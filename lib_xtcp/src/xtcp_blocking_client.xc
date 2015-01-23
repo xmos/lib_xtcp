@@ -3,7 +3,7 @@
 // University of Illinois/NCSA Open Source License posted in
 // LICENSE.txt and at <http://github.xcore.com/>
 
-#include "xtcp_client.h"
+#include "xtcp.h"
 
 void xtcp_wait_for_ifup(chanend tcp_svr)
 {

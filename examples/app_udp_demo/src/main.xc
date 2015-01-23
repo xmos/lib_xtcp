@@ -4,27 +4,28 @@
 // LICENSE.txt and at <http://github.xcore.com/>
 
 #include <platform.h>
-#include "print.h"
 #include "xtcp.h"
-#include "ethernet_board_support.h"
+#include "smi.h"
+#include "otp_board_info.h"
+#include "print.h"
 
-// These intializers are taken from the ethernet_board_support.h header for
-// XMOS dev boards. If you are using a different board you will need to
-// supply explicit port structure intializers for these values
-ethernet_xtcp_ports_t xtcp_ports =
-    {on ETHERNET_DEFAULT_TILE: OTP_PORTS_INITIALIZER,
-     ETHERNET_DEFAULT_SMI_INIT,
-     ETHERNET_DEFAULT_MII_INIT_lite,
-     ETHERNET_DEFAULT_RESET_INTERFACE_INIT};
+port p_eth_rxclk  = on tile[1]: XS1_PORT_1J;
+port p_eth_rxd    = on tile[1]: XS1_PORT_4E;
+port p_eth_txd    = on tile[1]: XS1_PORT_4F;
+port p_eth_rxdv   = on tile[1]: XS1_PORT_1K;
+port p_eth_txen   = on tile[1]: XS1_PORT_1L;
+port p_eth_txclk  = on tile[1]: XS1_PORT_1I;
+port p_eth_int    = on tile[1]: XS1_PORT_1O;
+port p_eth_rxerr  = on tile[1]: XS1_PORT_1P;
+port p_eth_timing = on tile[1]: XS1_PORT_8C;
 
-// IP Config - change this to suit your network.  Leave with all
-// 0 values to use DHCP/AutoIP
-xtcp_ipconfig_t ipconfig = {
-		{ 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
-		{ 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
-		{ 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
-};
+clock eth_rxclk   = on tile[1]: XS1_CLKBLK_1;
+clock eth_txclk   = on tile[1]: XS1_CLKBLK_2;
 
+port p_smi_mdc = on tile[1]: XS1_PORT_1N;
+port p_smi_mdio = on tile[1]: XS1_PORT_1M;
+
+otp_ports_t otp_ports = on tile[1]: OTP_PORTS_INITIALIZER;
 
 #define RX_BUFFER_SIZE 300
 #define INCOMING_PORT 15533
@@ -208,19 +209,39 @@ void udp_reflect(chanend c_xtcp)
   }
 }
 
-// Program entry point
-int main(void) {
-	chan xtcp[1];
-	par
-	{
-		// The TCP/IP server thread
-               on ETHERNET_DEFAULT_TILE: ethernet_xtcp_server(xtcp_ports,
-                                                              ipconfig,
-                                                              xtcp,
-                                                              1);
-                // The simple udp reflector thread
-                on stdcore[0]: udp_reflect(xtcp[0]);
 
-	}
-	return 0;
+// IP Config - change this to suit your network.  Leave with all
+// 0 values to use DHCP
+xtcp_ipconfig_t ipconfig = {
+  { 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
+  { 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
+  { 0, 0, 0, 0 }  // gateway (eg 192,168,0,1)
+};
+
+#define XTCP_MII_BUFSIZE 4096
+
+int main(void) {
+  chan c_xtcp[1];
+  mii_if i_mii;
+  smi_if i_smi;
+  par {
+
+    // MII/ethernet driver
+    on tile[1]: mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
+                    p_eth_txclk, p_eth_txen, p_eth_txd, p_eth_timing,
+                    eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE)
+
+    // SMI/ethernet phy driver
+    on tile[1]: smi(i_smi, 0x0, p_smi_mdio, p_smi_mdc);
+
+    // TCP component
+    on tile[1]: xtcp(c_xtcp, 1, i_mii,
+                     null, null, null,
+                     i_smi, null, otp_ports, ipconfig);
+
+    // The simple udp reflector thread
+    on tile[1]: udp_reflect(c_xtcp[0]);
+  }
+  return 0;
 }
+

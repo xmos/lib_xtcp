@@ -14,4 +14,5 @@ int get_uip_xtcp_ifstate();
 void uip_linkdown();
 void uip_linkup();
 void uip_xtcp_null_events();
+
 #endif // _UIP_XTCP_H_

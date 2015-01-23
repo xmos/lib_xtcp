@@ -6,13 +6,14 @@
 #include <string.h>
 #include <print.h>
 #include "uip.h"
-#include "xtcp_client.h"
+#include "xtcp.h"
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
 #include "timer.h"
 #include "dhcpc.h"
 #include "igmp.h"
 #include "uip_arp.h"
+#include "uip_xtcp.h"
 
 #define DHCPC_SERVER_PORT  67
 #define DHCPC_CLIENT_PORT  68

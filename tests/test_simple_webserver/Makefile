@@ -19,7 +19,10 @@ APP_NAME =
 # xcc for the final link (mapping) stage.
 
 #XCC_FLAGS_IPV6 = -O2 -save-temps -g -report -Xmapper --map -Xmapper MAPFILE -DIPV6=1
-XCC_FLAGS = -O2 -save-temps -g -report -Xmapper --map -Xmapper MAPFILE -DIPV6=0 -DXTCP_VERBOSE_DEBUG
+COMMON_FLAGS = -O2 -save-temps -g -report -Xmapper --map -Xmapper MAPFILE -DIPV6=0
+XCC_FLAGS_mii = $(COMMON_FLAGS) -DUSE_MAC=0
+XCC_FLAGS_mac = $(COMMON_FLAGS) -DUSE_MAC=1
+
 
 # The USED_MODULES variable lists other module used by the application. 
 USED_MODULES = lib_xtcp

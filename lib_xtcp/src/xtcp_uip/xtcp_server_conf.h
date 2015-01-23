@@ -4,7 +4,7 @@
 // LICENSE.txt and at <http://github.xcore.com/>
 
 #include "timer.h"
-#include "xtcp_client.h"
+#include "xtcp.h"
 
 typedef struct xtcp_server_state_t {
   int send_request;

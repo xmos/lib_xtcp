@@ -45,15 +45,15 @@ xtcp_ipconfig_t uip_static_ipconfig;
 
 static int dhcp_done = 0;
 
-void xtcp_tx_buffer(chanend mac_tx) {
-	uip_split_output(mac_tx);
-	uip_len = 0;
+void xtcp_tx_buffer(void) {
+  uip_split_output();
+  uip_len = 0;
 }
 
 void uip_server_init(chanend xtcp[], int num_xtcp, xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6])
 {
 	if (ipconfig != NULL)
-		memcpy(&uip_static_ipconfig, ipconfig, sizeof(xtcp_ipconfig_t));
+          memcpy(&uip_static_ipconfig, ipconfig, sizeof(xtcp_ipconfig_t));
 
 	memcpy(&uip_ethaddr, mac_address, 6);
 
@@ -117,14 +117,14 @@ static int uip_udp_conn_needs_poll(struct uip_udp_conn *uip_udp_conn)
   return needs_poll(s);
 }
 
-void xtcpd_check_connection_poll(chanend mac_tx)
+void xtcpd_check_connection_poll(void)
 {
 	for (int i = 0; i < UIP_CONNS; i++) {
 		if (uip_conn_needs_poll(&uip_conns[i])) {
 			uip_poll_conn(&uip_conns[i]);
 			if (uip_len > 0) {
 				uip_arp_out( NULL);
-				xtcp_tx_buffer(mac_tx);
+                                xtcp_tx_buffer();
 			}
 		}
 	}
@@ -134,13 +134,13 @@ void xtcpd_check_connection_poll(chanend mac_tx)
 			uip_udp_periodic(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-				xtcp_tx_buffer(mac_tx);
+                                xtcp_tx_buffer();
 			}
 		}
 	}
 }
 
-void xtcp_process_incoming_packet(chanend mac_tx, int length)
+void xtcp_process_incoming_packet(int length)
 {
 	if (BUF->type == htons(UIP_ETHTYPE_IP)) {
 		uip_len = length;
@@ -153,51 +153,51 @@ void xtcp_process_incoming_packet(chanend mac_tx, int length)
 				uip_arp_out( uip_udp_conn);
 			else
 				uip_arp_out( NULL);
-			xtcp_tx_buffer(mac_tx);
+                        xtcp_tx_buffer();
 		}
-	} else if (BUF->type == htons(UIP_ETHTYPE_ARP)) {
+        } else if (BUF->type == htons(UIP_ETHTYPE_ARP)) {
 		uip_len = length;
 		uip_arp_arpin();
 
 		if (uip_len > 0) {
-			xtcp_tx_buffer(mac_tx);
+                        xtcp_tx_buffer();
 		}
 		for (int i = 0; i < UIP_UDP_CONNS; i++) {
 			uip_udp_arp_event(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-				xtcp_tx_buffer(mac_tx);
+                                xtcp_tx_buffer();
 			}
 		}
 	}
 }
 
-void xtcp_process_udp_acks(chanend mac_tx)
+void xtcp_process_udp_acks(void)
 {
 	for (int i = 0; i < UIP_UDP_CONNS; i++) {
 		if (uip_udp_conn_has_ack(&uip_udp_conns[i])) {
 			uip_udp_ackdata(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-				xtcp_tx_buffer(mac_tx);
+                                xtcp_tx_buffer();
 			}
 		}
 	}
 }
 
-void xtcp_process_periodic_timer(chanend mac_tx)
+void xtcp_process_periodic_timer(void)
 {
 #if UIP_IGMP
 	igmp_periodic();
 	if(uip_len > 0) {
-		xtcp_tx_buffer(mac_tx);
+                xtcp_tx_buffer();
 	}
 #endif
 	for (int i = 0; i < UIP_UDP_CONNS; i++) {
 		uip_udp_periodic(i);
 		if (uip_len > 0) {
 			uip_arp_out(&uip_udp_conns[i]);
-			xtcp_tx_buffer(mac_tx);
+                        xtcp_tx_buffer();
 		}
 	}
 
@@ -205,7 +205,7 @@ void xtcp_process_periodic_timer(chanend mac_tx)
 		uip_periodic(i);
 		if (uip_len > 0) {
 			uip_arp_out( NULL);
-			xtcp_tx_buffer(mac_tx);
+                        xtcp_tx_buffer();
 		}
 	}
 }

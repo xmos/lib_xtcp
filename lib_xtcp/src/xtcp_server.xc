@@ -6,7 +6,7 @@
 #include <xs1.h>
 #include <print.h>
 #include "xtcp_cmd.h"
-#include "xtcp_client.h"
+#include "xtcp.h"
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
 

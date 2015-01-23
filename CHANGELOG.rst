@@ -1,5 +1,12 @@
-sc_xtcp Change Log
-==================
+TCP/IP Library Change Log
+=========================
+
+4.0.0
+-----
+
+  * Moved over to new file structure
+  * Updated to use new lib_ethernet
+
 
 3.2.1
 -----

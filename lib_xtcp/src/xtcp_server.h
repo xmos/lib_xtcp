@@ -6,7 +6,7 @@
 #ifndef __xtcp_server_h__
 #define __xtcp_server_h__
 #include <xccompat.h>
-#include "xtcp_client.h"
+#include "xtcp.h"
 #include "xtcp_server_conf.h"
 
 #if UIP_CONF_IPV6

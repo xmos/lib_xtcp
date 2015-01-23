@@ -6,7 +6,7 @@
 #include <xs1.h>
 #include <print.h>
 #include <xccompat.h>
-#include "xtcp_client.h"
+#include "xtcp.h"
 #include "xtcp_cmd.h"
 
 static void send_cmd(chanend c, xtcp_cmd_t cmd, int conn_id)
