@@ -97,7 +97,6 @@ void xtcp(chanend xtcp[n], size_t n,
 
       size_t index = i_eth_rx.get_index();
       ethernet_macaddr_filter_t macaddr_filter;
-      macaddr_filter.vlan = 0;
       memcpy(macaddr_filter.addr, mac_address, sizeof(mac_address));
       i_eth_cfg.add_macaddr_filter(index, 0, macaddr_filter);
 
