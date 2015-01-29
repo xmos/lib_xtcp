@@ -62,10 +62,12 @@ int main(void) {
   par {
 
 #if USE_MAC
-    on tile[1]: mii_ethernet(i_cfg, 1, i_rx, 1, i_tx, 1,
-                             p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
-                             p_eth_txclk, p_eth_txen, p_eth_txd, p_eth_timing,
-                             eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE);
+    on tile[1]: mii_ethernet_mac(i_cfg, 1, i_rx, 1, i_tx, 1,
+                                 p_eth_rxclk, p_eth_rxerr,
+                                 p_eth_rxd, p_eth_rxdv,
+                                 p_eth_txclk, p_eth_txen,
+                                 p_eth_txd, p_eth_timing,
+                                 eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE);
 
     on tile[1]: xtcp(c_xtcp, 1, null,
                      i_cfg[0], i_rx[0], i_tx[0],
