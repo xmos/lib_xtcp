@@ -106,8 +106,8 @@ void xtcp(chanend xtcp[n], size_t n,
       i_eth_cfg.add_macaddr_filter(index, 0, macaddr_filter);
 
       // Only allow ARP and IP packets to the stack
-      i_eth_cfg.add_ethertype_filter(index, 0, 0x0806);
-      i_eth_cfg.add_ethertype_filter(index, 0, 0x0800);
+      i_eth_cfg.add_ethertype_filter(index, 0x0806);
+      i_eth_cfg.add_ethertype_filter(index, 0x0800);
     }
   }
 
