@@ -14,7 +14,7 @@ Typical Resource Usage
     - locals: interface mii_if i_mii; chan c_xtcp[1];
     - fn: xtcp(c_xtcp, 1, i_mii,
                null, null, null,
-               null, null, null, ipconfig);
+               null, 0, null, null, ipconfig);
     - pins: 0
     - ports: 0
 
