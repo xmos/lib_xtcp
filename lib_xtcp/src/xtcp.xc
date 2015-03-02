@@ -61,6 +61,7 @@ void xtcp(chanend xtcp[n], size_t n,
           client ethernet_rx_if ?i_eth_rx,
           client ethernet_tx_if ?i_eth_tx,
           client smi_if ?i_smi,
+          uint8_t phy_address,
           char (&?mac_address0)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig)
@@ -154,7 +155,7 @@ void xtcp(chanend xtcp[n], size_t n,
       if (!isnull(i_smi))
       {
         static int linkstate=0;
-        int status = smi_is_link_up(i_smi);
+        int status = smi_is_link_up(i_smi, phy_address);
         if (!status && linkstate) {
           if (!isnull(i_eth_cfg))
               i_eth_cfg.set_link_state(0, ETHERNET_LINK_DOWN);

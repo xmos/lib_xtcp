@@ -594,6 +594,7 @@ void xtcp_accept_partial_ack(chanend c_xtcp,
  *                    for link up/link down events. Otherwise, it will
  *                    expect link up/link down events from the connected
  *                    Ethernet MAC.
+ *  \param phy_address The SMI address of the Ethernet PHY
  *  \param mac_address If this array is non-null then it will be used to set
  *                     the MAC address of the component.
  *  \param otp_ports   If this port structure is non-null then the component
@@ -609,6 +610,7 @@ void xtcp(chanend c_xtcp[n], size_t n,
           client ethernet_rx_if ?i_eth_rx,
           client ethernet_tx_if ?i_eth_tx,
           client smi_if ?i_smi,
+          uint8_t phy_address,
           char (&?mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
