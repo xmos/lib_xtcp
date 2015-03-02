@@ -71,7 +71,8 @@ int main(void) {
 
     on tile[1]: xtcp(c_xtcp, 1, null,
                      i_cfg[0], i_rx[0], i_tx[0],
-                     i_smi, null, otp_ports, ipconfig);
+                     i_smi, 0, 
+                     null, otp_ports, ipconfig);
 
 #else
     on tile[1]: mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
@@ -80,11 +81,12 @@ int main(void) {
 
     on tile[1]: xtcp(c_xtcp, 1, i_mii,
                      null, null, null,
-                     i_smi, null, otp_ports, ipconfig);
+                     i_smi, 0,
+                     null, otp_ports, ipconfig);
 #endif
 
     // SMI/ethernet phy driver
-    on tile[1]: smi(i_smi, 0x0, p_smi_mdio, p_smi_mdc);
+    on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
 
     // HTTP server application
