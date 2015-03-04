@@ -156,14 +156,15 @@ void xtcp(chanend xtcp[n], size_t n,
       {
         static int linkstate=0;
         int status = smi_is_link_up(i_smi, phy_address);
+        ethernet_speed_t link_speed = smi_get_link_speed(i_smi, phy_address);
         if (!status && linkstate) {
           if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, ETHERNET_LINK_DOWN);
+              i_eth_cfg.set_link_state(0, ETHERNET_LINK_DOWN, link_speed);
           uip_linkdown();
         }
         if (status && !linkstate) {
           if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, ETHERNET_LINK_UP);
+              i_eth_cfg.set_link_state(0, ETHERNET_LINK_UP, link_speed);
           uip_linkup();
         }
         linkstate = status;
