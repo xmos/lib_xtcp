@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #include <xtcp.h>
 #include <xtcp_server.h>
 #include <xtcp_server_impl.h>

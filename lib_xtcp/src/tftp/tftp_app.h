@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 /** Defines a high level interface to module_tftp from the application.
  *
  *  The following functions must be implemented, even if they are left blank.
