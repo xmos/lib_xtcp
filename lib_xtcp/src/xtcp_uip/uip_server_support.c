@@ -53,7 +53,7 @@ void xtcp_tx_buffer(void) {
 void uip_server_init(chanend xtcp[], int num_xtcp, xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6])
 {
 	if (ipconfig != NULL)
-          memcpy(&uip_static_ipconfig, ipconfig, sizeof(xtcp_ipconfig_t));
+		  memcpy(&uip_static_ipconfig, ipconfig, sizeof(xtcp_ipconfig_t));
 
 	memcpy(&uip_ethaddr, mac_address, 6);
 
@@ -124,7 +124,7 @@ void xtcpd_check_connection_poll(void)
 			uip_poll_conn(&uip_conns[i]);
 			if (uip_len > 0) {
 				uip_arp_out( NULL);
-                                xtcp_tx_buffer();
+				xtcp_tx_buffer();
 			}
 		}
 	}
@@ -134,7 +134,7 @@ void xtcpd_check_connection_poll(void)
 			uip_udp_periodic(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-                                xtcp_tx_buffer();
+				xtcp_tx_buffer();
 			}
 		}
 	}
@@ -153,20 +153,20 @@ void xtcp_process_incoming_packet(int length)
 				uip_arp_out( uip_udp_conn);
 			else
 				uip_arp_out( NULL);
-                        xtcp_tx_buffer();
+				xtcp_tx_buffer();
 		}
-        } else if (BUF->type == htons(UIP_ETHTYPE_ARP)) {
+		} else if (BUF->type == htons(UIP_ETHTYPE_ARP)) {
 		uip_len = length;
 		uip_arp_arpin();
 
 		if (uip_len > 0) {
-                        xtcp_tx_buffer();
+						xtcp_tx_buffer();
 		}
 		for (int i = 0; i < UIP_UDP_CONNS; i++) {
 			uip_udp_arp_event(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-                                xtcp_tx_buffer();
+				xtcp_tx_buffer();
 			}
 		}
 	}
@@ -179,7 +179,7 @@ void xtcp_process_udp_acks(void)
 			uip_udp_ackdata(i);
 			if (uip_len > 0) {
 				uip_arp_out(&uip_udp_conns[i]);
-                                xtcp_tx_buffer();
+				xtcp_tx_buffer();
 			}
 		}
 	}
@@ -190,14 +190,14 @@ void xtcp_process_periodic_timer(void)
 #if UIP_IGMP
 	igmp_periodic();
 	if(uip_len > 0) {
-                xtcp_tx_buffer();
+				xtcp_tx_buffer();
 	}
 #endif
 	for (int i = 0; i < UIP_UDP_CONNS; i++) {
 		uip_udp_periodic(i);
 		if (uip_len > 0) {
 			uip_arp_out(&uip_udp_conns[i]);
-                        xtcp_tx_buffer();
+			xtcp_tx_buffer();
 		}
 	}
 
@@ -205,7 +205,7 @@ void xtcp_process_periodic_timer(void)
 		uip_periodic(i);
 		if (uip_len > 0) {
 			uip_arp_out( NULL);
-                        xtcp_tx_buffer();
+			xtcp_tx_buffer();
 		}
 	}
 }
