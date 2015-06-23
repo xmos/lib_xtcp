@@ -62,7 +62,7 @@ void xtcp(chanend xtcp[n], size_t n,
           client ethernet_tx_if ?i_eth_tx,
           client smi_if ?i_smi,
           uint8_t phy_address,
-          char (&?mac_address0)[6],
+          const char (&?mac_address0)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig)
 {
