@@ -142,6 +142,14 @@ void xtcp(chanend xtcp[n], size_t n,
       if (desc.type == ETH_DATA) {
         xtcp_process_incoming_packet(desc.len);
       }
+      else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
+        if (((unsigned char *)uip_buf32)[0] == ETHERNET_LINK_UP) {
+          uip_linkup();
+        }
+        else {
+          uip_linkdown();
+        }
+      }
       break;
     case tmr when timerafter(timeout) :> timeout:
       timeout += 10000000;
@@ -157,13 +165,15 @@ void xtcp(chanend xtcp[n], size_t n,
         static int linkstate=0;
         ethernet_link_state_t status = smi_get_link_state(i_smi, phy_address);
         if (!status && linkstate) {
-          if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+          if (!isnull(i_eth_cfg)) {
+            i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+          }
           uip_linkdown();
         }
         if (status && !linkstate) {
-          if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+          if (!isnull(i_eth_cfg)) {
+            i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+          }
           uip_linkup();
         }
         linkstate = status;
