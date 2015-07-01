@@ -1,6 +1,11 @@
 TCP/IP Library Change Log
 =========================
 
+4.0.1
+-----
+  * Fixed issue with link up/down events being ignored when SMI is not polled within XTCP
+  * MAC address parameter to xtcp() is now qualified as const to allow parallel usage
+
 4.0.0
 -----
 
