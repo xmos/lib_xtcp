@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef TFTP_CONF_H_
 #define TFTP_CONF_H_
 

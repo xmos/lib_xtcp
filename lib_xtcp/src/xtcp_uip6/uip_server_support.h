@@ -1,25 +1,4 @@
-/*****************************************************************************
-*
-* Filename:         uip_server_support.h
-* Author:           Christian Schlittler
-* Version:          1.0
-* Creation date:	25.10.2013
-*
-* Copyright:        Christian Schlittler, christian.schlittler@gmx.ch
-*
-* Project:			XMOS and 6LoWPAN
-* Target:			XMOS sliceKIT with RFSlice extension
-* Compiler:
-*
-* -----------------------------------------------------------------------------
-*
-* History:
-*
-* -----------------------------------------------------------------------------
-*
-* Usage:
-*
-**************************************************************************** */
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 
 #ifndef UIP_SERVER_SUPPORT_H_
 #define UIP_SERVER_SUPPORT_H_

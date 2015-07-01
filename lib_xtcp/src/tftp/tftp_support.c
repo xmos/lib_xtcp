@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #include "tftp.h"
 #include "tftp_app.h"
 #include <platform.h>

@@ -1,33 +1,5 @@
 .. include:: ../../../README.rst
 
-Typical Resource Usage
-......................
-
-.. resusage::
-
-  * - configuration: Standard
-    - globals: xtcp_ipconfig_t ipconfig = {
-               { 0, 0, 0, 0 },
-               { 0, 0, 0, 0 },
-               { 0, 0, 0, 0 }
-               };
-    - locals: interface mii_if i_mii; chan c_xtcp[1];
-    - fn: xtcp(c_xtcp, 1, i_mii,
-               null, null, null,
-               null, 0, null, null, ipconfig);
-    - pins: 0
-    - ports: 0
-
-
-Software version and dependencies
-.................................
-
-.. libdeps::
-
-Related application notes
-.........................
-
-TODO
 
 Usage
 -----
@@ -74,18 +46,8 @@ interface. This is to allow applications to manage buffering and
 connection management in the most efficient way possible for the
 application. 
 
-.. only:: html
-
-  .. figure:: images/events-crop.png
-     :align: center
-
-     Example event sequence
-
-.. only:: latex
-
-  .. figure:: images/events-crop.pdf
-     :figwidth: 50%
-     :align: center
+  .. figure:: images/events-crop.*
+     :width: 50%
 
      Example event sequence
 
@@ -107,7 +69,7 @@ persistent state for each connection.
 
 The connection and event model is the same from both TCP connections
 and UDP connections. Full details of both the possible events and
-possible commands can be found in Section :ref:`sec_api`.
+possible commands can be found in :ref:`lib_xtcp_api`.
 
 TCP and UDP
 ...........
@@ -311,8 +273,18 @@ by the library on build).
        DHCP is a protocol for dynamically acquiring an IP address from
        a centralised DHCP server.  This option is enabled by default.
 
+.. _lib_xtcp_api:
+
 Functional API
 --------------
+
+All functions can be found in the ``xtcp.h`` header file::
+
+  #include <xtcp.h>
+
+The application also needs to add ``lib_xtcp`` to its build modules::
+
+  USED_MODULES = ... lib_xtcp ...
 
 Data Structures/Types
 .....................
@@ -338,9 +310,9 @@ Server API
 
 .. doxygenfunction:: xtcp
 
-.. _xtcp_client_api:
-
 |newpage|
+
+.. _xtcp_client_api:
 
 Client API
 ..........

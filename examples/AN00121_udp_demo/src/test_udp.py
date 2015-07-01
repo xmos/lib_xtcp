@@ -7,14 +7,14 @@ import socket,sys
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-print "Connecting.."
+print ("Connecting..")
 sock.connect((sys.argv[1], 15533))
-print "Connected"
+print ("Connected")
 
 msg = "hello world"
-print "Sending message: " + msg
-sock.send(msg)
+print ("Sending message: " + msg)
+sock.send(bytes(msg,"utf-8"))
 
-print "Closing..."
+print ("Closing...")
 sock.close()
-print "Closed"
+print ("Closed")

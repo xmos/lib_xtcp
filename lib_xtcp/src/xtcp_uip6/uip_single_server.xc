@@ -1,41 +1,4 @@
-/*****************************************************************************
-*
-* Filename:         uip_single_server.xc
-* Author:           David Lacey
-*                   Christian Schlittler
-* Version:          1.0
-* Creation date:	15.10.2013
-*
-* Copyright:        Christian Schlittler, christian.schlittler@gmx.ch
-*                   2013, ZHAW School of Engineering
-*                   2013, XMOS Ltd, All rights reserved
-*                   This software is freely distributable under a derivative of the
-*                   University of Illinois/NCSA Open Source License posted in
-*
-* Project:          XMOS and 6LoWPAN
-* Target:           XMOS sliceKIT with RFSlice extension
-* Compiler:         xcc with xTIMEcomposer 13.0.0beta
-*
-* -----------------------------------------------------------------------------
-*
-* History:
-*
-* This code was written by David Lacey to run the uIP protocol stack in V1.0. Now
-* an extension of the protocol stack to IPv6 is needed, so a newer version of
-* uip is used. Therefore, some adaption had to be made in this file.
-*
-* -----------------------------------------------------------------------------
-*
-* Usage:
-*
-**************************************************************************** */
-
-// Copyright (c) 2011, XMOS Ltd, All rights reserved
-// This software is freely distributable under a derivative of the
-// University of Illinois/NCSA Open Source License posted in
-// LICENSE.txt and at <http://github.xcore.com/>
-
-
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 
 #include <xs1.h>
 #include <xclib.h>

@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef UIP_PACKETQUEUE_H
 #define UIP_PACKETQUEUE_H
 
