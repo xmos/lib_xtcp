@@ -10,20 +10,12 @@
 #include "xtcp_client_conf.h"
 #endif
 
-#ifndef XTCP_SEPARATE_MAC
+#ifndef XTCP_STRIP_VLAN_TAGS
+#define XTCP_STRIP_VLAN_TAGS 0
+#endif
+
+#ifndef XTCP_SEPARATE_MAC // Deprecated
 #define XTCP_SEPARATE_MAC 0
-#endif
-
-#if XTCP_SEPARATE_MAC
-#define ETHERNET_DEFAULT_IMPLEMENTATION full
-#endif
-
-#ifndef ETHERNET_USE_XTCP_FILTER
-#define ETHERNET_USE_XTCP_FILTER 1
-#endif
-
-#if ETHERNET_USE_XTCP_FILTER
-#define ETHERNET_CUSTOM_FILTER_HEADER "xtcp_mac_filter.h"
 #endif
 
 #ifndef XTCP_ENABLE_PUSH_FLAG_NOTIFICATION

@@ -17,11 +17,6 @@ INCLUDE_DIRS += $(XTCP_SOURCE_DIRS) api
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 MODULE_XCC_FLAGS = $(XCC_FLAGS)
 
-ifeq ($(USE_XTCP_MAC_CUSTOM_FILTER),1)
-INCLUDE_DIRS += src/mac_custom_filter
-SOURCE_DIRS += src/mac_custom_filter
-endif
-
 $(call SET_XCC_XC_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_FLAGS) -g -Os)
 $(call SET_XCC_C_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_FLAGS) -Os)
 
