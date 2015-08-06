@@ -6,7 +6,7 @@
 #include "xtcp.h"
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
-#include "timer.h"
+#include "uip_timer.h"
 #include "dhcpc.h"
 #include "igmp.h"
 #include "uip_arp.h"
@@ -438,10 +438,10 @@ void uip_xtcpd_handle_poll(xtcpd_state_t *s)
     s->s.send_request--;
   }
   else if (s->s.poll_interval != 0 &&
-           timer_expired(&(s->s.tmr)))
+           uip_timer_expired(&(s->s.tmr)))
     {
       xtcpd_event(XTCP_POLL, s);
-      timer_set(&(s->s.tmr), s->s.poll_interval);
+      uip_timer_set(&(s->s.tmr), s->s.poll_interval);
     }
 }
 
@@ -652,7 +652,7 @@ void xtcpd_set_poll_interval(int linknum, int conn_id, int poll_interval)
   xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
   if (s != NULL && s->conn.protocol == XTCP_PROTOCOL_UDP) {
     s->s.poll_interval = poll_interval;
-    timer_set(&(s->s.tmr), poll_interval * CLOCK_SECOND/1000);
+    uip_timer_set(&(s->s.tmr), poll_interval * CLOCK_SECOND/1000);
   }
 }
 

@@ -3,7 +3,7 @@
 #include "uip.h"
 #include "autoip.h"
 #include "uip_arp.h"
-#include "timer.h"
+#include "uip_timer.h"
 #include "clock-arch.h"
 #include <print.h>
 #include <string.h>
@@ -112,7 +112,7 @@ static void random_timer_set(struct uip_timer *t,
   rand(autoip_state);
   x = autoip_state->rand * (b-a);
   x = x >> 32;
-  timer_set(t, a + x);
+  uip_timer_set(t, a + x);
 }
 
 __attribute__ ((noinline))
@@ -144,7 +144,7 @@ static void send_announce()
   uip_ipaddr_copy(BUF->sipaddr, autoip_state->ipaddr);
 
   autoip_state->announces_sent++;
-  timer_set(&autoip_state->timer, ANNOUNCE_INTERVAL * CLOCK_SECOND);
+  uip_timer_set(&autoip_state->timer, ANNOUNCE_INTERVAL * CLOCK_SECOND);
 }
 
 void autoip_periodic()
@@ -156,7 +156,7 @@ void autoip_periodic()
     case NO_ADDRESS:
       {
         int r1,r2;
-        if (!autoip_state->limit_rate || timer_expired(&autoip_state->timer)) {
+        if (!autoip_state->limit_rate || uip_timer_expired(&autoip_state->timer)) {
           rand(autoip_state);
           r1 = autoip_state->rand & 0xff;
           r2 = (autoip_state->rand & 0xff00) >> 8;
@@ -167,25 +167,25 @@ void autoip_periodic()
         break;
       }
     case WAIT_FOR_PROBE:
-      if (timer_expired(&autoip_state->timer)) {
+      if (uip_timer_expired(&autoip_state->timer)) {
         autoip_state->state = PROBING;
         send_probe();
       }
       break;
     case PROBING:
-      if (timer_expired(&autoip_state->timer))
+      if (uip_timer_expired(&autoip_state->timer))
         {
           if (autoip_state->probes_sent == PROBE_NUM) {
             // configured
             autoip_state->state = WAIT_FOR_ANNOUNCE;
-            timer_set(&autoip_state->timer, ANNOUNCE_WAIT * CLOCK_SECOND);
+            uip_timer_set(&autoip_state->timer, ANNOUNCE_WAIT * CLOCK_SECOND);
           }
           else
             send_probe();
         }
       break;
     case WAIT_FOR_ANNOUNCE:
-      if (timer_expired(&autoip_state->timer)) {
+      if (uip_timer_expired(&autoip_state->timer)) {
         if (autoip_state->num_conflicts == 0) {
           autoip_state->state = ANNOUNCING;
           send_announce();
@@ -198,7 +198,7 @@ void autoip_periodic()
           autoip_state->limit_rate =
             autoip_state->limit_rate ||
             (autoip_state->num_conflicts > MAX_CONFLICTS);
-          timer_set(&autoip_state->timer, RATE_LIMIT_INTERVAL * CLOCK_SECOND);
+          uip_timer_set(&autoip_state->timer, RATE_LIMIT_INTERVAL * CLOCK_SECOND);
         }
       }
       break;

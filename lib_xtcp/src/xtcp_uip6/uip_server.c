@@ -12,7 +12,7 @@
 #include "uip_arp.h"
 #include "xcoredev.h"
 #include "xtcp_server.h"
-#include "timer.h"
+#include "uip_timer.h"
 #include "uip_server.h"
 #include "ethernet_rx_client.h"
 #include "ethernet_tx_client.h"

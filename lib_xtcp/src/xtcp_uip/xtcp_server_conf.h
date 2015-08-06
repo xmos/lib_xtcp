@@ -1,6 +1,6 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
 
-#include "timer.h"
+#include "uip_timer.h"
 #include "xtcp.h"
 
 typedef struct xtcp_server_state_t {

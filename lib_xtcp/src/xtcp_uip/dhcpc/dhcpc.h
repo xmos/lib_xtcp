@@ -35,7 +35,7 @@
 #ifndef __DHCPC_H__
 #define __DHCPC_H__
 
-#include "timer.h"
+#include "uip_timer.h"
 #include "pt.h"
 
 struct dhcpc_state {

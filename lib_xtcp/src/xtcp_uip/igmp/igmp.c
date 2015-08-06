@@ -2,7 +2,7 @@
 
 #include "uip.h"
 #include "uip_arp.h"
-#include "timer.h"
+#include "uip_timer.h"
 #include <string.h>
 #include <print.h>
 
@@ -155,10 +155,10 @@ static void igmp_group_periodic(igmp_group_state_t *s)
       send_membership_report(s);
       s->flag = 1;
       s->state = DELAYED_MEMBER;
-      timer_set(&s->timer, UNSOLICITED_REPORT_INTERVAL * CLOCK_SECOND);
+      uip_timer_set(&s->timer, UNSOLICITED_REPORT_INTERVAL * CLOCK_SECOND);
       break;
     case DELAYED_MEMBER:
-      if (timer_expired(&s->timer))  {
+      if (uip_timer_expired(&s->timer))  {
         send_membership_report(s);
         s->flag = 1;
         s->state = IDLE_MEMBER;
@@ -209,7 +209,7 @@ void igmp_in()
             {
               groups[i].state = DELAYED_MEMBER;
               // should be random up to max response time
-              timer_set(&groups[i].timer,
+              uip_timer_set(&groups[i].timer,
                         (IGMPBUF->max_response >> 5) * CLOCK_SECOND);
             }
         }

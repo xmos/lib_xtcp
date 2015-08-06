@@ -39,7 +39,7 @@
 #include <print.h>
 #include "uip.h"
 #include "dhcpc.h"
-#include "timer.h"
+#include "uip_timer.h"
 #include "pt.h"
 #include "autoip.h"
 
@@ -312,12 +312,12 @@ PT_THREAD(handle_dhcp(void))
   initwait:
     rand_startup = rand() % 8192; // 0 - 8 seconds
     s.ticks = rand_startup;
-    timer_set(&s.timer, s.ticks);
+    uip_timer_set(&s.timer, s.ticks);
 
     do
     {
         PT_YIELD(&s.pt);
-    } while (!timer_expired(&s.timer));
+    } while (!uip_timer_expired(&s.timer));
 
   init:
     s.state = STATE_SENDING;
@@ -326,7 +326,7 @@ PT_THREAD(handle_dhcp(void))
     while (1)
     {
         send_discover();
-        timer_set(&s.timer, s.ticks);
+        uip_timer_set(&s.timer, s.ticks);
 
         do
         {
@@ -342,7 +342,7 @@ PT_THREAD(handle_dhcp(void))
               }
             }
 
-        } while (!timer_expired(&s.timer));
+        } while (!uip_timer_expired(&s.timer));
 
 #if UIP_USE_AUTOIP
         if (s.ticks == CLOCK_SECOND * 4)
@@ -362,7 +362,7 @@ PT_THREAD(handle_dhcp(void))
     do
     {
         send_request();
-        timer_set(&s.timer, s.ticks);
+        uip_timer_set(&s.timer, s.ticks);
 
         do
         {
@@ -381,7 +381,7 @@ PT_THREAD(handle_dhcp(void))
                 goto initwait;
               }
             }
-        } while (!timer_expired(&s.timer));
+        } while (!uip_timer_expired(&s.timer));
 
         if (s.ticks <= CLOCK_SECOND * 10)
         {
@@ -411,8 +411,8 @@ PT_THREAD(handle_dhcp(void))
     {
         ticks = IMIN(s.ticks, MAX_TICKS);
         s.ticks -= ticks;
-        timer_set(&s.timer, ticks);
-        PT_YIELD_UNTIL(&s.pt, timer_expired(&s.timer));
+        uip_timer_set(&s.timer, ticks);
+        PT_YIELD_UNTIL(&s.pt, uip_timer_expired(&s.timer));
     }
 
     if((s.lease_time[0]*65536ul + s.lease_time[1])*CLOCK_SECOND/2 <= MAX_TICKS32)
@@ -430,7 +430,7 @@ PT_THREAD(handle_dhcp(void))
         send_request();
         ticks = IMIN(s.ticks / 2, MAX_TICKS);
         s.ticks -= ticks;
-        timer_set(&s.timer, ticks);
+        uip_timer_set(&s.timer, ticks);
 
         do
         {
@@ -449,7 +449,7 @@ PT_THREAD(handle_dhcp(void))
                 goto init;
               }
             }
-        } while (!timer_expired(&s.timer));
+        } while (!uip_timer_expired(&s.timer));
 
     } while (s.ticks >= CLOCK_SECOND*3);
 

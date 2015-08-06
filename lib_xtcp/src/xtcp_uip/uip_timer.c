@@ -49,7 +49,7 @@
  */
 
 #include "clock.h"
-#include "timer.h"
+#include "uip_timer.h"
 
 /*---------------------------------------------------------------------------*/
 /**
@@ -64,7 +64,7 @@
  *
  */
 void
-timer_set(struct uip_timer *t, clock_time_t interval)
+uip_timer_set(struct uip_timer *t, clock_time_t interval)
 {
   t->interval = interval;
   t->start = clock_time();
@@ -84,7 +84,7 @@ timer_set(struct uip_timer *t, clock_time_t interval)
  * \sa timer_restart()
  */
 void
-timer_reset(struct uip_timer *t)
+uip_timer_reset(struct uip_timer *t)
 {
   t->start += t->interval;
 }
@@ -104,7 +104,7 @@ timer_reset(struct uip_timer *t)
  * \sa timer_reset()
  */
 void
-timer_restart(struct uip_timer *t)
+uip_timer_restart(struct uip_timer *t)
 {
   t->start = clock_time();
 }
@@ -121,7 +121,7 @@ timer_restart(struct uip_timer *t)
  *
  */
 int
-timer_expired(struct uip_timer *t)
+uip_timer_expired(struct uip_timer *t)
 {
   return (clock_time_t)(clock_time() - t->start) >= (clock_time_t)t->interval;
 }

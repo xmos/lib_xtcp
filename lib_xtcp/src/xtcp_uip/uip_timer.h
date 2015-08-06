@@ -60,8 +60,8 @@
  *
  * $Id: timer.h,v 1.3 2006/06/11 21:46:39 adam Exp $
  */
-#ifndef __TIMER_H__
-#define __TIMER_H__
+#ifndef __UIP_TIMER_H__
+#define __UIP_TIMER_H__
 
 #include "clock.h"
 
@@ -79,12 +79,12 @@ struct uip_timer {
 };
 
 #ifndef __XC__
-void timer_set(struct uip_timer *t, clock_time_t interval);
-void timer_reset(struct uip_timer *t);
-void timer_restart(struct uip_timer *t);
-int timer_expired(struct uip_timer *t);
+void uip_timer_set(struct uip_timer *t, clock_time_t interval);
+void uip_timer_reset(struct uip_timer *t);
+void uip_timer_restart(struct uip_timer *t);
+int uip_timer_expired(struct uip_timer *t);
 #endif
 
-#endif /* __TIMER_H__ */
+#endif /* __UIP_TIMER_H__ */
 
 /** @} */
