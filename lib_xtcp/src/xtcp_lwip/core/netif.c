@@ -184,13 +184,11 @@ netif_add(struct netif *netif,
 #if LWIP_IPV4
           const ip4_addr_t *ipaddr, const ip4_addr_t *netmask, const ip4_addr_t *gw,
 #endif /* LWIP_IPV4 */
-          void *state, netif_init_fn init, netif_input_fn input)
+          void *state)
 {
 #if LWIP_IPV6
   u32_t i;
 #endif
-
-  LWIP_ASSERT("No init function given", init != NULL);
 
   /* reset new interface configuration state */
 #if LWIP_IPV4
@@ -231,9 +229,6 @@ netif_add(struct netif *netif,
 #if LWIP_NETIF_LINK_CALLBACK
   netif->link_callback = NULL;
 #endif /* LWIP_NETIF_LINK_CALLBACK */
-#if LWIP_IGMP
-  netif->igmp_mac_filter = NULL;
-#endif /* LWIP_IGMP */
 #if LWIP_IPV6 && LWIP_IPV6_MLD
   netif->mld_mac_filter = NULL;
 #endif /* LWIP_IPV6 && LWIP_IPV6_MLD */
@@ -245,7 +240,6 @@ netif_add(struct netif *netif,
   /* remember netif specific state information data */
   netif->state = state;
   netif->num = netif_num++;
-  netif->input = input;
   NETIF_SET_HWADDRHINT(netif, NULL);
 #if ENABLE_LOOPBACK && LWIP_LOOPBACK_MAX_PBUFS
   netif->loop_cnt_current = 0;
@@ -254,11 +248,6 @@ netif_add(struct netif *netif,
 #if LWIP_IPV4
   netif_set_addr(netif, ipaddr, netmask, gw);
 #endif /* LWIP_IPV4 */
-
-  /* call user specified initialization function for netif */
-  if (init(netif) != ERR_OK) {
-    return NULL;
-  }
 
   /* add this netif to the list */
   netif->next = netif_list;
