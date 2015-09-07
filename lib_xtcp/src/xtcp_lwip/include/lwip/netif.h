@@ -100,33 +100,6 @@ extern "C" {
 
 struct netif;
 
-/** Function prototype for netif init functions. Set up flags and output/linkoutput
- * callback functions in this function.
- *
- * @param netif The netif to initialize
- */
-typedef err_t (*netif_init_fn)(struct netif *netif);
-/** Function prototype for netif->input functions. This function is saved as 'input'
- * callback function in the netif struct. Call it when a packet has been received.
- *
- * @param p The received packet, copied into a pbuf
- * @param inp The netif which received the packet
- */
-typedef err_t (*netif_input_fn)(struct pbuf *p, struct netif *inp);
-
-#if LWIP_IPV4
-/** Function prototype for netif->output functions. Called by lwIP when a packet
- * shall be sent. For ethernet netif, set this to 'etharp_output' and set
- * 'linkoutput'.
- *
- * @param netif The netif which shall send a packet
- * @param p The packet to send (p->payload points to IP header)
- * @param ipaddr The IP address to which the packet shall be sent
- */
-typedef err_t (*netif_output_fn)(struct netif *netif, struct pbuf *p,
-       const ip4_addr_t *ipaddr);
-#endif /* LWIP_IPV4*/
-
 #if LWIP_IPV6
 /** Function prototype for netif->output_ip6 functions. Called by lwIP when a packet
  * shall be sent. For ethernet netif, set this to 'ethip6_output' and set
@@ -140,20 +113,6 @@ typedef err_t (*netif_output_ip6_fn)(struct netif *netif, struct pbuf *p,
        const ip6_addr_t *ipaddr);
 #endif /* LWIP_IPV6 */
 
-/** Function prototype for netif->linkoutput functions. Only used for ethernet
- * netifs. This function is called by ARP when a packet shall be sent.
- *
- * @param netif The netif which shall send a packet
- * @param p The packet to send (raw ethernet packet)
- */
-typedef err_t (*netif_linkoutput_fn)(struct netif *netif, struct pbuf *p);
-/** Function prototype for netif status- or link-callback functions. */
-typedef void (*netif_status_callback_fn)(struct netif *netif);
-#if LWIP_IPV4 && LWIP_IGMP
-/** Function prototype for netif igmp_mac_filter functions */
-typedef err_t (*netif_igmp_mac_filter_fn)(struct netif *netif,
-       const ip4_addr_t *group, u8_t action);
-#endif /* LWIP_IPV4 && LWIP_IGMP */
 #if LWIP_IPV6 && LWIP_IPV6_MLD
 /** Function prototype for netif mld_mac_filter functions */
 typedef err_t (*netif_mld_mac_filter_fn)(struct netif *netif,
@@ -180,19 +139,6 @@ struct netif {
    * @see ip6_addr.h */
   u8_t ip6_addr_state[LWIP_IPV6_NUM_ADDRESSES];
 #endif /* LWIP_IPV6 */
-  /** This function is called by the network device driver
-   *  to pass a packet up the TCP/IP stack. */
-  netif_input_fn input;
-#if LWIP_IPV4
-  /** This function is called by the IP module when it wants
-   *  to send a packet on the interface. This function typically
-   *  first resolves the hardware address, then sends the packet. */
-  netif_output_fn output;
-#endif /* LWIP_IPV4 */
-  /** This function is called by the ARP module when it wants
-   *  to send a packet on the interface. This function outputs
-   *  the pbuf as-is on the link medium. */
-  netif_linkoutput_fn linkoutput;
 #if LWIP_IPV6
   /** This function is called by the IPv6 module when it wants
    *  to send a packet on the interface. This function typically
@@ -269,11 +215,6 @@ struct netif {
   u32_t ifoutnucastpkts;
   u32_t ifoutdiscards;
 #endif /* LWIP_SNMP */
-#if LWIP_IPV4 && LWIP_IGMP
-  /** This function could be called to add or delete an entry in the multicast
-      filter table of the ethernet MAC.*/
-  netif_igmp_mac_filter_fn igmp_mac_filter;
-#endif /* LWIP_IPV4 && LWIP_IGMP */
 #if LWIP_IPV6 && LWIP_IPV6_MLD
   /** This function could be called to add or delete an entry in the IPv6 multicast
       filter table of the ethernet MAC. */
@@ -323,7 +264,7 @@ struct netif *netif_add(struct netif *netif,
 #if LWIP_IPV4
                         const ip4_addr_t *ipaddr, const ip4_addr_t *netmask, const ip4_addr_t *gw,
 #endif /* LWIP_IPV4 */
-                        void *state, netif_init_fn init, netif_input_fn input);
+                        void *state);
 #if LWIP_IPV4
 void netif_set_addr(struct netif *netif, const ip4_addr_t *ipaddr, const ip4_addr_t *netmask,
                     const ip4_addr_t *gw);
@@ -369,11 +310,6 @@ void netif_set_link_callback(struct netif *netif, netif_status_callback_fn link_
 #define netif_set_hostname(netif, name) do { if((netif) != NULL) { (netif)->hostname = name; }}while(0)
 #define netif_get_hostname(netif) (((netif) != NULL) ? ((netif)->hostname) : NULL)
 #endif /* LWIP_NETIF_HOSTNAME */
-
-#if LWIP_IGMP
-#define netif_set_igmp_mac_filter(netif, function) do { if((netif) != NULL) { (netif)->igmp_mac_filter = function; }}while(0)
-#define netif_get_igmp_mac_filter(netif) (((netif) != NULL) ? ((netif)->igmp_mac_filter) : NULL)
-#endif /* LWIP_IGMP */
 
 #if LWIP_IPV6 && LWIP_IPV6_MLD
 #define netif_set_mld_mac_filter(netif, function) do { if((netif) != NULL) { (netif)->mld_mac_filter = function; }}while(0)

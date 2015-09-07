@@ -48,8 +48,13 @@
 extern "C" {
 #endif
 
+#ifdef __XC__
+#define port ip_port
+#endif
+
 struct tcp_pcb;
 
+#if LWIP_CALLBACK_API
 /** Function prototype for tcp accept callback functions. Called when a new
  * connection can be accepted on a listening pcb.
  *
@@ -124,6 +129,10 @@ typedef void  (*tcp_err_fn)(void *arg, err_t err);
  * @note When a connection attempt fails, the error callback is currently called!
  */
 typedef err_t (*tcp_connected_fn)(void *arg, struct tcp_pcb *tpcb, err_t err);
+#else
+typedef void* tcp_connected_fn;
+typedef void* tcp_poll_fn;
+#endif
 
 #if LWIP_WND_SCALE
 #define RCV_WND_SCALE(pcb, wnd) (((wnd) >> (pcb)->rcv_scale))
@@ -177,7 +186,7 @@ enum tcp_state {
   /* ports are in host byte order */ \
   u16_t local_port
 
-
+struct tcp_seg; // Workaround for compiler bug 16948
 /* the TCP protocol control block */
 struct tcp_pcb {
 /** common PCB members */
@@ -341,11 +350,13 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
 struct tcp_pcb * tcp_new     (void);
 
 void             tcp_arg     (struct tcp_pcb *pcb, void *arg);
+#if LWIP_CALLBACK_API
 void             tcp_accept  (struct tcp_pcb *pcb, tcp_accept_fn accept);
 void             tcp_recv    (struct tcp_pcb *pcb, tcp_recv_fn recv);
 void             tcp_sent    (struct tcp_pcb *pcb, tcp_sent_fn sent);
 void             tcp_poll    (struct tcp_pcb *pcb, tcp_poll_fn poll, u8_t interval);
 void             tcp_err     (struct tcp_pcb *pcb, tcp_err_fn err);
+#endif
 
 #define          tcp_mss(pcb)             (((pcb)->flags & TF_TIMESTAMP) ? ((pcb)->mss - 12)  : (pcb)->mss)
 #define          tcp_sndbuf(pcb)          ((pcb)->snd_buf)
