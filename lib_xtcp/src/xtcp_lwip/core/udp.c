@@ -426,15 +426,7 @@ udp_input(struct pbuf *p, struct netif *inp)
         }
       }
 #endif /* SO_REUSE && SO_REUSE_RXTOALL */
-      /* callback */
-      if (pcb->recv != NULL) {
-        /* now the recv function is responsible for freeing p */
-        pcb->recv(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
-      } else {
-        /* no recv function registered? then we have to free the pbuf! */
-        pbuf_free(p);
-        goto end;
-      }
+      udp_recv_event(pcb->recv_arg, pcb, p, ip_current_src_addr(), src);
     } else {
       LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: not for us.\n"));
 
@@ -1049,23 +1041,6 @@ udp_disconnect(struct udp_pcb *pcb)
   pcb->remote_port = 0;
   /* mark PCB as unconnected */
   pcb->flags &= ~UDP_FLAGS_CONNECTED;
-}
-
-/**
- * Set a receive callback for a UDP PCB
- *
- * This callback will be called when receiving a datagram for the pcb.
- *
- * @param pcb the pcb for which to set the recv callback
- * @param recv function pointer of the callback function
- * @param recv_arg additional argument to pass to the callback function
- */
-void
-udp_recv(struct udp_pcb *pcb, udp_recv_fn recv, void *recv_arg)
-{
-  /* remember recv() callback and user data */
-  pcb->recv = recv;
-  pcb->recv_arg = recv_arg;
 }
 
 /**
