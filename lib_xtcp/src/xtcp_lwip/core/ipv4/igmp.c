@@ -306,7 +306,7 @@ igmp_lookup_group(struct netif *ifp, const ip4_addr_t *addr)
   if (group != NULL) {
     group->netif              = ifp;
     ip4_addr_set(&(group->group_address), addr);
-    group->timer              = 0; /* Not running */
+    group->igmp_timer              = 0; /* Not running */
     group->group_state        = IGMP_GROUP_NON_MEMBER;
     group->last_reporter_flag = 0;
     group->use                = 0;
@@ -461,7 +461,7 @@ igmp_input(struct pbuf *p, struct netif *inp, const ip4_addr_t *dest)
      IGMP_STATS_INC(igmp.rx_report);
      if (group->group_state == IGMP_GROUP_DELAYING_MEMBER) {
        /* This is on a specific group we have already looked up */
-       group->timer = 0; /* stopped */
+       group->igmp_timer = 0; /* stopped */
        group->group_state = IGMP_GROUP_IDLE_MEMBER;
        group->last_reporter_flag = 0;
      }
@@ -630,9 +630,9 @@ igmp_tmr(void)
   struct igmp_group *group = igmp_group_list;
 
   while (group != NULL) {
-    if (group->timer > 0) {
-      group->timer--;
-      if (group->timer == 0) {
+    if (group->igmp_timer > 0) {
+      group->igmp_timer--;
+      if (group->igmp_timer == 0) {
         igmp_timeout(group);
       }
     }
@@ -678,15 +678,15 @@ igmp_start_timer(struct igmp_group *group, u8_t max_time)
     max_time = 1;
   }
   /* ensure the random value is > 0 */
-  group->timer = (LWIP_RAND() % max_time);
-  if (group->timer == 0) {
-    group->timer = 1;
+  group->igmp_timer = (LWIP_RAND() % max_time);
+  if (group->igmp_timer == 0) {
+    group->igmp_timer = 1;
   }
 #else /* LWIP_RAND */
   /* ATTENTION: use this only if absolutely necessary! */
-  group->timer = max_time / 2;
-  if (group->timer == 0) {
-    group->timer = 1;
+  group->igmp_timer = max_time / 2;
+  if (group->igmp_timer == 0) {
+    group->igmp_timer = 1;
   }
 #endif /* LWIP_RAND */
 }
@@ -702,7 +702,7 @@ igmp_delaying_member(struct igmp_group *group, u8_t maxresp)
 {
   if ((group->group_state == IGMP_GROUP_IDLE_MEMBER) ||
      ((group->group_state == IGMP_GROUP_DELAYING_MEMBER) &&
-      ((group->timer == 0) || (maxresp < group->timer)))) {
+      ((group->igmp_timer == 0) || (maxresp < group->igmp_timer)))) {
     igmp_start_timer(group, maxresp);
     group->group_state = IGMP_GROUP_DELAYING_MEMBER;
   }
