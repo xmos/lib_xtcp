@@ -616,6 +616,16 @@ void xtcp(chanend c_xtcp[n], size_t n,
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
 
+void xtcp_lwip(chanend c_xtcp[n], size_t n,
+          client mii_if ?i_mii,
+          client ethernet_cfg_if ?i_eth_cfg,
+          client ethernet_rx_if ?i_eth_rx,
+          client ethernet_tx_if ?i_eth_tx,
+          client smi_if ?i_smi,
+          uint8_t phy_address,
+          const char (&?mac_address)[6],
+          otp_ports_t &?otp_ports,
+          xtcp_ipconfig_t &ipconfig);
 #endif
 
 /** Utility functions **/
