@@ -1,24 +1,28 @@
 VERSION = 4.0.1
 
-DEPENDENT_MODULES = lib_ethernet(>=3.0.3) lib_otpinfo(>=2.0.0)
+DEPENDENT_MODULES = lib_ethernet(>=3.0.3) lib_otpinfo(>=2.0.0) lib_crypto
 
 ifeq ($(CONFIG),IPV6)
 XTCP_SOURCE_DIRS = src src/xtcp_uip6/*
 EXCLUDE_FILES += uip_arp.c autoip.c dhcp.c igmp.c rpl.c rpl-dag.c rpl-ext-header.c \
                  rpl-icmp6.c rpl-mrhof.c rpl-of0.c rpl-timers.c
+
 else
+LWIP_SOURCE_DIRS = src/xtcp_lwip/api src/xtcp_lwip/core/ src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
 XTCP_SOURCE_DIRS = src src/xtcp_uip/*
-EXCLUDE_FILES += uip-fw.c uip-neighbor.c
+EXCLUDE_FILES += uip-fw.c uip-neighbor.c uip_xtcp.c
 endif
 
-SOURCE_DIRS += $(XTCP_SOURCE_DIRS)
+SOURCE_DIRS += $(XTCP_SOURCE_DIRS) $(LWIP_SOURCE_DIRS)
 
-INCLUDE_DIRS += $(XTCP_SOURCE_DIRS) api
+LWIP_INCLUDE_DIRS = src/xtcp_lwip/include src/xtcp_lwip/xcore/include
+INCLUDE_DIRS += $(XTCP_SOURCE_DIRS) api $(LWIP_INCLUDE_DIRS)
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 MODULE_XCC_FLAGS = $(XCC_FLAGS)
+MODULE_XCC_C_FLAGS = $(XCC_C_FLAGS)
 
-$(call SET_XCC_XC_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_FLAGS) -g -Os)
-$(call SET_XCC_C_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_FLAGS) -Os)
+# $(call SET_XCC_XC_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_XC_FLAGS) -g -Os)
+# $(call SET_XCC_C_FLAGS, $(XTCP_SOURCE_DIRS), $(XCC_C_FLAGS) -Os)
 
 XCC_FLAGS_xcoredev.xc = $(XCC_FLAGS) -fsubword-select
 XCC_FLAGS_xtcp_server.xc = $(XCC_FLAGS) -fsubword-select
