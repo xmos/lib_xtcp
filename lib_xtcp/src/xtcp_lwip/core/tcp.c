@@ -1023,7 +1023,6 @@ tcp_slowtmr_start:
     /* If the PCB should be removed, do it. */
     if (pcb_remove) {
       struct tcp_pcb *pcb2;
-      tcp_err_fn err_fn;
       void *err_arg;
       tcp_pcb_purge(pcb);
       /* Remove PCB from tcp_active_pcbs list. */
@@ -1041,14 +1040,13 @@ tcp_slowtmr_start:
                  pcb->local_port, pcb->remote_port);
       }
 
-      err_fn = pcb->errf;
       err_arg = pcb->callback_arg;
       pcb2 = pcb;
       pcb = pcb->next;
       memp_free(MEMP_TCP_PCB, pcb2);
 
       tcp_active_pcbs_changed = 0;
-      TCP_EVENT_ERR(err_fn, err_arg, ERR_ABRT);
+      TCP_EVENT_ERR(NULL, err_arg, ERR_ABRT);
       if (tcp_active_pcbs_changed) {
         goto tcp_slowtmr_start;
       }
