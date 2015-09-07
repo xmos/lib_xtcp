@@ -290,7 +290,7 @@ uip_arp_arpin(void)
   uip_len = 0;
 
 #if UIP_USE_AUTOIP
-  autoip_arp_in();
+  uip_autoip_arp_in();
 #endif
 
   switch(BUF->opcode) {
