@@ -44,7 +44,7 @@
 #include "lwip/netif.h"
 #include "lwip/ip.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -229,7 +229,7 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif);
 
 extern const struct eth_addr ethbroadcast, ethzero;
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

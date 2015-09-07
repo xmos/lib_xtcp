@@ -53,7 +53,7 @@ struct autoip;
 #include "lwip/dhcp6.h"
 #endif /* LWIP_IPV6_DHCP6 */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -403,7 +403,7 @@ err_t netif_add_ip6_address(struct netif *netif, ip6_addr_t *ip6addr, s8_t *chos
 #define NETIF_SET_HWADDRHINT(netif, hint)
 #endif /* LWIP_NETIF_HWADDRHINT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

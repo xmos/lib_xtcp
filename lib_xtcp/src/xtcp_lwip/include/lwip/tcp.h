@@ -44,7 +44,7 @@
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -406,7 +406,7 @@ struct tcp_pcb * tcp_listen_dual_with_backlog(struct tcp_pcb *pcb, u8_t backlog)
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
 
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

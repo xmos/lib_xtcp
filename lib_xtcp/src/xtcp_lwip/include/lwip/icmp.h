@@ -41,7 +41,7 @@
 #include "lwip/icmp6.h"
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -120,7 +120,7 @@ void icmp_time_exceeded(struct pbuf *p, enum icmp_te_type t);
 #define icmp_port_unreach(isipv6, pbuf)
 #endif /* (LWIP_IPV6 && LWIP_ICMP6) || (LWIP_IPV4 && LWIP_ICMP) LWIP_IPV4*/
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

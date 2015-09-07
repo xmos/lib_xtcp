@@ -42,7 +42,7 @@
 #include "lwip/ip.h"
 #include "lwip/ip6_addr.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -185,7 +185,7 @@ void udp_debug_print(struct udp_hdr *udphdr);
 void udp_netif_ipv4_addr_changed(const ip4_addr_t* old_addr, const ip4_addr_t* new_addr);
 #endif /* LWIP_IPV4 */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

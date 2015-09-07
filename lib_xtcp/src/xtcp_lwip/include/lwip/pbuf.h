@@ -36,7 +36,7 @@
 #include "lwip/opt.h"
 #include "lwip/err.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -219,7 +219,7 @@ u16_t pbuf_memcmp(struct pbuf* p, u16_t offset, const void* s2, u16_t n);
 u16_t pbuf_memfind(struct pbuf* p, const void* mem, u16_t mem_len, u16_t start_offset);
 u16_t pbuf_strstr(struct pbuf* p, const char* substr);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

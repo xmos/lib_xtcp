@@ -43,7 +43,7 @@
 #include "lwip/err.h"
 #include "lwip/netif.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -140,7 +140,7 @@ void ip4_debug_print(struct pbuf *p);
 #define ip4_debug_print(p)
 #endif /* IP_DEBUG */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

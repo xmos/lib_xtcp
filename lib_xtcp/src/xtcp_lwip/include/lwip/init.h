@@ -34,7 +34,7 @@
 
 #include "lwip/opt.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -65,7 +65,7 @@ extern "C" {
 /* Modules initialization */
 void lwip_init(void);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

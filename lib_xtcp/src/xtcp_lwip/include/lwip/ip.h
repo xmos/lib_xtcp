@@ -42,7 +42,7 @@
 #include "lwip/ip4.h"
 #include "lwip/ip6.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -305,7 +305,7 @@ err_t ip_input(struct pbuf *p, struct netif *inp);
   (ipaddr) = ip_netif_get_local_ip(isipv6, netif, dest, storage); \
 }while(0)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

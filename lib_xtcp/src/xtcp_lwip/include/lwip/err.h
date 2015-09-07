@@ -35,7 +35,7 @@
 #include "lwip/opt.h"
 #include "lwip/arch.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -79,7 +79,7 @@ extern const char *lwip_strerr(err_t err);
 #define lwip_strerr(x) ""
 #endif /* LWIP_DEBUG */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

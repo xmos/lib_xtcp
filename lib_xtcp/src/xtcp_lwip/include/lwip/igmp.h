@@ -42,7 +42,7 @@
 
 #if LWIP_IPV4 && LWIP_IGMP /* don't build if not configured for use in lwipopts.h */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -81,7 +81,7 @@ struct igmp_group {
   /** current state of the group */
   u8_t               group_state;
   /** timer for reporting, negative is OFF */
-  u16_t              timer;
+  u16_t              igmp_timer;
   /** counter of simultaneous uses */
   u8_t               use;
 };
@@ -97,7 +97,7 @@ err_t  igmp_joingroup(const ip4_addr_t *ifaddr, const ip4_addr_t *groupaddr);
 err_t  igmp_leavegroup(const ip4_addr_t *ifaddr, const ip4_addr_t *groupaddr);
 void   igmp_tmr(void);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

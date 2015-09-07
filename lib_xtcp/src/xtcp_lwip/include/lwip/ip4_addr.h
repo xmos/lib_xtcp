@@ -37,7 +37,7 @@
 
 #if LWIP_IPV4
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -244,7 +244,7 @@ int ip4addr_aton(const char *cp, ip4_addr_t *addr);
 char *ip4addr_ntoa(const ip4_addr_t *addr);
 char *ip4addr_ntoa_r(const ip4_addr_t *addr, char *buf, int buflen);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

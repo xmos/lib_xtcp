@@ -38,7 +38,7 @@
 #include "lwip/ip4_addr.h"
 #include "lwip/ip6_addr.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -272,7 +272,7 @@ extern const ip_addr_t ip6_addr_any;
 
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
