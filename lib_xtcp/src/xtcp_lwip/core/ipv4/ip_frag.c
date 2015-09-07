@@ -847,7 +847,7 @@ ip4_frag(struct pbuf *p, struct netif *netif, const ip4_addr_t *dest)
     header = pbuf_alloc(PBUF_LINK, 0, PBUF_RAM);
     if (header != NULL) {
       pbuf_chain(header, rambuf);
-      netif->output(netif, header, dest);
+      etharp_output(netif, header, dest);
       IPFRAG_STATS_INC(ip_frag.xmit);
       snmp_inc_ipfragcreates();
       pbuf_free(header);
@@ -860,7 +860,7 @@ ip4_frag(struct pbuf *p, struct netif *netif, const ip4_addr_t *dest)
     /* No need for separate header pbuf - we allowed room for it in rambuf
      * when allocated.
      */
-    netif->output(netif, rambuf, dest);
+    etharp_output(netif, rambuf, dest);
     IPFRAG_STATS_INC(ip_frag.xmit);
 
     /* Unfortunately we can't reuse rambuf - the hardware may still be

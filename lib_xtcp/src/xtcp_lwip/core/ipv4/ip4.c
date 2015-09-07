@@ -315,7 +315,7 @@ ip4_forward(struct pbuf *p, struct ip_hdr *iphdr, struct netif *inp)
     return;
   }
   /* transmit pbuf on chosen interface */
-  netif->output(netif, p, ip4_current_dest_addr());
+  etharp_output(netif, p, ip4_current_dest_addr());
   return;
 return_noroute:
   snmp_inc_ipoutnoroutes();
@@ -909,7 +909,7 @@ err_t ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_add
 #endif /* IP_FRAG */
 
   LWIP_DEBUGF(IP_DEBUG, ("netif->output()"));
-  return netif->output(netif, p, dest);
+  return etharp_output(netif, p, dest);
 }
 
 /**

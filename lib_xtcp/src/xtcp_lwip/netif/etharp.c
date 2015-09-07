@@ -63,6 +63,8 @@
 
 #include <string.h>
 
+#include "xcore_netif.h"
+
 const struct eth_addr ethbroadcast = {{0xff,0xff,0xff,0xff,0xff,0xff}};
 const struct eth_addr ethzero = {{0,0,0,0,0,0}};
 
@@ -454,7 +456,7 @@ etharp_send_ip(struct netif *netif, struct pbuf *p, struct eth_addr *src, const 
   ETHADDR16_COPY(&ethhdr->src, src);
   LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("etharp_send_ip: sending packet %p\n", (void *)p));
   /* send the packet */
-  return netif->linkoutput(netif, p);
+  return xcore_linkoutput(netif, p);
 }
 
 /**
@@ -835,7 +837,7 @@ etharp_arp_input(struct netif *netif, struct eth_addr *ethaddr, struct pbuf *p)
          are already correct, we tested that before */
 
       /* return ARP reply */
-      netif->linkoutput(netif, p);
+      xcore_linkoutput(netif, p);
     /* we are not configured? */
     } else if (ip4_addr_isany_val(netif->ip_addr)) {
       /* { for_us == 0 and netif->ip_addr.addr == 0 } */
@@ -1327,7 +1329,7 @@ etharp_raw(struct netif *netif, const struct eth_addr *ethsrc_addr,
   ETHADDR16_COPY(&ethhdr->src, ethsrc_addr);
 
   /* send ARP query */
-  result = netif->linkoutput(netif, p);
+  result = xcore_linkoutput(netif, p);
   ETHARP_STATS_INC(etharp.xmit);
   /* free ARP query packet */
   pbuf_free(p);
