@@ -26,6 +26,7 @@ extern "C" {
 #define DHCP_SNAME_LEN  64U
 #define DHCP_FILE_LEN   128U
 
+struct dhcp_msg; // Workaround for compiler bug 16948
 struct dhcp
 {
   /** transaction identifier of last sent request */ 
@@ -136,6 +137,9 @@ u8_t dhcp_supplied_address(struct netif *netif);
 void dhcp_coarse_tmr(void);
 /** to be called every half second */
 void dhcp_fine_tmr(void);
+
+/* receive, unfold, parse and free incoming messages */
+void dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
  
 /** DHCP message item offsets and length */
 #define DHCP_OP_OFS       0
