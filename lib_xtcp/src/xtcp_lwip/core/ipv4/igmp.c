@@ -95,6 +95,8 @@ Steve Reynolds
 
 #include "string.h"
 
+#include "xcore_netif.h"
+
 /* 
  * IGMP constants
  */
@@ -180,12 +182,10 @@ igmp_start(struct netif *netif)
     group->use++;
 
     /* Allow the igmp messages at the MAC level */
-    if (netif->igmp_mac_filter != NULL) {
-      LWIP_DEBUGF(IGMP_DEBUG, ("igmp_start: igmp_mac_filter(ADD "));
-      ip4_addr_debug_print_val(IGMP_DEBUG, allsystems);
-      LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
-      netif->igmp_mac_filter(netif, &allsystems, IGMP_ADD_MAC_FILTER);
-    }
+    LWIP_DEBUGF(IGMP_DEBUG, ("igmp_start: igmp_mac_filter(ADD "));
+    ip4_addr_debug_print_val(IGMP_DEBUG, allsystems);
+    LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
+    xcore_igmp_mac_filter(netif, &allsystems, IGMP_ADD_MAC_FILTER);
 
     return ERR_OK;
   }
@@ -219,12 +219,10 @@ igmp_stop(struct netif *netif)
         prev->next = next;
       }
       /* disable the group at the MAC level */
-      if (netif->igmp_mac_filter != NULL) {
-        LWIP_DEBUGF(IGMP_DEBUG, ("igmp_stop: igmp_mac_filter(DEL "));
-        ip4_addr_debug_print(IGMP_DEBUG, &group->group_address);
-        LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
-        netif->igmp_mac_filter(netif, &(group->group_address), IGMP_DEL_MAC_FILTER);
-      }
+      LWIP_DEBUGF(IGMP_DEBUG, ("igmp_stop: igmp_mac_filter(DEL "));
+      ip4_addr_debug_print(IGMP_DEBUG, &group->group_address);
+      LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
+      xcore_igmp_mac_filter(netif, &(group->group_address), IGMP_DEL_MAC_FILTER);
       /* free group */
       memp_free(MEMP_IGMP_GROUP, group);
     } else {
@@ -518,11 +516,11 @@ igmp_joingroup(const ip4_addr_t *ifaddr, const ip4_addr_t *groupaddr)
           LWIP_DEBUGF(IGMP_DEBUG, ("\n"));
 
           /* If first use of the group, allow the group at the MAC level */
-          if ((group->use==0) && (netif->igmp_mac_filter != NULL)) {
+          if (group->use==0) {
             LWIP_DEBUGF(IGMP_DEBUG, ("igmp_joingroup: igmp_mac_filter(ADD "));
             ip4_addr_debug_print(IGMP_DEBUG, groupaddr);
             LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
-            netif->igmp_mac_filter(netif, groupaddr, IGMP_ADD_MAC_FILTER);
+            xcore_igmp_mac_filter(netif, groupaddr, IGMP_ADD_MAC_FILTER);
           }
 
           IGMP_STATS_INC(igmp.tx_join);
@@ -593,12 +591,10 @@ igmp_leavegroup(const ip4_addr_t *ifaddr, const ip4_addr_t *groupaddr)
           }
 
           /* Disable the group at the MAC level */
-          if (netif->igmp_mac_filter != NULL) {
-            LWIP_DEBUGF(IGMP_DEBUG, ("igmp_leavegroup: igmp_mac_filter(DEL "));
-            ip4_addr_debug_print(IGMP_DEBUG, groupaddr);
-            LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
-            netif->igmp_mac_filter(netif, groupaddr, IGMP_DEL_MAC_FILTER);
-          }
+          LWIP_DEBUGF(IGMP_DEBUG, ("igmp_leavegroup: igmp_mac_filter(DEL "));
+          ip4_addr_debug_print(IGMP_DEBUG, groupaddr);
+          LWIP_DEBUGF(IGMP_DEBUG, (") on if %p\n", netif));
+          xcore_igmp_mac_filter(netif, groupaddr, IGMP_DEL_MAC_FILTER);
 
           LWIP_DEBUGF(IGMP_DEBUG, ("igmp_leavegroup: remove group: "));
           ip4_addr_debug_print(IGMP_DEBUG, groupaddr);
