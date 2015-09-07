@@ -85,7 +85,7 @@ struct udp_pcb;
  * @param addr the remote IP address from which the packet was received
  * @param port the remote port from which the packet was received
  */
-typedef void (*udp_recv_fn)(void *arg, struct udp_pcb *pcb, struct pbuf *p,
+void udp_recv_event(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     const ip_addr_t *addr, u16_t port);
 
 struct udp_pcb {
@@ -112,8 +112,6 @@ struct udp_pcb {
   u16_t chksum_len_rx, chksum_len_tx;
 #endif /* LWIP_UDPLITE */
 
-  /** receive callback function */
-  udp_recv_fn recv;
   /** user-supplied argument for the recv callback */
   void *recv_arg;
 };
@@ -129,8 +127,7 @@ err_t            udp_bind       (struct udp_pcb *pcb, const ip_addr_t *ipaddr,
 err_t            udp_connect    (struct udp_pcb *pcb, const ip_addr_t *ipaddr,
                                  u16_t port);
 void             udp_disconnect (struct udp_pcb *pcb);
-void             udp_recv       (struct udp_pcb *pcb, udp_recv_fn recv,
-                                 void *recv_arg);
+
 err_t            udp_sendto_if  (struct udp_pcb *pcb, struct pbuf *p,
                                  const ip_addr_t *dst_ip, u16_t dst_port,
                                  struct netif *netif);
