@@ -40,7 +40,7 @@ extern unsigned int uip_buf32[];
 
 // Global functions from the uip stack
 extern void uip_arp_timer(void);
-extern void autoip_periodic();
+extern void uip_autoip_periodic();
 extern void igmp_periodic();
 
 extern void xtcpd_check_connection_poll(void);
@@ -188,7 +188,7 @@ void xtcp(chanend xtcp[n], size_t n,
       if (UIP_USE_AUTOIP) {
         if (++autoip_timer == 5) {
           autoip_timer = 0;
-          autoip_periodic();
+          uip_autoip_periodic();
           if (uip_len > 0) {
             xtcp_tx_buffer();
           }
