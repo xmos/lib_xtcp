@@ -131,9 +131,9 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
   }
 
   // uip_server_init(xtcp, n, &ipconfig, mac_address);
+  xtcpd_init(xtcp, n);
 
   lwip_init();
-  low_level_init(my_netif, mac_address);
 
   ip4_addr_t ipaddr, netmask, gateway;
   memcpy(&ipaddr, ipconfig.ipaddr, sizeof(xtcp_ipaddr_t));
@@ -146,8 +146,11 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
     netif_set_default(netif);
   }
 
+  low_level_init(my_netif, mac_address); // Needs to be called after netif_add which zeroes everything
+
   // Start DHCP?
   netif_set_up(netif);
+  autoip_start(netif);
 
   int time_now;
   timers[0] :> time_now;
@@ -182,7 +185,7 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
               /* Read enough bytes to fill this pbuf in the chain. The
                * available data in the pbuf is given by the q->len
                * variable. */
-              memcpy(q->payload, (char *unsafe)data[byte_cnt], q->len);
+              memcpy(q->payload, (char *unsafe)&data[byte_cnt], q->len);
               byte_cnt += q->len;
             }
             // acknowledge that packet has been read
@@ -201,6 +204,9 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
       break;
     case !isnull(i_eth_rx) => i_eth_rx.packet_ready():
       /* TODO */
+      break;
+
+    case (int i=0;i<n;i++) xtcpd_service_client(xtcp[i], i):
       break;
 
     case(size_t i = 0; i < NUM_TIMEOUTS; i++)

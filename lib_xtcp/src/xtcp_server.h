@@ -27,6 +27,11 @@ void xtcpd_send_event(chanend c, xtcp_event_type_t event,
 
 void xtcpd_send_null_event(chanend c);
 
+#ifdef __XC__
+#pragma select handler
+#endif
+void xtcpd_service_client(chanend c, int i);
+
 void xtcpd_service_clients(chanend xtcp[], int num_xtcp);
 void xtcpd_service_clients_until_ready(int waiting_link,
                                        chanend xtcp[],

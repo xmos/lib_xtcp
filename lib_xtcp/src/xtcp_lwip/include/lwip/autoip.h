@@ -52,7 +52,7 @@
 /* #include "lwip/udp.h" */
 #include "netif/etharp.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -115,7 +115,7 @@ void autoip_network_changed(struct netif *netif);
 /** check if AutoIP supplied netif->ip_addr */
 u8_t autoip_supplied_address(struct netif *netif);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

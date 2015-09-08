@@ -6,6 +6,7 @@
 #include "xtcp.h"
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
+#include "debug_print.h"
 
 static int notified[MAX_XTCP_CLIENTS];
 static int pending_event[MAX_XTCP_CLIENTS];
@@ -249,6 +250,37 @@ static void send_conn_and_complete(chanend c,
   }
   outct(c, XS1_CT_END);
   chkct(c, XS1_CT_END);
+}
+
+#pragma select handler
+void xtcpd_service_client(chanend xtcp, int i)
+{
+  unsigned char tok;
+  unsigned int cmd;
+  unsigned int conn_id;
+  tok = inct(xtcp);
+  if (tok == XS1_CT_END) {
+    // the other side has responded to the transaction
+    notified[i] = 0;
+    if (pending_event[i] != -1) {
+      dummy_conn.event = pending_event[i];
+
+      send_conn_and_complete(xtcp, dummy_conn);
+      pending_event[i] = -1;
+    }
+  }
+  else {
+    outct(xtcp, XS1_CT_END);
+    if (!notified[i])
+      outct(xtcp, XS1_CT_END);
+    cmd = inuint(xtcp);
+    conn_id = inuint(xtcp);
+    chkct(xtcp, XS1_CT_END);
+    outct(xtcp, XS1_CT_END);
+    handle_xtcp_cmd(xtcp, i, cmd, conn_id);
+    if (notified[i])
+      outct(xtcp, XS1_CT_END);
+  }
 }
 
 #pragma unsafe arrays
