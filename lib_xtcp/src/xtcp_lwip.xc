@@ -59,7 +59,7 @@ static void init_timers(unsigned period[NUM_TIMEOUTS],
   period[DHCP_FINE_TIMEOUT] = DHCP_FINE_TIMER_MSECS * XS1_TIMER_KHZ;
 
   for (int i=0; i < NUM_TIMEOUTS; i++) {
-    timeout[i] += period[i];
+    timeout[i] = time_now + period[i];
   }
 }
 
@@ -206,6 +206,15 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
     case(size_t i = 0; i < NUM_TIMEOUTS; i++)
       timers[i] when timerafter(timeout[i]) :> unsigned current:
 
+      switch (i) {
+      case ARP_TIMEOUT: etharp_tmr(); break;
+      case AUTOIP_TIMEOUT: autoip_tmr(); break;
+      case TCP_TIMEOUT: tcp_tmr(); break;
+      case IGMP_TIMEOUT: igmp_tmr(); break;
+      case DHCP_COARSE_TIMEOUT: dhcp_coarse_tmr(); break;
+      case DHCP_FINE_TIMEOUT: dhcp_fine_tmr(); break;
+      default: fail("Bad timer\n"); break;
+      }
 
       timeout[i] = current + period[i];
 
