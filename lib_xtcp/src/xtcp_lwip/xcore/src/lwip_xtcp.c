@@ -434,23 +434,50 @@ void uip_xtcpd_handle_poll(xtcpd_state_t *s)
     }
 }
 
+err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
+         enum lwip_event e,
+         struct pbuf *p,
+         u16_t size,
+         err_t err) {
 
+  xtcpd_state_t *s = &(pcb->xtcp_state);
+  debug_printf(".. GOT EVENT .. %d\n", e);
 
-#define BUF ((struct uip_tcpip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define FBUF ((struct uip_tcpip_hdr *)&uip_reassbuf[0])
-#define ICMPBUF ((struct uip_icmpip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UDPBUF ((struct uip_udpip_hdr *)&uip_buf[UIP_LLH_LEN])
+  switch (e) {
+    case LWIP_EVENT_ACCEPT: {
+      xtcpd_init_state(s,
+                       XTCP_PROTOCOL_TCP,
+                       (unsigned char *) &pcb->remote_ip,
+                       pcb->local_port,
+                       pcb->remote_port,
+                       pcb);
+      xtcpd_event(XTCP_NEW_CONNECTION, s);
+      break;
+    }
+    case LWIP_EVENT_RECV: {
+      if (s->linknum != -1) {
+
+        xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
+
+        xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
+      }
+      break;
+    }
+  }
+  return ERR_OK;
+}
 
 void
 xtcpd_appcall(void)
 {
+/*
   xtcpd_state_t *s;
 
   if (uip_udpconnection() &&
       (uip_udp_conn->lport == HTONS(DHCPC_CLIENT_PORT) ||
        uip_udp_conn->lport == HTONS(DHCPC_SERVER_PORT))) {
 #if UIP_USE_DHCP
-    dhcpc_appcall();
+    // dhcpc_appcall();
 #endif
     return;
   }
@@ -574,7 +601,7 @@ xtcpd_appcall(void)
     }
     return;
   }
-
+*/
 }
 
 static int uip_ifstate = 0;

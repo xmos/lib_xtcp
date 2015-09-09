@@ -1,4 +1,5 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
+#include "lwip_xtcp.h"
 #include <xtcp.h>
 #include <xtcp_server.h>
 #include <xtcp_server_impl.h>
@@ -61,14 +62,6 @@ static void init_timers(unsigned period[NUM_TIMEOUTS],
   for (int i=0; i < NUM_TIMEOUTS; i++) {
     timeout[i] = time_now + period[i];
   }
-}
-
-err_t lwip_tcp_event(void *unsafe arg, struct tcp_pcb *unsafe pcb,
-         enum lwip_event e,
-         struct pbuf *unsafe p,
-         u16_t size,
-         err_t err) {
-
 }
 
 void xtcp_lwip(chanend xtcp[n], size_t n,
