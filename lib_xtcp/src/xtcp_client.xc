@@ -155,7 +155,7 @@ int xtcp_recvi(chanend c_xtcp, unsigned char data[], int index)
 			c_xtcp :> data[i];
 	}
 
-        chkct(c_xtcp, XS1_CT_END);
+  chkct(c_xtcp, XS1_CT_END);
 
 	return len;
 }
@@ -177,7 +177,7 @@ int xtcp_recv_count(chanend c_xtcp, char data[], int count)
 		}
 	}
 
-        chkct(c_xtcp, XS1_CT_END);
+  chkct(c_xtcp, XS1_CT_END);
 
 	return len;
 }

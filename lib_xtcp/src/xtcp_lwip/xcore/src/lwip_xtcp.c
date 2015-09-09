@@ -62,12 +62,13 @@ static int get_listener_linknum(struct listener_info_t listeners[],
                                 int local_port)
 {
   int i, linknum = -1;
-  for (i=0;i<n;i++)
+  for (i=0;i<n;i++) {
     if (listeners[i].active &&
         local_port == listeners[i].port_number) {
       linknum = listeners[i].linknum;
       break;
     }
+  }
   return linknum;
 }
 
@@ -109,8 +110,8 @@ void xtcpd_init_state(xtcpd_state_t *s,
   s->conn.connection_type = connection_type;
   s->linknum = linknum;
   s->conn.id = guid;
-  s->conn.local_port = HTONS(local_port);
-  s->conn.remote_port = HTONS(remote_port);
+  s->conn.local_port = local_port;
+  s->conn.remote_port = remote_port;
   s->conn.protocol = protocol;
   s->s.uip_conn = (int) conn;
 #ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
@@ -137,11 +138,10 @@ static void unregister_listener(struct listener_info_t listeners[],
 
   int i;
   for (i=0;i<n;i++){
-    if (listeners[i].port_number == HTONS(port_number) &&
-        listeners[i].active)
-      {
+    if (listeners[i].port_number == port_number &&
+        listeners[i].active) {
       listeners[i].active = 0;
-      }
+    }
   }
 }
 
@@ -152,18 +152,18 @@ static void register_listener(struct listener_info_t listeners[],
 {
   int i;
 
-    for (i=0;i<n;i++)
-      if (!listeners[i].active)
-        break;
+  for (i=0;i<n;i++)
+    if (!listeners[i].active)
+      break;
 
-    if (i==n) {
-      // Error: max number of listeners reached
-    }
-    else {
-      listeners[i].active = 1;
-      listeners[i].port_number = HTONS(port_number);
-      listeners[i].linknum = linknum;
-    }
+  if (i==n) {
+    // Error: max number of listeners reached
+  }
+  else {
+    listeners[i].active = 1;
+    listeners[i].port_number = port_number;
+    listeners[i].linknum = linknum;
+  }
 }
 
 void xtcpd_unlisten(int linknum, int port_number){
