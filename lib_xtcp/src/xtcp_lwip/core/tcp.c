@@ -410,7 +410,7 @@ tcp_abandon(struct tcp_pcb *pcb, int reset)
       tcp_rst(seqno, ackno, &pcb->local_ip, &pcb->remote_ip, local_port, pcb->remote_port);
     }
     memp_free(MEMP_TCP_PCB, pcb);
-    TCP_EVENT_ERR(errf, errf_arg, ERR_ABRT);
+    // TCP_EVENT_ERR(errf, errf_arg, ERR_ABRT);
   }
 }
 
