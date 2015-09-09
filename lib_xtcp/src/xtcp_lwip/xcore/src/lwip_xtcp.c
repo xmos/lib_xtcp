@@ -168,7 +168,7 @@ static void register_listener(struct listener_info_t listeners[],
 
 void xtcpd_unlisten(int linknum, int port_number){
   unregister_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
-  uip_unlisten(HTONS(port_number));
+  // uip_unlisten(HTONS(port_number));
 }
 
 void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
@@ -176,11 +176,13 @@ void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
 
   if (p == XTCP_PROTOCOL_TCP) {
     register_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
-    uip_listen(HTONS(port_number));
+    struct tcp_pcb *pcb = tcp_new();
+    tcp_bind(pcb, NULL, port_number);
+    pcb = tcp_listen(pcb);
   }
   else {
     register_listener(udp_listeners, linknum, port_number, NUM_UDP_LISTENERS);
-    uip_udp_listen(HTONS(port_number));
+    // uip_udp_listen(HTONS(port_number));
   }
   return;
 }
@@ -432,6 +434,7 @@ void uip_xtcpd_handle_poll(xtcpd_state_t *s)
       xtcpd_event(XTCP_POLL, s);
       uip_timer_set(&(s->s.tmr), s->s.poll_interval);
     }
+  */
 }
 
 err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
