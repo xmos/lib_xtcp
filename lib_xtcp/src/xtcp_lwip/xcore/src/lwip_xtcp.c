@@ -11,6 +11,8 @@
 #include "igmp.h"
 #include "uip_arp.h"
 #include "uip_xtcp.h"
+#include "lwip/tcp.h"
+#include "lwip/netif.h"
 
 #define DHCPC_SERVER_PORT  67
 #define DHCPC_CLIENT_PORT  68
@@ -43,24 +45,6 @@ struct listener_info_t {
 static int prev_ifstate[MAX_XTCP_CLIENTS];
 struct listener_info_t tcp_listeners[NUM_TCP_LISTENERS] = {{0}};
 struct listener_info_t udp_listeners[NUM_UDP_LISTENERS] = {{0}};
-
-
-static struct xtcpd_state_t  *lookup_xtcpd_state(int conn_id) {
-  int i=0;
-  for (i=0;i<((UIP_CONNS>UIP_UDP_CONNS) ? UIP_CONNS : UIP_UDP_CONNS);i++) {
-    if (i < UIP_CONNS) {
-      xtcpd_state_t *s = (xtcpd_state_t *) &(uip_conns[i].appstate);
-      if (s->conn.id == conn_id) return s;
-    }
-    if (i < UIP_UDP_CONNS) {
-        xtcpd_state_t *s = (xtcpd_state_t *) &(uip_udp_conns[i].appstate);
-        if (s->conn.id == conn_id) return s;
-    }
-  }
-  return NULL;
-}
-
-
 
 void xtcpd_init(chanend xtcp_links_init[], int n)
 {
@@ -115,7 +99,7 @@ void xtcpd_init_state(xtcpd_state_t *s,
   memset(s, 0, sizeof(xtcpd_state_t));
 
   // Find and use a GUID that is not being used by another connection
-  while (lookup_xtcpd_state(guid) != NULL)
+  while (xtcpd_lookup_tcp_state(guid) != NULL)
   {
     guid++;
     if (guid > MAX_GUID)
@@ -204,7 +188,7 @@ void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
 
 void xtcpd_bind_local(int linknum, int conn_id, int port_number)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   s->conn.local_port = port_number;
   if (s->conn.protocol == XTCP_PROTOCOL_UDP)
     ((struct uip_udp_conn *) s->s.uip_conn)->lport = HTONS(port_number);
@@ -217,7 +201,7 @@ void xtcpd_bind_remote(int linknum,
                        xtcp_ipaddr_t addr,
                        int port_number)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s->conn.protocol == XTCP_PROTOCOL_UDP) {
     struct uip_udp_conn *conn = (struct uip_udp_conn *) s->s.uip_conn;
     s->conn.remote_port = port_number;
@@ -230,6 +214,7 @@ void xtcpd_bind_remote(int linknum,
 
 void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
                    xtcp_protocol_t p) {
+/*
   uip_ipaddr_t uipaddr;
   uip_ipaddr(uipaddr, addr[0], addr[1], addr[2], addr[3]);
   if (p == XTCP_PROTOCOL_TCP) {
@@ -243,7 +228,7 @@ void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
   }
   else {
     struct uip_udp_conn *conn;
-    conn = uip_udp_new(&uipaddr, HTONS(port_number));
+    // conn = uip_udp_new(&uipaddr, HTONS(port_number));
     if (conn != NULL) {
       xtcpd_state_t *s = (xtcpd_state_t *) &(conn->appstate);
       s->linknum = linknum;
@@ -251,13 +236,14 @@ void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
       s->conn.connection_type = XTCP_CLIENT_CONNECTION;
     }
   }
+*/
   return;
 }
 
 
 void xtcpd_init_send(int linknum, int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
 
   if (s != NULL) {
     s->s.send_request++;
@@ -273,7 +259,7 @@ void xtcpd_init_send_from_uip(struct uip_conn *conn)
 
 void xtcpd_set_appstate(int linknum, int conn_id, xtcp_appstate_t appstate)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     s->conn.appstate = appstate;
   }
@@ -282,7 +268,7 @@ void xtcpd_set_appstate(int linknum, int conn_id, xtcp_appstate_t appstate)
 
 void xtcpd_abort(int linknum, int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     s->s.abort_request = 1;
   }
@@ -290,7 +276,7 @@ void xtcpd_abort(int linknum, int conn_id)
 
 void xtcpd_close(int linknum, int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     s->s.close_request = 1;
   }
@@ -298,7 +284,7 @@ void xtcpd_close(int linknum, int conn_id)
 
 void xtcpd_ack_recv_mode(int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     s->s.ack_recv_mode = 1;
   }
@@ -306,7 +292,7 @@ void xtcpd_ack_recv_mode(int conn_id)
 
 void xtcpd_ack_recv(int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     ((struct uip_conn *) s->s.uip_conn)->tcpstateflags &= ~UIP_STOPPED;
     s->s.ack_request = 1;
@@ -316,7 +302,7 @@ void xtcpd_ack_recv(int conn_id)
 
 void xtcpd_pause(int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     ((struct uip_conn *) s->s.uip_conn)->tcpstateflags |= UIP_STOPPED;
   }
@@ -325,7 +311,7 @@ void xtcpd_pause(int conn_id)
 
 void xtcpd_unpause(int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     ((struct uip_conn *) s->s.uip_conn)->tcpstateflags &= ~UIP_STOPPED;
     s->s.ack_request = 1;
@@ -335,7 +321,7 @@ void xtcpd_unpause(int conn_id)
 #ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
 void xtcpd_accept_partial_ack(int conn_id)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL) {
     s->s.accepts_partial_ack = 1;
   }
@@ -350,6 +336,7 @@ static int do_xtcpd_send(chanend c,
                   unsigned char data[],
                   int mss)
 {
+/*
   int len;
 #ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
   int outstanding=0;
@@ -383,12 +370,14 @@ static int do_xtcpd_send(chanend c,
   }
 #endif
   return len;
+  */
 }
 
 
 
 void uip_xtcpd_handle_poll(xtcpd_state_t *s)
 {
+/*
  if (s->s.ack_request) {
    uip_flags |= UIP_NEWDATA;
    uip_slen = 0;
@@ -649,7 +638,7 @@ int get_uip_xtcp_ifstate()
 
 void xtcpd_set_poll_interval(int linknum, int conn_id, int poll_interval)
 {
-  xtcpd_state_t *s = lookup_xtcpd_state(conn_id);
+  xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   if (s != NULL && s->conn.protocol == XTCP_PROTOCOL_UDP) {
     s->s.poll_interval = poll_interval;
     uip_timer_set(&(s->s.tmr), poll_interval * CLOCK_SECOND/1000);
@@ -675,10 +664,12 @@ void xtcpd_leave_group(xtcp_ipaddr_t addr)
 }
 
 void xtcpd_get_mac_address(unsigned char mac_addr[]){
+/*
   mac_addr[0] = uip_ethaddr.addr[0];
   mac_addr[1] = uip_ethaddr.addr[1];
   mac_addr[2] = uip_ethaddr.addr[2];
   mac_addr[3] = uip_ethaddr.addr[3];
   mac_addr[4] = uip_ethaddr.addr[4];
   mac_addr[5] = uip_ethaddr.addr[5];
+*/
 }

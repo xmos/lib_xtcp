@@ -43,6 +43,7 @@
 #include "lwip/err.h"
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
+#include "xtcp_server.h"
 
 #if defined(__cplusplus) || defined(__XC__)
 extern "C" {
@@ -184,7 +185,8 @@ enum tcp_state {
   enum tcp_state state; /* TCP state */ \
   u8_t prio; \
   /* ports are in host byte order */ \
-  u16_t local_port
+  u16_t local_port; \
+  xtcpd_state_t xtcp_state
 
 struct tcp_seg; // Workaround for compiler bug 16948
 /* the TCP protocol control block */

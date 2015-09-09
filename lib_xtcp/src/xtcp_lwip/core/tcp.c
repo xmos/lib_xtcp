@@ -55,6 +55,7 @@
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/nd6.h"
+#include "xtcp_server.h"
 
 #include <string.h>
 
@@ -1767,6 +1768,20 @@ tcp_next_iss(void)
   iss += tcp_ticks;       /* XXX */
   return iss;
 }
+
+struct xtcpd_state_t *xtcpd_lookup_tcp_state(int conn_id) {
+  const int max_pcb_list = NUM_TCP_PCB_LISTS;
+  struct tcp_pcb *cpcb;
+
+  for (int i = 0; i < max_pcb_list; i++) {
+    for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+      xtcpd_state_t *s = &(cpcb->xtcp_state);
+      if (s->conn.id == conn_id) return s;
+    }
+  }
+  return NULL;
+}
+
 
 #if TCP_CALCULATE_EFF_SEND_MSS
 /**

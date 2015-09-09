@@ -63,4 +63,12 @@ void xtcpd_get_mac_address(unsigned char []);
 void xtcpd_server_init(void);
 
 void xtcpd_queue_event(chanend c, int linknum, int event);
+
+#ifdef __XC__
+extern "C" {
+#endif
+struct xtcpd_state_t *xtcpd_lookup_tcp_state(int conn_id);
+#ifdef __XC__
+}
+#endif
 #endif
