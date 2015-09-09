@@ -143,7 +143,12 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
 
   // Start DHCP?
   netif_set_up(netif);
-  autoip_start(netif);
+  if (ipconfig.ipaddr[0] == 0) {
+    autoip_start(netif);
+  }
+  else {
+    lwip_xtcp_up();
+  }
 
   int time_now;
   timers[0] :> time_now;
@@ -216,6 +221,7 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
       }
 
       timeout[i] = current + period[i];
+      uip_xtcp_checkstate();
 
       break;
     }

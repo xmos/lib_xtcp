@@ -609,18 +609,9 @@ static int uip_ifstate = 0;
 
 void xtcpd_get_ipconfig(xtcp_ipconfig_t *ipconfig)
 {
-  ipconfig->ipaddr[0] = uip_ipaddr1(uip_hostaddr);
-  ipconfig->ipaddr[1] = uip_ipaddr2(uip_hostaddr);
-  ipconfig->ipaddr[2] = uip_ipaddr3(uip_hostaddr);
-  ipconfig->ipaddr[3] = uip_ipaddr4(uip_hostaddr);
-  ipconfig->netmask[0] = uip_ipaddr1(uip_netmask);
-  ipconfig->netmask[1] = uip_ipaddr2(uip_netmask);
-  ipconfig->netmask[2] = uip_ipaddr3(uip_netmask);
-  ipconfig->netmask[3] = uip_ipaddr4(uip_netmask);
-  ipconfig->gateway[0] = uip_ipaddr1(uip_draddr);
-  ipconfig->gateway[1] = uip_ipaddr2(uip_draddr);
-  ipconfig->gateway[2] = uip_ipaddr3(uip_draddr);
-  ipconfig->gateway[3] = uip_ipaddr4(uip_draddr);
+  IPADDR2_COPY(ipconfig->ipaddr, &netif_default->ip_addr.addr);
+  IPADDR2_COPY(ipconfig->netmask, &netif_default->netmask.addr);
+  IPADDR2_COPY(ipconfig->gateway, &netif_default->gw.addr);
 }
 
 void uip_xtcpd_send_config(int linknum)
@@ -648,7 +639,7 @@ void uip_xtcp_checkstate()
 }
 
 
-void uip_xtcp_up() {
+void lwip_xtcp_up() {
   uip_ifstate = 1;
 }
 
