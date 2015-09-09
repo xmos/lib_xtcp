@@ -11,7 +11,7 @@ mii_info_t xtcp_mii_info;
 unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
                                    const ip4_addr_t *unsafe group,
                                    u8_t action) {
-
+  return ERR_OK;
 }
 
 err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
