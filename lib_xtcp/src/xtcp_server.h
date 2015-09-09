@@ -3,8 +3,10 @@
 #ifndef __xtcp_server_h__
 #define __xtcp_server_h__
 #include <xccompat.h>
+#include "xc2compat.h"
 #include "xtcp.h"
 #include "xtcp_server_conf.h"
+#include "lwip/pbuf.h"
 
 #if UIP_CONF_IPV6
 #include "process.h"
@@ -43,6 +45,12 @@ void xtcpd_recv(chanend xtcp[],
                 REFERENCE_PARAM(xtcpd_state_t, s),
                 unsigned char data[],
                 int datalen);
+
+unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
+                                int linknum,
+                                int num_xtcp,
+                                REFERENCE_PARAM(xtcpd_state_t, s),
+                                struct pbuf *unsafe p);
 
 int xtcpd_send(chanend c,
                xtcp_event_type_t event,

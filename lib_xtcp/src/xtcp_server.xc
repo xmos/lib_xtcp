@@ -7,6 +7,7 @@
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
 #include "debug_print.h"
+#include "lwip/pbuf.h"
 
 static int notified[MAX_XTCP_CLIENTS];
 static int pending_event[MAX_XTCP_CLIENTS];
@@ -391,6 +392,46 @@ void xtcpd_recv(chanend xtcp[],
     s.conn.event = XTCP_RECV_DATA;
     send_conn_and_complete(xtcp[linknum], s.conn);
     master do_recv(xtcp[linknum], client_ready, datalen, data);
+    if (!client_ready) {
+      xtcpd_service_clients_until_ready(linknum, xtcp, num_xtcp);
+    }
+  } while (!client_ready);
+
+  outct(xtcp[linknum], XS1_CT_END);
+
+  return;
+}
+
+unsafe static transaction do_pbuf_recv(chanend xtcp, int &client_ready,
+                                       struct pbuf *unsafe p)
+{
+  xtcp :> client_ready;
+  if (client_ready) {
+    xtcp <: (int)p->tot_len;
+    struct pbuf *unsafe q;
+    for (q = p; q != NULL; q = q->next) {
+      for (int i=0; i < q->len; i++) {
+        xtcp <: (uint8_t)(((uint8_t *unsafe)q->payload)[i]);
+      }
+    }
+  }
+}
+
+unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
+                                 int linknum,
+                                 int num_xtcp,
+                                 xtcpd_state_t &s,
+                                 struct pbuf *unsafe p)
+{
+  int client_ready = 0;
+  if (linknum != 0){
+    client_ready = 0;
+  }
+
+  do {
+    s.conn.event = XTCP_RECV_DATA;
+    send_conn_and_complete(xtcp[linknum], s.conn);
+    master do_pbuf_recv(xtcp[linknum], client_ready, p);
     if (!client_ready) {
       xtcpd_service_clients_until_ready(linknum, xtcp, num_xtcp);
     }
