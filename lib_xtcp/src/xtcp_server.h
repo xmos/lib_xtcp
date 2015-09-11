@@ -46,11 +46,18 @@ void xtcpd_recv(chanend xtcp[],
                 unsigned char data[],
                 int datalen);
 
+int xtcpd_send_split_start(chanend c,
+                           xtcp_event_type_t event,
+                           REFERENCE_PARAM(xtcpd_state_t, s),
+                           int mss);
+
 unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
                                 int linknum,
                                 int num_xtcp,
                                 REFERENCE_PARAM(xtcpd_state_t, s),
                                 struct pbuf *unsafe p);
+
+void xtcpd_send_split_data(chanend c, unsigned char *unsafe data, int pos, int len);
 
 int xtcpd_send(chanend c,
                xtcp_event_type_t event,

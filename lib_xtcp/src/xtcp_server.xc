@@ -461,6 +461,32 @@ int xtcpd_send(chanend c,
   return len;
 }
 
+int xtcpd_send_split_start(chanend c,
+                           xtcp_event_type_t event,
+                           xtcpd_state_t &s,
+                           int mss)
+{
+  int len;
+  s.conn.event = event;
+  s.conn.mss = mss;
+  send_conn_and_complete(c, s.conn);
+  c :> len;
+  return len;
+}
+
+void xtcpd_send_split_data(chanend c, unsigned char *unsafe data, int pos, int len)
+{
+  unsafe {
+    master {
+      c <: len;
+      for (int i=pos; i<len; i++) {
+        c :> data[i];
+      }
+    }
+  }
+}
+
+
 #if XTCP_SUPPORT_DEPRECATED_1V3_FEATURES
 void xtcpd_send_config_event(chanend c,
                              xtcp_config_event_t event,

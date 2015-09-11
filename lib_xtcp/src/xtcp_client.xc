@@ -206,10 +206,18 @@ void xtcp_sendi(chanend c_xtcp,
                 int index,
                 int len)
 {
-  slave {
-    c_xtcp <: len;
-    for (int i=index;i<index+len;i++)
-      c_xtcp <: data[i];
+  c_xtcp <: len;
+  int more_data = len;
+  while (more_data) {
+    slave {
+      int chunk_len;
+      c_xtcp :> chunk_len;
+      for (int i=index; i<index+chunk_len; i++) {
+        c_xtcp <: data[i];
+      }
+      index = index+chunk_len;
+      more_data -= chunk_len;
+    }
   }
 }
 
