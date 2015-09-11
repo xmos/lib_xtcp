@@ -494,7 +494,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
       /* Create a pbuf with a copy or reference to seglen bytes. We
        * can use PBUF_RAW here since the data appears in the middle of
        * a segment. A header will never be prepended. */
-      if (apiflags & TCP_WRITE_FLAG_COPY) {
+      if ((apiflags & TCP_WRITE_FLAG_COPY) || (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY)) {
         /* Data is copied */
         if ((concat_p = tcp_pbuf_prealloc(PBUF_RAW, seglen, space, &oversize, pcb, apiflags, 1)) == NULL) {
           LWIP_DEBUGF(TCP_OUTPUT_DEBUG | 2,
@@ -505,7 +505,12 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 #if TCP_OVERSIZE_DBGCHECK
         last_unsent->oversize_left += oversize;
 #endif /* TCP_OVERSIZE_DBGCHECK */
-        TCP_DATA_COPY2(concat_p->payload, (const u8_t*)arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
+        if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
+          xtcpd_send_split_data((unsigned)arg, concat_p->payload, pos, seglen);
+        }
+        else {
+          TCP_DATA_COPY2(concat_p->payload, (const u8_t*)arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
+        }
 #if TCP_CHECKSUM_ON_COPY
         concat_chksummed += seglen;
 #endif /* TCP_CHECKSUM_ON_COPY */
@@ -552,7 +557,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
     u8_t chksum_swapped = 0;
 #endif /* TCP_CHECKSUM_ON_COPY */
 
-    if (apiflags & TCP_WRITE_FLAG_COPY) {
+    if ((apiflags & TCP_WRITE_FLAG_COPY) || (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY)) {
       /* If copy is set, memory should be allocated and data copied
        * into pbuf */
       if ((p = tcp_pbuf_prealloc(PBUF_TRANSPORT, seglen + optlen, mss_local, &oversize, pcb, apiflags, queue == NULL)) == NULL) {
@@ -561,7 +566,12 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
       }
       LWIP_ASSERT("tcp_write: check that first pbuf can hold the complete seglen",
                   (p->len >= seglen));
-      TCP_DATA_COPY2((char *)p->payload + optlen, (const u8_t*)arg + pos, seglen, &chksum, &chksum_swapped);
+      if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
+        xtcpd_send_split_data((unsigned)arg, (char *)p->payload + optlen, pos, seglen);
+      }
+      else {
+        TCP_DATA_COPY2((char *)p->payload + optlen, (const u8_t*)arg + pos, seglen, &chksum, &chksum_swapped);
+      }
     } else {
       /* Copy is not set: First allocate a pbuf for holding the data.
        * Since the referenced data is available at least until it is
