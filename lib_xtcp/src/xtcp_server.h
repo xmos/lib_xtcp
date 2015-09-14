@@ -75,6 +75,8 @@ void xtcpd_queue_event(chanend c, int linknum, int event);
 extern "C" {
 #endif
 struct xtcpd_state_t *xtcpd_lookup_tcp_state(int conn_id);
+struct tcp_pcb *xtcpd_lookup_pcb_state(int conn_id);
+void xtcpd_check_connection_poll(void);
 #ifdef __XC__
 }
 #endif

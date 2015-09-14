@@ -224,6 +224,9 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
       uip_xtcp_checkstate();
 
       break;
+    default:
+      xtcpd_check_connection_poll();
+      break;
     }
     }
   }

@@ -1769,6 +1769,20 @@ tcp_next_iss(void)
   return iss;
 }
 
+void xtcpd_check_connection_poll(void) {
+  const int max_pcb_list = NUM_TCP_PCB_LISTS;
+  struct tcp_pcb *cpcb;
+
+  for (int i = 0; i < max_pcb_list; i++) {
+    for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+      xtcpd_state_t *s = &(cpcb->xtcp_state);
+      if (s) {
+        lwip_xtcpd_handle_poll(s, cpcb);
+      }
+    }
+  }
+}
+
 struct xtcpd_state_t *xtcpd_lookup_tcp_state(int conn_id) {
   const int max_pcb_list = NUM_TCP_PCB_LISTS;
   struct tcp_pcb *cpcb;
@@ -1781,6 +1795,20 @@ struct xtcpd_state_t *xtcpd_lookup_tcp_state(int conn_id) {
   }
   return NULL;
 }
+
+struct tcp_pcb *xtcpd_lookup_pcb_state(int conn_id) {
+  const int max_pcb_list = NUM_TCP_PCB_LISTS;
+  struct tcp_pcb *cpcb;
+
+  for (int i = 0; i < max_pcb_list; i++) {
+    for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+      xtcpd_state_t *s = &(cpcb->xtcp_state);
+      if (s->conn.id == conn_id) return cpcb;
+    }
+  }
+  return NULL;
+}
+
 
 
 #if TCP_CALCULATE_EFF_SEND_MSS

@@ -216,29 +216,25 @@ void xtcpd_bind_remote(int linknum,
 
 void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
                    xtcp_protocol_t p) {
-/*
-  uip_ipaddr_t uipaddr;
-  uip_ipaddr(uipaddr, addr[0], addr[1], addr[2], addr[3]);
   if (p == XTCP_PROTOCOL_TCP) {
-    struct uip_conn *conn = uip_connect(&uipaddr, HTONS(port_number));
-    if (conn != NULL) {
-         xtcpd_state_t *s = (xtcpd_state_t *) &(conn->appstate);
-         s->linknum = linknum;
-         s->s.connect_request = 1;
-         s->conn.connection_type = XTCP_CLIENT_CONNECTION;
-       }
-  }
-  else {
-    struct uip_udp_conn *conn;
-    // conn = uip_udp_new(&uipaddr, HTONS(port_number));
-    if (conn != NULL) {
-      xtcpd_state_t *s = (xtcpd_state_t *) &(conn->appstate);
+    struct tcp_pcb *pcb = tcp_new();
+    tcp_nagle_disable(pcb);
+    ip_addr_t dst;
+    IPADDR2_COPY(&dst, addr);
+    err_t res = tcp_connect(pcb, &dst, port_number, NULL);
+    if (res == ERR_OK) {
+      xtcpd_state_t *s = (xtcpd_state_t *) &(pcb->xtcp_state);
       s->linknum = linknum;
       s->s.connect_request = 1;
       s->conn.connection_type = XTCP_CLIENT_CONNECTION;
     }
+    else {
+      fail("Couldn't TCP connect");
+    }
   }
-*/
+  else {
+    // UDP TODO
+  }
   return;
 }
 
@@ -335,106 +331,38 @@ extern u16_t uip_slen;
 static int do_xtcpd_send(chanend c,
                   xtcp_event_type_t event,
                   xtcpd_state_t *s,
-                  unsigned char data[],
                   int mss)
 {
-/*
   int len;
-#ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
-  int outstanding=0;
-  if (!uip_udpconnection()) {
-    if (!s->s.accepts_partial_ack && uip_conn->len > 1)
-      return 0;
-
-    outstanding = uip_conn->len;
-    if (outstanding == 1)
-      outstanding = 0;
-    s->conn.outstanding = outstanding;
-
-  }
-#endif
 
   xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
-  len = xtcpd_send(c,event,s,data,mss);
+  len = xtcpd_send_split_start(c, event, s, mss);
 
-#ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
-  if (!uip_udpconnection()) {
-    if (outstanding != 0 &&
-        len > outstanding) {
-      len = len - outstanding;
-      memmove((char *) uip_appdata,
-              &((char *)uip_appdata)[outstanding],
-              len);
-    }
-    else if (outstanding > 0) {
-      len = 0;
-    }
-  }
-#endif
   return len;
-  */
 }
 
 
 
-void uip_xtcpd_handle_poll(xtcpd_state_t *s)
+void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb)
 {
-/*
- if (s->s.ack_request) {
-   uip_flags |= UIP_NEWDATA;
-   uip_slen = 0;
-   s->s.ack_request = 0;
- }
- if (s->s.abort_request) {
-    if (uip_udpconnection()) {
-      uip_udp_conn->lport = 0;
-      xtcpd_event(XTCP_CLOSED, s);
-    }
-    else
-      uip_abort();
-    s->s.abort_request = 0;
-  }
-  else if (s->s.close_request) {
-    if (uip_udpconnection()) {
-      uip_udp_conn->lport = 0;
-      xtcpd_event(XTCP_CLOSED, s);
-    }
-    else
-      uip_close();
-    s->s.close_request = 0;
-  }
-  else
-  if (s->s.connect_request) {
-    if (uip_udpconnection()) {
-      xtcpd_init_state(s,
-                       XTCP_PROTOCOL_UDP,
-                       (unsigned char *) uip_udp_conn->ripaddr,
-                       uip_udp_conn->lport,
-                       uip_udp_conn->rport,
-                       uip_udp_conn);
-      xtcpd_event(XTCP_NEW_CONNECTION, s);
-      s->s.connect_request = 0;
-    }
-  }
-  else if (s->s.send_request) {
+  if (s->s.send_request) {
     int len;
     if (s->linknum != -1) {
       len = do_xtcpd_send(xtcp_links[s->linknum],
                        XTCP_REQUEST_DATA,
                        s,
-                       uip_appdata,
-                       uip_udpconnection() ? XTCP_CLIENT_BUF_SIZE : uip_mss());
-      uip_send(uip_appdata, len);
+                       tcp_mss(pcb));
+      if (len) {
+        tcp_write(pcb, xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+        tcp_output(pcb);
+      }
+      else {
+        // Complete send
+        // tcp_output(pcb);
+      }
     }
     s->s.send_request--;
   }
-  else if (s->s.poll_interval != 0 &&
-           uip_timer_expired(&(s->s.tmr)))
-    {
-      xtcpd_event(XTCP_POLL, s);
-      uip_timer_set(&(s->s.tmr), s->s.poll_interval);
-    }
-  */
 }
 
 err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
@@ -457,12 +385,53 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
       xtcpd_event(XTCP_NEW_CONNECTION, s);
       break;
     }
+    case LWIP_EVENT_CONNECTED: {
+      xtcpd_init_state(s,
+                       XTCP_PROTOCOL_TCP,
+                       (unsigned char *) &pcb->remote_ip,
+                       pcb->local_port,
+                       pcb->remote_port,
+                       pcb);
+      xtcpd_event(XTCP_NEW_CONNECTION, s);
+      break;
+    }
     case LWIP_EVENT_RECV: {
+      if (p != NULL) {
+        if (s->linknum != -1) {
+
+          xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
+
+          if (p == NULL) __builtin_trap();
+          xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
+        }
+        tcp_recved(pcb, p->tot_len);
+        pbuf_free(p);
+      } else if (err == ERR_OK) {
+        tcp_close(pcb);
+      }
+      break;
+    }
+    case LWIP_EVENT_POLL: {
+      if (s->s.close_request) {
+        if (!s->s.closed){
+          s->s.closed = 1;
+          xtcpd_event(XTCP_CLOSED, s);
+        }
+        tcp_close(pcb);
+      }
+      break;
+    }
+    case LWIP_EVENT_SENT: {
+      int len;
       if (s->linknum != -1) {
-
-        xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
-
-        xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
+        len = do_xtcpd_send(xtcp_links[s->linknum],
+                            XTCP_SENT_DATA,
+                            s,
+                            tcp_mss(pcb));
+        if (len) {
+          tcp_write(pcb, xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+          tcp_output(pcb);
+        }
       }
       break;
     }

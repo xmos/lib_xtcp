@@ -340,6 +340,8 @@ enum lwip_event {
   LWIP_EVENT_ERR
 };
 
+void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb);
+
 err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
          enum lwip_event,
          struct pbuf *p,
