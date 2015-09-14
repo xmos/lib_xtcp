@@ -372,7 +372,6 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
          err_t err) {
 
   xtcpd_state_t *s = &(pcb->xtcp_state);
-  debug_printf(".. GOT EVENT .. %d\n", e);
 
   switch (e) {
     case LWIP_EVENT_ACCEPT: {
