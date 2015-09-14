@@ -567,7 +567,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
       LWIP_ASSERT("tcp_write: check that first pbuf can hold the complete seglen",
                   (p->len >= seglen));
       if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
-        xtcpd_send_split_data((unsigned)arg, (char *)p->payload + optlen, pos, seglen);
+        xtcpd_send_split_data((unsigned)arg, (unsigned char *)p->payload + optlen, pos, seglen);
       }
       else {
         TCP_DATA_COPY2((char *)p->payload + optlen, (const u8_t*)arg + pos, seglen, &chksum, &chksum_swapped);
