@@ -892,7 +892,7 @@ err_t ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_add
 #endif /* !LWIP_HAVE_LOOPIF */
       ) {
     /* Packet to self, enqueue it for loopback */
-    LWIP_DEBUGF(IP_DEBUG, ("netif_loop_output()"));
+    LWIP_DEBUGF(IP_DEBUG, ("netif_loop_output()\n"));
     return netif_loop_output(netif, p);
   }
 #if LWIP_MULTICAST_TX_OPTIONS
@@ -908,7 +908,7 @@ err_t ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_add
   }
 #endif /* IP_FRAG */
 
-  LWIP_DEBUGF(IP_DEBUG, ("netif->output()"));
+  LWIP_DEBUGF(IP_DEBUG, ("netif->output()\n"));
   return etharp_output(netif, p, dest);
 }
 
@@ -1001,31 +1001,31 @@ ip4_debug_print(struct pbuf *p)
 
   LWIP_DEBUGF(IP_DEBUG, ("IP header:\n"));
   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(IP_DEBUG, ("|%2"S16_F" |%2"S16_F" |  0x%02"X16_F" |     %5"U16_F"     | (v, hl, tos, len)\n",
+  LWIP_DEBUGF(IP_DEBUG, ("|%"S16_F" |%"S16_F" |  0x%"X16_F" |     %"U16_F"     | (v, hl, tos, len)\n",
                     IPH_V(iphdr),
                     IPH_HL(iphdr),
                     IPH_TOS(iphdr),
                     ntohs(IPH_LEN(iphdr))));
   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(IP_DEBUG, ("|    %5"U16_F"      |%"U16_F"%"U16_F"%"U16_F"|    %4"U16_F"   | (id, flags, offset)\n",
+  LWIP_DEBUGF(IP_DEBUG, ("|    %"U16_F"      |%"U16_F"%"U16_F"%"U16_F"|    %"U16_F"   | (id, flags, offset)\n",
                     ntohs(IPH_ID(iphdr)),
                     ntohs(IPH_OFFSET(iphdr)) >> 15 & 1,
                     ntohs(IPH_OFFSET(iphdr)) >> 14 & 1,
                     ntohs(IPH_OFFSET(iphdr)) >> 13 & 1,
                     ntohs(IPH_OFFSET(iphdr)) & IP_OFFMASK));
   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(IP_DEBUG, ("|  %3"U16_F"  |  %3"U16_F"  |    0x%04"X16_F"     | (ttl, proto, chksum)\n",
+  LWIP_DEBUGF(IP_DEBUG, ("|  %"U16_F"  |  %"U16_F"  |    0x%"X16_F"     | (ttl, proto, chksum)\n",
                     IPH_TTL(iphdr),
                     IPH_PROTO(iphdr),
                     ntohs(IPH_CHKSUM(iphdr))));
   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(IP_DEBUG, ("|  %3"U16_F"  |  %3"U16_F"  |  %3"U16_F"  |  %3"U16_F"  | (src)\n",
+  LWIP_DEBUGF(IP_DEBUG, ("|  %"U16_F"  |  %"U16_F"  |  %"U16_F"  |  %"U16_F"  | (src)\n",
                     ip4_addr1_16(&iphdr->src),
                     ip4_addr2_16(&iphdr->src),
                     ip4_addr3_16(&iphdr->src),
                     ip4_addr4_16(&iphdr->src)));
   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(IP_DEBUG, ("|  %3"U16_F"  |  %3"U16_F"  |  %3"U16_F"  |  %3"U16_F"  | (dest)\n",
+  LWIP_DEBUGF(IP_DEBUG, ("|  %"U16_F"  |  %"U16_F"  |  %"U16_F"  |  %"U16_F"  | (dest)\n",
                     ip4_addr1_16(&iphdr->dest),
                     ip4_addr2_16(&iphdr->dest),
                     ip4_addr3_16(&iphdr->dest),
