@@ -36,6 +36,10 @@
 #include "lwip/opt.h"
 #include "lwip/err.h"
 
+#ifdef __XC__
+#define volatile
+#endif
+
 #if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
