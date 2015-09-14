@@ -392,7 +392,7 @@ err_t            tcp_shutdown(struct tcp_pcb *pcb, int shut_rx, int shut_tx);
 /* Flags for "apiflags" parameter in tcp_write */
 #define TCP_WRITE_FLAG_COPY 0x01
 #define TCP_WRITE_FLAG_MORE 0x02
-#define TCP_WRITE_FLAG_XCORE_CHAN_COPY 0x03
+#define TCP_WRITE_FLAG_XCORE_CHAN_COPY 0x04
 
 err_t            tcp_write   (struct tcp_pcb *pcb, const void *dataptr, u16_t len,
                               u8_t apiflags);
