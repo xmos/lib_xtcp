@@ -7,11 +7,13 @@
 #define LWIP_SNMP 0
 #define LWIP_AUTOIP 1
 #define LWIP_IGMP 1
+#define LWIP_ICMP 1
 #define LWIP_TCP 1
 #define LWIP_UDP 1
 #define LWIP_EVENT_API  1
 #define LWIP_RAW 0
 #define LWIP_UDP_CALLBACK_API 0
+#define LWIP_CALLBACK_API 0
 
 
 #define LWIP_NETIF_HOSTNAME 0
@@ -24,6 +26,7 @@
 #define IP_REASSEMBLY 0
 #define IP_FRAG 0
 
+#define LWIP_NETIF_TX_SINGLE_PBUF 1
 #define LWIP_DHCP_AUTOIP_COOP 1
 
 #define CHECKSUM_CHECK_TCP 0
