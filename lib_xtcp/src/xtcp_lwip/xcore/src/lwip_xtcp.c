@@ -353,7 +353,7 @@ void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb)
                        s,
                        tcp_mss(pcb));
       if (len) {
-        tcp_write(pcb, xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+        tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
         tcp_output(pcb);
       }
       else {
@@ -428,7 +428,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
                             s,
                             tcp_mss(pcb));
         if (len) {
-          tcp_write(pcb, xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+          tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
           tcp_output(pcb);
         }
       }
