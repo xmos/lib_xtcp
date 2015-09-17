@@ -133,7 +133,7 @@
   #endif /* !MBEDTLS_HAVE_INT32 && __GNUC__ && 64-bit platform */
 #endif /* !MBEDTLS_HAVE_INT32 && _MSC_VER && _M_AMD64 */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -709,7 +709,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
  */
 int mbedtls_mpi_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

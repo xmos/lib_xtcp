@@ -43,7 +43,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -271,7 +271,7 @@ void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
                           const unsigned char input[16],
                           unsigned char output[16] );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -279,7 +279,7 @@ void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
 #include "aes_alt.h"
 #endif /* MBEDTLS_AES_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -290,7 +290,7 @@ extern "C" {
  */
 int mbedtls_aes_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

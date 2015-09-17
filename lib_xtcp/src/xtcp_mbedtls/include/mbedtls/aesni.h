@@ -36,7 +36,7 @@
 
 #if defined(MBEDTLS_HAVE_X86_64)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -102,7 +102,7 @@ int mbedtls_aesni_setkey_enc( unsigned char *rk,
                       const unsigned char *key,
                       size_t bits );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

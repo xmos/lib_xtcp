@@ -31,7 +31,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -82,7 +82,7 @@ int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen );
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

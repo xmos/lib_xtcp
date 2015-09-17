@@ -36,7 +36,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -101,7 +101,7 @@ void mbedtls_md5_finish( mbedtls_md5_context *ctx, unsigned char output[16] );
 /* Internal use */
 void mbedtls_md5_process( mbedtls_md5_context *ctx, const unsigned char data[64] );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -109,7 +109,7 @@ void mbedtls_md5_process( mbedtls_md5_context *ctx, const unsigned char data[64]
 #include "md5_alt.h"
 #endif /* MBEDTLS_MD5_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -129,7 +129,7 @@ void mbedtls_md5( const unsigned char *input, size_t ilen, unsigned char output[
  */
 int mbedtls_md5_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

@@ -42,7 +42,7 @@
 
 /* \} name SECTION: Module settings */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -101,7 +101,7 @@ mbedtls_ssl_cookie_write_t mbedtls_ssl_cookie_write;
  */
 mbedtls_ssl_cookie_check_t mbedtls_ssl_cookie_check;
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

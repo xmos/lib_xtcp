@@ -35,7 +35,7 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -113,7 +113,7 @@ void mbedtls_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms );
  */
 int mbedtls_timing_get_delay( void *data );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -121,7 +121,7 @@ int mbedtls_timing_get_delay( void *data );
 #include "timing_alt.h"
 #endif /* MBEDTLS_TIMING_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -134,7 +134,7 @@ extern "C" {
 int mbedtls_timing_self_test( int verbose );
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

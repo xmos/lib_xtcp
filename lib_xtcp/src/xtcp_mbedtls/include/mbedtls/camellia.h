@@ -42,7 +42,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -209,7 +209,7 @@ int mbedtls_camellia_crypt_ctr( mbedtls_camellia_context *ctx,
                        unsigned char *output );
 #endif /* MBEDTLS_CIPHER_MODE_CTR */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -217,7 +217,7 @@ int mbedtls_camellia_crypt_ctr( mbedtls_camellia_context *ctx,
 #include "camellia_alt.h"
 #endif /* MBEDTLS_CAMELLIA_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -228,7 +228,7 @@ extern "C" {
  */
 int mbedtls_camellia_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

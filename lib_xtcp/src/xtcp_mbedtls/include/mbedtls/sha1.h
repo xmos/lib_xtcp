@@ -36,7 +36,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -101,7 +101,7 @@ void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] );
 /* Internal use */
 void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -109,7 +109,7 @@ void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[6
 #include "sha1_alt.h"
 #endif /* MBEDTLS_SHA1_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -129,7 +129,7 @@ void mbedtls_sha1( const unsigned char *input, size_t ilen, unsigned char output
  */
 int mbedtls_sha1_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

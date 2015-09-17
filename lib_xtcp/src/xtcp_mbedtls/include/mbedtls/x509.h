@@ -168,7 +168,7 @@
 
 #define MBEDTLS_X509_MAX_DN_NAME_SIZE         256 /**< Maximum value size of a DN entry */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -324,7 +324,7 @@ int mbedtls_x509_write_sig( unsigned char **p, unsigned char *start,
         p += (size_t) ret;                                  \
     } while( 0 )
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

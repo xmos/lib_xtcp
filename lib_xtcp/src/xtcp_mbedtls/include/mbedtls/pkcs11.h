@@ -41,7 +41,7 @@
 #define inline __inline
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -163,7 +163,7 @@ static inline size_t mbedtls_ssl_pkcs11_key_len( void *ctx )
     return ( (mbedtls_pkcs11_context *) ctx )->len;
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

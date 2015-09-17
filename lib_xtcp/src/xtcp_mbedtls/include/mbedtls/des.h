@@ -43,7 +43,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -280,7 +280,7 @@ int mbedtls_des3_crypt_cbc( mbedtls_des3_context *ctx,
  */
 void mbedtls_des_setkey( uint32_t SK[32],
                          const unsigned char key[MBEDTLS_DES_KEY_SIZE] );
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -288,7 +288,7 @@ void mbedtls_des_setkey( uint32_t SK[32],
 #include "des_alt.h"
 #endif /* MBEDTLS_DES_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -299,7 +299,7 @@ extern "C" {
  */
 int mbedtls_des_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

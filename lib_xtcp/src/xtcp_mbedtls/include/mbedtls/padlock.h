@@ -51,7 +51,7 @@
 
 #define MBEDTLS_PADLOCK_ALIGN16(x) (uint32_t *) (16 + ((int32_t) x & ~15))
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -98,7 +98,7 @@ int mbedtls_padlock_xcryptcbc( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

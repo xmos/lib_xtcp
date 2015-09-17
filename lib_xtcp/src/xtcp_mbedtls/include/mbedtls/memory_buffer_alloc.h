@@ -50,7 +50,7 @@
 #define MBEDTLS_MEMORY_VERIFY_FREE         (1 << 1)
 #define MBEDTLS_MEMORY_VERIFY_ALWAYS       (MBEDTLS_MEMORY_VERIFY_ALLOC | MBEDTLS_MEMORY_VERIFY_FREE)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -139,7 +139,7 @@ int mbedtls_memory_buffer_alloc_verify( void );
 int mbedtls_memory_buffer_alloc_self_test( int verbose );
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

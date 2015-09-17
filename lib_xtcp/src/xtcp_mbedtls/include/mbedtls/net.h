@@ -51,7 +51,7 @@
 #define MBEDTLS_NET_PROTO_TCP 0 /**< The TCP transport protocol */
 #define MBEDTLS_NET_PROTO_UDP 1 /**< The UDP transport protocol */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -218,7 +218,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
  */
 void mbedtls_net_free( mbedtls_net_context *ctx );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

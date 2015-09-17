@@ -41,7 +41,7 @@
 #define MBEDTLS_PKCS12_PBE_DECRYPT      0
 #define MBEDTLS_PKCS12_PBE_ENCRYPT      1
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -112,7 +112,7 @@ int mbedtls_pkcs12_derivation( unsigned char *data, size_t datalen,
                        const unsigned char *salt, size_t saltlen,
                        mbedtls_md_type_t mbedtls_md, int id, int iterations );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

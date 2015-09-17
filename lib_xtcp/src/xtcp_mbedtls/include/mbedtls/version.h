@@ -52,7 +52,7 @@
 
 #if defined(MBEDTLS_VERSION_C)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -102,7 +102,7 @@ void mbedtls_version_get_string_full( char *string );
  */
 int mbedtls_version_check_feature( const char *feature );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

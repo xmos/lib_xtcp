@@ -69,7 +69,7 @@
  */
 #if defined(MBEDTLS_RSA_C)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -643,7 +643,7 @@ void mbedtls_rsa_free( mbedtls_rsa_context *ctx );
  */
 int mbedtls_rsa_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

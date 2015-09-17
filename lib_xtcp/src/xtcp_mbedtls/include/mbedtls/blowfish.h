@@ -46,7 +46,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -192,7 +192,7 @@ int mbedtls_blowfish_crypt_ctr( mbedtls_blowfish_context *ctx,
                         unsigned char *output );
 #endif /* MBEDTLS_CIPHER_MODE_CTR */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

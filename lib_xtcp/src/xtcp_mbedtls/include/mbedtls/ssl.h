@@ -391,7 +391,7 @@ union mbedtls_ssl_premaster_secret
 
 #define MBEDTLS_PREMASTER_SIZE     sizeof( union mbedtls_ssl_premaster_secret )
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -2253,7 +2253,7 @@ void mbedtls_ssl_session_init( mbedtls_ssl_session *session );
  */
 void mbedtls_ssl_session_free( mbedtls_ssl_session *session );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

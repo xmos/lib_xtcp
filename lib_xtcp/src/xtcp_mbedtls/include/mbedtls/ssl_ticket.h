@@ -36,7 +36,7 @@
 #include "threading.h"
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -128,7 +128,7 @@ mbedtls_ssl_ticket_parse_t mbedtls_ssl_ticket_parse;
  */
 void mbedtls_ssl_ticket_free( mbedtls_ssl_ticket_context *ctx );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

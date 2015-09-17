@@ -47,7 +47,7 @@
 
 /* \} name SECTION: Module settings */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -136,7 +136,7 @@ void mbedtls_ssl_cache_set_max_entries( mbedtls_ssl_cache_context *cache, int ma
  */
 void mbedtls_ssl_cache_free( mbedtls_ssl_cache_context *cache );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

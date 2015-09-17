@@ -39,7 +39,7 @@
 #define MBEDTLS_PKCS5_DECRYPT      0
 #define MBEDTLS_PKCS5_ENCRYPT      1
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -87,7 +87,7 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
  */
 int mbedtls_pkcs5_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

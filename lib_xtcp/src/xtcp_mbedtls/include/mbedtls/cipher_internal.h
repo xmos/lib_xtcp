@@ -33,7 +33,7 @@
 
 #include "cipher.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -102,7 +102,7 @@ extern const mbedtls_cipher_definition_t mbedtls_cipher_definitions[];
 
 extern int mbedtls_cipher_supported[];
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

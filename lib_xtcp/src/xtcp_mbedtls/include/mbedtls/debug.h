@@ -75,7 +75,7 @@
 
 #endif /* MBEDTLS_DEBUG_C */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -118,7 +118,7 @@ void mbedtls_debug_print_crt( const mbedtls_ssl_context *ssl, int level,
                       const char *text, const mbedtls_x509_crt *crt );
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

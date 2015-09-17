@@ -35,7 +35,7 @@
 
 #include "md.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -107,7 +107,7 @@ extern const mbedtls_md_info_t mbedtls_sha384_info;
 extern const mbedtls_md_info_t mbedtls_sha512_info;
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

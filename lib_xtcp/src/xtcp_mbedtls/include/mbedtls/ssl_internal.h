@@ -147,7 +147,7 @@
  */
 #define MBEDTLS_TLS_EXT_SUPPORTED_POINT_FORMATS_PRESENT (1 << 0)
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -474,7 +474,7 @@ static inline int mbedtls_ssl_safer_memcmp( const void *a, const void *b, size_t
     return( diff );
 }
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

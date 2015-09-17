@@ -41,7 +41,7 @@
 // Regular implementation
 //
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -113,7 +113,7 @@ int mbedtls_xtea_crypt_cbc( mbedtls_xtea_context *ctx,
                     unsigned char *output);
 #endif /* MBEDTLS_CIPHER_MODE_CBC */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
@@ -121,7 +121,7 @@ int mbedtls_xtea_crypt_cbc( mbedtls_xtea_context *ctx,
 #include "xtea_alt.h"
 #endif /* MBEDTLS_XTEA_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -132,7 +132,7 @@ extern "C" {
  */
 int mbedtls_xtea_self_test( int verbose );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

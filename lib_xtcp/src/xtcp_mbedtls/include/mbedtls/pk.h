@@ -60,7 +60,7 @@
 #define MBEDTLS_ERR_PK_SIG_LEN_MISMATCH    -0x3900  /**< The signature is valid but its length is less than expected. */
 
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -604,7 +604,7 @@ int mbedtls_pk_write_pubkey( unsigned char **p, unsigned char *start,
 int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n );
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

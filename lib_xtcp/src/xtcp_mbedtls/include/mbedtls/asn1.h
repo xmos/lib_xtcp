@@ -103,7 +103,7 @@
         ( ( MBEDTLS_OID_SIZE(oid_str) != (oid_buf)->len ) ||                \
           memcmp( (oid_str), (oid_buf)->p, (oid_buf)->len) != 0 )
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -335,7 +335,7 @@ void mbedtls_asn1_free_named_data( mbedtls_asn1_named_data *entry );
  */
 void mbedtls_asn1_free_named_data_list( mbedtls_asn1_named_data **head );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

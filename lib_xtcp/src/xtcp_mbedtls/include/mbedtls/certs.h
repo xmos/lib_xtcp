@@ -25,7 +25,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -92,7 +92,7 @@ extern const char   mbedtls_test_cli_key_rsa[];
 extern const size_t mbedtls_test_cli_key_rsa_len;
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

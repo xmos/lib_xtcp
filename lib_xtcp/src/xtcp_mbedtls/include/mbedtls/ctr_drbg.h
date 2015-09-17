@@ -77,7 +77,7 @@
 #define MBEDTLS_CTR_DRBG_PR_OFF             0       /**< No prediction resistance       */
 #define MBEDTLS_CTR_DRBG_PR_ON              1       /**< Prediction resistance enabled  */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -283,7 +283,7 @@ int mbedtls_ctr_drbg_seed_entropy_len( mbedtls_ctr_drbg_context *,
                                int (*)(void *, unsigned char *, size_t), void *,
                                const unsigned char *, size_t, size_t );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

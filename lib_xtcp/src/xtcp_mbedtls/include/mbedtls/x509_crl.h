@@ -31,7 +31,7 @@
 
 #include "x509.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -165,7 +165,7 @@ void mbedtls_x509_crl_free( mbedtls_x509_crl *crl );
 /* \} name */
 /* \} addtogroup x509_module */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

@@ -51,7 +51,7 @@
  */
 typedef mbedtls_ecp_keypair mbedtls_ecdsa_context;
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -241,7 +241,7 @@ void mbedtls_ecdsa_init( mbedtls_ecdsa_context *ctx );
  */
 void mbedtls_ecdsa_free( mbedtls_ecdsa_context *ctx );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

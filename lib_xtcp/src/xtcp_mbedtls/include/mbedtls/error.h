@@ -85,7 +85,7 @@
  * Module dependent error code (5 bits 0x.00.-0x.F8.)
  */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -100,7 +100,7 @@ extern "C" {
  */
 void mbedtls_strerror( int errnum, char *buffer, size_t buflen );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

@@ -29,7 +29,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -207,7 +207,7 @@ int mbedtls_platform_set_exit( void (*exit_func)( int status ) );
 #endif /* MBEDTLS_PLATFORM_EXIT_MACRO */
 #endif /* MBEDTLS_PLATFORM_EXIT_ALT */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 

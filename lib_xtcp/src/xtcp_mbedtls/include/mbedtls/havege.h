@@ -27,7 +27,7 @@
 
 #define MBEDTLS_HAVEGE_COLLECT_SIZE 1024
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -67,7 +67,7 @@ void mbedtls_havege_free( mbedtls_havege_state *hs );
  */
 int mbedtls_havege_random( void *p_rng, unsigned char *output, size_t len );
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
