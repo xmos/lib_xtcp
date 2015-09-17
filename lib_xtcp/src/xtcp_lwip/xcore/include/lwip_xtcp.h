@@ -3,6 +3,8 @@
 #ifndef _LWIP_XTCP_H_
 #define _LWIP_XTCP_H_
 
+#include <xccompat.h>
+
 void lwip_xtcp_checkstate();
 void lwip_xtcp_up();
 void lwip_xtcp_down();
