@@ -9,14 +9,16 @@ EXCLUDE_FILES += uip_arp.c autoip.c dhcp.c igmp.c rpl.c rpl-dag.c rpl-ext-header
 
 else
 LWIP_SOURCE_DIRS = src/xtcp_lwip/api src/xtcp_lwip/core/ src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
+MBEDTLS_SOURCE_DIRS = src/xtcp_mbedtls/library
 XTCP_SOURCE_DIRS = src src/xtcp_uip/*
 EXCLUDE_FILES += uip-fw.c uip-neighbor.c uip_xtcp.c xcoredev.xc uip_server_support.c xtcp.xc dhcpc.c autoip/autoip.c uip-split.c uip_arp.c uip.c psock.c
 endif
 
-SOURCE_DIRS += $(XTCP_SOURCE_DIRS) $(LWIP_SOURCE_DIRS)
+SOURCE_DIRS += $(XTCP_SOURCE_DIRS) $(LWIP_SOURCE_DIRS) $(MBEDTLS_SOURCE_DIRS)
 
 LWIP_INCLUDE_DIRS = src/xtcp_lwip/include src/xtcp_lwip/xcore/include
-INCLUDE_DIRS += $(XTCP_SOURCE_DIRS) api $(LWIP_INCLUDE_DIRS)
+MBEDTLS_INCLUDE_DIRS = src/xtcp_mbedtls/include
+INCLUDE_DIRS += $(XTCP_SOURCE_DIRS) api $(LWIP_INCLUDE_DIRS) $(MBEDTLS_INCLUDE_DIRS)
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 MODULE_XCC_FLAGS = $(XCC_FLAGS)
 MODULE_XCC_C_FLAGS = $(XCC_C_FLAGS)
