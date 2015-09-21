@@ -89,26 +89,20 @@
 extern "C" {
 #endif
 
-/**
- * \brief           Entropy poll callback pointer
- *
- * \param data      Callback-specific data pointer
- * \param output    Data to fill
- * \param len       Maximum size to provide
- * \param olen      The actual amount of bytes put into the buffer (Can be 0)
- *
- * \return          0 if no critical failures occurred,
- *                  MBEDTLS_ERR_ENTROPY_SOURCE_FAILED otherwise
- */
-typedef int (*mbedtls_entropy_f_source_ptr)(void *data, unsigned char *output, size_t len,
-                            size_t *olen);
+typedef enum {
+    ENTROPY_DUMMY,
+    ENTROPY_PLATFORM,
+    ENTROPY_HAVEGE,
+    ENTROPY_HARDCLOCK,
+    ENTROPY_HARDWARE
+} entropy_f_source;
 
 /**
  * \brief           Entropy source state
  */
 typedef struct
 {
-    mbedtls_entropy_f_source_ptr    f_source;   /**< The entropy source callback */
+    entropy_f_source    f_source;   /**< The entropy source callback */
     void *          p_source;   /**< The callback data pointer */
     size_t          size;       /**< Amount received in bytes */
     size_t          threshold;  /**< Minimum bytes required before release */
@@ -169,7 +163,7 @@ void mbedtls_entropy_free( mbedtls_entropy_context *ctx );
  * \return          0 if successful or MBEDTLS_ERR_ENTROPY_MAX_SOURCES
  */
 int mbedtls_entropy_add_source( mbedtls_entropy_context *ctx,
-                        mbedtls_entropy_f_source_ptr f_source, void *p_source,
+                        entropy_f_source f_source, void *p_source,
                         size_t threshold, int strong );
 
 /**

@@ -28,6 +28,7 @@
 #if defined(MBEDTLS_THREADING_C)
 #include "mbedtls/threading.h"
 #endif
+#include "mbedtls/entropy.h"
 
 #define MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED        -0x0034  /**< The entropy source failed. */
 #define MBEDTLS_ERR_CTR_DRBG_REQUEST_TOO_BIG              -0x0036  /**< Too many random requested in single call. */
@@ -96,11 +97,6 @@ typedef struct
 
     mbedtls_aes_context aes_ctx;        /*!<  AES context       */
 
-    /*
-     * Callbacks (Entropy)
-     */
-    int (*f_entropy)(void *, unsigned char *, size_t);
-
     void *p_entropy;            /*!<  context for the entropy function */
 
 #if defined(MBEDTLS_THREADING_C)
@@ -137,7 +133,6 @@ void mbedtls_ctr_drbg_init( mbedtls_ctr_drbg_context *ctx );
  *                      MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED
  */
 int mbedtls_ctr_drbg_seed( mbedtls_ctr_drbg_context *ctx,
-                   int (*f_entropy)(void *, unsigned char *, size_t),
                    void *p_entropy,
                    const unsigned char *custom,
                    size_t len );
@@ -279,8 +274,7 @@ int mbedtls_ctr_drbg_update_seed_file( mbedtls_ctr_drbg_context *ctx, const char
 int mbedtls_ctr_drbg_self_test( int verbose );
 
 /* Internal functions (do not call directly) */
-int mbedtls_ctr_drbg_seed_entropy_len( mbedtls_ctr_drbg_context *,
-                               int (*)(void *, unsigned char *, size_t), void *,
+int mbedtls_ctr_drbg_seed_entropy_len( mbedtls_ctr_drbg_context *, void *,
                                const unsigned char *, size_t, size_t );
 
 #if defined(__cplusplus) || defined(__XC__)

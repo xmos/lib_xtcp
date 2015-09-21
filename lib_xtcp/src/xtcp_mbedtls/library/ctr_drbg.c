@@ -72,7 +72,6 @@ void mbedtls_ctr_drbg_init( mbedtls_ctr_drbg_context *ctx )
  */
 int mbedtls_ctr_drbg_seed_entropy_len(
                    mbedtls_ctr_drbg_context *ctx,
-                   int (*f_entropy)(void *, unsigned char *, size_t),
                    void *p_entropy,
                    const unsigned char *custom,
                    size_t len,
@@ -85,7 +84,6 @@ int mbedtls_ctr_drbg_seed_entropy_len(
 
     mbedtls_aes_init( &ctx->aes_ctx );
 
-    ctx->f_entropy = f_entropy;
     ctx->p_entropy = p_entropy;
 
     ctx->entropy_len = entropy_len;
@@ -103,12 +101,11 @@ int mbedtls_ctr_drbg_seed_entropy_len(
 }
 
 int mbedtls_ctr_drbg_seed( mbedtls_ctr_drbg_context *ctx,
-                   int (*f_entropy)(void *, unsigned char *, size_t),
                    void *p_entropy,
                    const unsigned char *custom,
                    size_t len )
 {
-    return( mbedtls_ctr_drbg_seed_entropy_len( ctx, f_entropy, p_entropy, custom, len,
+    return( mbedtls_ctr_drbg_seed_entropy_len( ctx, p_entropy, custom, len,
                                        MBEDTLS_CTR_DRBG_ENTROPY_LEN ) );
 }
 
@@ -298,7 +295,7 @@ int mbedtls_ctr_drbg_reseed( mbedtls_ctr_drbg_context *ctx,
     /*
      * Gather entropy_len bytes of entropy to seed state
      */
-    if( 0 != ctx->f_entropy( ctx->p_entropy, seed,
+    if( 0 != mbedtls_entropy_func( ctx->p_entropy, seed,
                              ctx->entropy_len ) )
     {
         return( MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED );
