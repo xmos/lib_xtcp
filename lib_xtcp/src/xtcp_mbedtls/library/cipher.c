@@ -592,6 +592,60 @@ static int get_no_padding( unsigned char *input, size_t input_len,
 }
 #endif /* MBEDTLS_CIPHER_MODE_WITH_PADDING */
 
+static void do_add_padding( mbedtls_cipher_padding_t padding_mode, unsigned char *output, size_t olen, size_t data_len )
+{
+    switch( padding_mode )
+    {
+#if defined(MBEDTLS_CIPHER_PADDING_PKCS7)
+    case MBEDTLS_PADDING_PKCS7:
+        return add_pkcs_padding(output, olen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS)
+    case MBEDTLS_PADDING_ONE_AND_ZEROS:
+        return add_one_and_zeros_padding(output, olen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN)
+    case MBEDTLS_PADDING_ZEROS_AND_LEN:
+        return add_zeros_and_len_padding(output, olen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ZEROS)
+    case MBEDTLS_PADDING_ZEROS:
+        return add_zeros_padding(output, olen, data_len);
+#endif
+    case MBEDTLS_PADDING_NONE:
+    default:
+        __builtin_trap();
+    }
+}
+
+static int do_get_padding( mbedtls_cipher_padding_t padding_mode, unsigned char *input, size_t ilen, size_t *data_len )
+{
+    switch( padding_mode )
+    {
+#if defined(MBEDTLS_CIPHER_PADDING_PKCS7)
+    case MBEDTLS_PADDING_PKCS7:
+        return get_pkcs_padding(input, ilen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS)
+    case MBEDTLS_PADDING_ONE_AND_ZEROS:
+        return get_one_and_zeros_padding(input, ilen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN)
+    case MBEDTLS_PADDING_ZEROS_AND_LEN:
+        return get_zeros_and_len_padding(input, ilen, data_len);
+#endif
+#if defined(MBEDTLS_CIPHER_PADDING_ZEROS)
+    case MBEDTLS_PADDING_ZEROS:
+        return get_zeros_padding(input, ilen, data_len);
+#endif
+    case MBEDTLS_PADDING_NONE:
+        return get_no_padding(input, ilen, data_len);
+
+    default:
+        __builtin_trap();
+    }
+}
+
 int mbedtls_cipher_finish( mbedtls_cipher_context_t *ctx,
                    unsigned char *output, size_t *olen )
 {
@@ -624,7 +678,7 @@ int mbedtls_cipher_finish( mbedtls_cipher_context_t *ctx,
         if( MBEDTLS_ENCRYPT == ctx->operation )
         {
             /* check for 'no padding' mode */
-            if( NULL == ctx->add_padding )
+            if( MBEDTLS_PADDING_NONE == ctx->padding_mode )
             {
                 if( 0 != ctx->unprocessed_len )
                     return( MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED );
@@ -632,7 +686,7 @@ int mbedtls_cipher_finish( mbedtls_cipher_context_t *ctx,
                 return( 0 );
             }
 
-            ctx->add_padding( ctx->unprocessed_data, mbedtls_cipher_get_iv_size( ctx ),
+            do_add_padding( ctx->padding_mode, ctx->unprocessed_data, mbedtls_cipher_get_iv_size( ctx ),
                     ctx->unprocessed_len );
         }
         else if( mbedtls_cipher_get_block_size( ctx ) != ctx->unprocessed_len )
@@ -641,7 +695,7 @@ int mbedtls_cipher_finish( mbedtls_cipher_context_t *ctx,
              * For decrypt operations, expect a full block,
              * or an empty block if no padding
              */
-            if( NULL == ctx->add_padding && 0 == ctx->unprocessed_len )
+            if( MBEDTLS_PADDING_NONE == ctx->padding_mode && 0 == ctx->unprocessed_len )
                 return( 0 );
 
             return( MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED );
@@ -657,7 +711,7 @@ int mbedtls_cipher_finish( mbedtls_cipher_context_t *ctx,
 
         /* Set output size for decryption */
         if( MBEDTLS_DECRYPT == ctx->operation )
-            return ctx->get_padding( output, mbedtls_cipher_get_block_size( ctx ),
+            return do_get_padding( ctx->padding_mode, output, mbedtls_cipher_get_block_size( ctx ),
                                      olen );
 
         /* Set output size for encryption */
@@ -684,31 +738,18 @@ int mbedtls_cipher_set_padding_mode( mbedtls_cipher_context_t *ctx, mbedtls_ciph
     {
 #if defined(MBEDTLS_CIPHER_PADDING_PKCS7)
     case MBEDTLS_PADDING_PKCS7:
-        ctx->add_padding = add_pkcs_padding;
-        ctx->get_padding = get_pkcs_padding;
-        break;
 #endif
 #if defined(MBEDTLS_CIPHER_PADDING_ONE_AND_ZEROS)
     case MBEDTLS_PADDING_ONE_AND_ZEROS:
-        ctx->add_padding = add_one_and_zeros_padding;
-        ctx->get_padding = get_one_and_zeros_padding;
-        break;
 #endif
 #if defined(MBEDTLS_CIPHER_PADDING_ZEROS_AND_LEN)
     case MBEDTLS_PADDING_ZEROS_AND_LEN:
-        ctx->add_padding = add_zeros_and_len_padding;
-        ctx->get_padding = get_zeros_and_len_padding;
-        break;
 #endif
 #if defined(MBEDTLS_CIPHER_PADDING_ZEROS)
     case MBEDTLS_PADDING_ZEROS:
-        ctx->add_padding = add_zeros_padding;
-        ctx->get_padding = get_zeros_padding;
-        break;
 #endif
     case MBEDTLS_PADDING_NONE:
-        ctx->add_padding = NULL;
-        ctx->get_padding = get_no_padding;
+        ctx->padding_mode = mode;
         break;
 
     default:
