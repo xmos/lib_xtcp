@@ -572,4 +572,135 @@ const mbedtls_md_info_t mbedtls_sha512_info = {
 
 #endif /* MBEDTLS_SHA512_C */
 
+void md_do_starts(mbedtls_md_type_t type, void *ctx )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha512_starts_wrap(ctx);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_starts_wrap(ctx);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_starts_wrap(ctx);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_update(mbedtls_md_type_t type, void *ctx, const unsigned char *input,
+                                size_t ilen )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_update_wrap(ctx, input, ilen);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_update_wrap(ctx, input, ilen);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_update_wrap(ctx, input, ilen);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_finish(mbedtls_md_type_t type, void *ctx, unsigned char *output )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_finish_wrap(ctx, output);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_finish_wrap(ctx, output);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_finish_wrap(ctx, output);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_digest(mbedtls_md_type_t type, const unsigned char *input, size_t ilen,
+                    unsigned char *output )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha512_wrap(input, ilen, output);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return mbedtls_sha1(input, ilen, output);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return mbedtls_md5(input, ilen, output);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void *md_do_alloc(mbedtls_md_type_t type)
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_ctx_alloc();
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_ctx_alloc();
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_ctx_alloc();
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_free(mbedtls_md_type_t type, void *ctx)
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_ctx_free(ctx);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_ctx_free(ctx);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_ctx_free(ctx);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_clone(mbedtls_md_type_t type, void *dst, const void *src )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_clone_wrap(dst, src);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_clone_wrap(dst, src);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_clone_wrap(dst, src);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void md_do_process(mbedtls_md_type_t type, void *ctx, const unsigned char *data  )
+{
+    switch (type) {
+#if defined(MBEDTLS_SHA512_C)
+        case MBEDTLS_MD_SHA512: return sha384_process_wrap(ctx, data);
+#endif
+#if defined(MBEDTLS_SHA1_C)
+        case MBEDTLS_MD_SHA1: return sha1_process_wrap(ctx, data);
+#endif
+#if defined(MBEDTLS_MD5_C)
+        case MBEDTLS_MD_MD5: return md5_process_wrap(ctx, data);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+
 #endif /* MBEDTLS_MD_C */

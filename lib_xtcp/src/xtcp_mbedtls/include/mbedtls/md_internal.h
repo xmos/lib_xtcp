@@ -83,6 +83,21 @@ struct mbedtls_md_info_t
     void (*process_func)( void *ctx, const unsigned char *input );
 };
 
+void md_do_starts(mbedtls_md_type_t type, void *ctx );
+void md_do_update(mbedtls_md_type_t type, void *ctx, const unsigned char *input,
+                                size_t ilen );
+void md_do_finish(mbedtls_md_type_t type, void *ctx, unsigned char *output );
+
+void md_do_digest(mbedtls_md_type_t type, const unsigned char *input, size_t ilen,
+                    unsigned char *output );
+
+void *md_do_alloc(mbedtls_md_type_t type);
+
+void md_do_free(mbedtls_md_type_t type, void *ctx);
+
+void md_do_clone(mbedtls_md_type_t type, void *dst, const void *src );
+void md_do_process(mbedtls_md_type_t type, void *ctx, const unsigned char *data  );
+
 #if defined(MBEDTLS_MD2_C)
 extern const mbedtls_md_info_t mbedtls_md2_info;
 #endif
