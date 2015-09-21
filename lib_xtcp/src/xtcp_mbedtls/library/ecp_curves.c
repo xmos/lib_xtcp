@@ -634,6 +634,43 @@ static int ecp_mod_p224k1( mbedtls_mpi * );
 static int ecp_mod_p256k1( mbedtls_mpi * );
 #endif
 
+int do_modp(modpfunc func, mbedtls_mpi *mpi)
+{
+    switch (func)
+    {
+        case MODP_NONE: __builtin_trap(); break;
+#if defined(MBEDTLS_ECP_NIST_OPTIM)
+#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
+        case MODP_P192: return ecp_mod_p192(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
+        case MODP_P224: return ecp_mod_p224(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+        case MODP_P256: return ecp_mod_p256(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
+        case MODP_P384: return ecp_mod_p384(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
+        case MODP_P521: return ecp_mod_p521(mpi);
+#endif
+#endif /* MBEDTLS_ECP_NIST_OPTIM */
+#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
+        case MODP_P192K1: return ecp_mod_p192k1(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
+        case MODP_P224K1: return ecp_mod_p224k1(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
+        case MODP_P256K1: return ecp_mod_p256k1(mpi);
+#endif
+#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+        case MODP_P255: return ecp_mod_p255(mpi);
+#endif
+    }
+}
+
 #define LOAD_GROUP_A( G )   ecp_group_load( grp,            \
                             G ## _p,  sizeof( G ## _p  ),   \
                             G ## _a,  sizeof( G ## _a  ),   \
@@ -697,49 +734,49 @@ int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id )
     {
 #if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP192R1:
-            NIST_MODP( p192 );
+            grp->modp = MODP_P192;
             return( LOAD_GROUP( secp192r1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP192R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP224R1:
-            NIST_MODP( p224 );
+            grp->modp = MODP_P224;
             return( LOAD_GROUP( secp224r1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP224R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP256R1:
-            NIST_MODP( p256 );
+            grp->modp = MODP_P256;
             return( LOAD_GROUP( secp256r1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP256R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP384R1:
-            NIST_MODP( p384 );
+            grp->modp = MODP_P384;
             return( LOAD_GROUP( secp384r1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP384R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP521R1:
-            NIST_MODP( p521 );
+            grp->modp = MODP_P521;
             return( LOAD_GROUP( secp521r1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP521R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
         case MBEDTLS_ECP_DP_SECP192K1:
-            grp->modp = ecp_mod_p192k1;
+            grp->modp = MODP_P192K1;
             return( LOAD_GROUP_A( secp192k1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP192K1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
         case MBEDTLS_ECP_DP_SECP224K1:
-            grp->modp = ecp_mod_p224k1;
+            grp->modp = MODP_P224K1;
             return( LOAD_GROUP_A( secp224k1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP224K1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
         case MBEDTLS_ECP_DP_SECP256K1:
-            grp->modp = ecp_mod_p256k1;
+            grp->modp = MODP_P256K1;
             return( LOAD_GROUP_A( secp256k1 ) );
 #endif /* MBEDTLS_ECP_DP_SECP256K1_ENABLED */
 
@@ -760,7 +797,7 @@ int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id )
 
 #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
         case MBEDTLS_ECP_DP_CURVE25519:
-            grp->modp = ecp_mod_p255;
+            grp->modp = MODP_P255;
             return( ecp_use_curve25519( grp ) );
 #endif /* MBEDTLS_ECP_DP_CURVE25519_ENABLED */
 

@@ -102,6 +102,20 @@ typedef struct
 }
 mbedtls_ecp_point;
 
+typedef enum {
+    MODP_NONE,
+    MODP_P192, // ecp_mod_p192
+    MODP_P224, // ecp_mod_p224
+    MODP_P256, // ecp_mod_p256
+    MODP_P384, // ecp_mod_p384
+    MODP_P521, // ecp_mod_p521
+    MODP_P192K1, // ecp_mod_p192k1
+    MODP_P224K1, // ecp_mod_p224k1
+    MODP_P256K1, //ecp_mod_p256k1
+    MODP_P255 // ecp_mod_p255
+} modpfunc;
+
+
 /**
  * \brief           ECP group structure
  *
@@ -137,9 +151,7 @@ typedef struct
     size_t pbits;       /*!<  number of bits in P                           */
     size_t nbits;       /*!<  number of bits in 1. P, or 2. private keys    */
     unsigned int h;     /*!<  internal: 1 if the constants are static       */
-    int (*modp)(mbedtls_mpi *); /*!<  function for fast reduction mod P             */
-    int (*t_pre)(mbedtls_ecp_point *, void *);  /*!< unused                         */
-    int (*t_post)(mbedtls_ecp_point *, void *); /*!< unused                         */
+    modpfunc modp; /*!<  function for fast reduction mod P             */
     void *t_data;                       /*!< unused                         */
     mbedtls_ecp_point *T;       /*!<  pre-computed points for ecp_mul_comb()        */
     size_t T_size;      /*!<  number for pre-computed points                */
@@ -612,6 +624,8 @@ int mbedtls_ecp_gen_key( mbedtls_ecp_group_id grp_id, mbedtls_ecp_keypair *key,
  *                  a MBEDTLS_ERR_ECP_XXX or MBEDTLS_ERR_MPI_XXX code.
  */
 int mbedtls_ecp_check_pub_priv( const mbedtls_ecp_keypair *pub, const mbedtls_ecp_keypair *prv );
+
+int do_modp(modpfunc func, mbedtls_mpi *mpi);
 
 #if defined(MBEDTLS_SELF_TEST)
 /**
