@@ -2720,7 +2720,7 @@ static int ssl_write_certificate_verify( mbedtls_ssl_context *ssl )
     /*
      * Make an RSA signature of the handshake digests
      */
-    ssl->handshake->calc_verify( ssl, hash );
+    ssl_do_calc_verify( ssl, hash );
 
 #if defined(MBEDTLS_SSL_PROTO_SSL3) || defined(MBEDTLS_SSL_PROTO_TLS1) || \
     defined(MBEDTLS_SSL_PROTO_TLS1_1)

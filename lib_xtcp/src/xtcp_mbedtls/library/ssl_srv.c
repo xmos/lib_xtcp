@@ -837,7 +837,7 @@ static int ssl_parse_client_hello_v2( mbedtls_ssl_context *ssl )
         return( ret );
     }
 
-    ssl->handshake->update_checksum( ssl, buf + 2, n );
+    ssl_do_update_checksum( ssl, buf + 2, n );
 
     buf = ssl->in_msg;
     n = ssl->in_left - 5;
@@ -1179,7 +1179,7 @@ read_record_header:
 
     MBEDTLS_SSL_DEBUG_BUF( 4, "record contents", buf, msg_len );
 
-    ssl->handshake->update_checksum( ssl, buf, msg_len );
+    ssl_do_update_checksum( ssl, buf, msg_len );
 
     /*
      * Handshake layer:
@@ -3389,7 +3389,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
     }
 
     /* Needs to be done before read_record() to exclude current message */
-    ssl->handshake->calc_verify( ssl, hash );
+    ssl_do_calc_verify( ssl, hash );
 
     if( ( ret = mbedtls_ssl_read_record( ssl ) ) != 0 )
     {

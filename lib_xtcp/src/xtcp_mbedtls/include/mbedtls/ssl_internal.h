@@ -224,6 +224,7 @@ struct mbedtls_ssl_handshake_params
 #endif
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
+    int checksum_start;
     void (*update_checksum)(mbedtls_ssl_context *, const unsigned char *, size_t);
     void (*calc_verify)(mbedtls_ssl_context *, unsigned char *);
     void (*calc_finished)(mbedtls_ssl_context *, unsigned char *, int);
@@ -250,6 +251,15 @@ struct mbedtls_ssl_handshake_params
 #endif
 };
 
+void ssl_do_update_checksum( mbedtls_ssl_context *ssl,
+                             const unsigned char *buf, size_t len );
+int ssl_do_tls_prf( mbedtls_ssl_context *ssl,
+                     const unsigned char *secret, size_t slen,
+                     const char *label,
+                     const unsigned char *random, size_t rlen,
+                     unsigned char *dstbuf, size_t dlen );
+void ssl_do_calc_verify( mbedtls_ssl_context *ssl, unsigned char *hash);
+void ssl_do_calc_finished( mbedtls_ssl_context *ssl, unsigned char *buf, int from);
 /*
  * This structure contains a full set of runtime transform parameters
  * either in negotiation or active.

@@ -55,6 +55,8 @@
 #include <time.h>
 #endif
 
+#include "xtcp.h"
+
 /* For convenience below and in programs */
 #if defined(MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) ||                           \
     defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) ||                       \
@@ -475,6 +477,7 @@ struct mbedtls_ssl_session
 #endif
 };
 
+#ifndef __XC__ // Bitfields not supported in XC...
 /**
  * SSL/TLS configuration to be shared between mbedtls_ssl_context structures.
  */
@@ -488,18 +491,23 @@ struct mbedtls_ssl_config
 
     const int *ciphersuite_list[4]; /*!< allowed ciphersuites per version   */
 
+#if defined(MBEDTLS_DEBUG_C)
     /** Callback for printing debug output                                  */
     void (*f_dbg)(void *, int, const char *, int, const char *);
     void *p_dbg;                    /*!< context for the debug function     */
+#endif
 
-    /** Callback for getting (pseudo-)random numbers                        */
-    int  (*f_rng)(void *, unsigned char *, size_t);
     void *p_rng;                    /*!< context for the RNG function       */
 
+#if defined(MBEDTLS_SSL_SRV_C)
     /** Callback to retrieve a session from the cache                       */
     int (*f_get_cache)(void *, mbedtls_ssl_session *);
     /** Callback to store a session into the cache                          */
     int (*f_set_cache)(void *, const mbedtls_ssl_session *);
+#else
+    void *f_get_cache;
+    void *f_set_cache;
+#endif
     void *p_cache;                  /*!< context for cache callbacks        */
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
@@ -645,6 +653,7 @@ struct mbedtls_ssl_config
     unsigned int fallback : 1;      /*!< is this a fallback?                */
 #endif
 };
+#endif
 
 
 struct mbedtls_ssl_context
@@ -669,13 +678,9 @@ struct mbedtls_ssl_context
     unsigned badmac_seen;       /*!< records with a bad MAC received    */
 #endif
 
-    /*
-     * Callbacks
-     */
-    int (*f_send)(void *, const unsigned char *, size_t);
-    int (*f_recv)(void *, unsigned char *, size_t);
-    int (*f_recv_timeout)(void *, unsigned char *, size_t, uint32_t);
     void *p_bio;                /*!< context for I/O operations   */
+    unsigned xtcp_chan;
+    xtcp_connection_t *xtcp_conn;
 
     /*
      * Session layer
@@ -695,13 +700,6 @@ struct mbedtls_ssl_context
     mbedtls_ssl_transform *transform_out;       /*!<  current transform params (in)   */
     mbedtls_ssl_transform *transform;           /*!<  negotiated transform params     */
     mbedtls_ssl_transform *transform_negotiate; /*!<  transform params in negotiation */
-
-    /*
-     * Timers
-     */
-    void *p_timer;              /*!< context for the timer callbacks */
-    void (*f_set_timer)(void *, uint32_t, uint32_t); /*!< set timer callback */
-    int (*f_get_timer)(void *); /*!< get timer callback             */
 
     /*
      * Record layer (incoming data)
@@ -977,9 +975,11 @@ void mbedtls_ssl_conf_rng( mbedtls_ssl_config *conf,
  * \param f_dbg    debug function
  * \param p_dbg    debug parameter
  */
+#if defined(MBEDTLS_DEBUG_C)
 void mbedtls_ssl_conf_dbg( mbedtls_ssl_config *conf,
                   void (*f_dbg)(void *, int, const char *, int, const char *),
                   void  *p_dbg );
+#endif
 
 /**
  * \brief          Set the underlying BIO callbacks for write, read and
@@ -1005,10 +1005,7 @@ void mbedtls_ssl_conf_dbg( mbedtls_ssl_config *conf,
  *                 f_recv_timeout callback, or a f_recv that doesn't block.
  */
 void mbedtls_ssl_set_bio( mbedtls_ssl_context *ssl,
-        void *p_bio,
-        int (*f_send)(void *, const unsigned char *, size_t),
-        int (*f_recv)(void *, unsigned char *, size_t),
-        int (*f_recv_timeout)(void *, unsigned char *, size_t, uint32_t) );
+        void *p_bio, unsigned xtcp_chan, xtcp_connection_t *xtcp_conn);
 
 /**
  * \brief          Set the timeout period for mbedtls_ssl_read()
@@ -1043,10 +1040,12 @@ void mbedtls_ssl_conf_read_timeout( mbedtls_ssl_config *conf, uint32_t timeout )
  *                 1 if the intermediate delay only is expired
  *                 2 if the final delay is expired
  */
+#if defined(MBEDTLS_SSL_PROTO_DTLS)
 void mbedtls_ssl_set_timer_cb( mbedtls_ssl_context *ssl,
                                void *p_timer,
                                void (*f_set_timer)(void *, uint32_t int_ms, uint32_t fin_ms),
                                int (*f_get_timer)(void *) );
+#endif
 
 /**
  * \brief           Callback type: generate and write session ticket
