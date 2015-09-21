@@ -1876,8 +1876,13 @@ static int x509_crt_verify_top(
                 mbedtls_x509_crl *ca_crl,
                 const mbedtls_x509_crt_profile *profile,
                 int path_cnt, uint32_t *flags,
-                int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
-                void *p_vrfy )
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
+                     int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
+                     void *p_vrfy )
+#else
+                     void *f_vrfy,
+                     void *p_vrfy )
+#endif
 {
     int ret;
     uint32_t ca_flags = 0;
@@ -1978,6 +1983,7 @@ static int x509_crt_verify_top(
         if( mbedtls_x509_time_is_future( &trust_ca->valid_from ) )
             ca_flags |= MBEDTLS_X509_BADCERT_FUTURE;
 
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
         if( NULL != f_vrfy )
         {
             if( ( ret = f_vrfy( p_vrfy, trust_ca, path_cnt + 1,
@@ -1986,14 +1992,17 @@ static int x509_crt_verify_top(
                 return( ret );
             }
         }
+#endif
     }
 
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
     /* Call callback on top cert */
     if( NULL != f_vrfy )
     {
         if( ( ret = f_vrfy( p_vrfy, child, path_cnt, flags ) ) != 0 )
             return( ret );
     }
+#endif
 
     *flags |= ca_flags;
 
@@ -2005,8 +2014,13 @@ static int x509_crt_verify_child(
                 mbedtls_x509_crt *trust_ca, mbedtls_x509_crl *ca_crl,
                 const mbedtls_x509_crt_profile *profile,
                 int path_cnt, uint32_t *flags,
-                int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
-                void *p_vrfy )
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
+                     int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
+                     void *p_vrfy )
+#else
+                     void *f_vrfy,
+                     void *p_vrfy )
+#endif
 {
     int ret;
     uint32_t parent_flags = 0;
@@ -2109,11 +2123,12 @@ static int x509_crt_verify_child(
         }
     }
 
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
     /* child is verified to be a child of the parent, call verify callback */
     if( NULL != f_vrfy )
         if( ( ret = f_vrfy( p_vrfy, child, path_cnt, flags ) ) != 0 )
             return( ret );
-
+#endif
     *flags |= parent_flags;
 
     return( 0 );
@@ -2126,8 +2141,13 @@ int mbedtls_x509_crt_verify( mbedtls_x509_crt *crt,
                      mbedtls_x509_crt *trust_ca,
                      mbedtls_x509_crl *ca_crl,
                      const char *cn, uint32_t *flags,
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
                      int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
                      void *p_vrfy )
+#else
+                     void *f_vrfy,
+                     void *p_vrfy )
+#endif
 {
     return( mbedtls_x509_crt_verify_with_profile( crt, trust_ca, ca_crl,
                 &mbedtls_x509_crt_profile_default, cn, flags, f_vrfy, p_vrfy ) );
@@ -2142,8 +2162,13 @@ int mbedtls_x509_crt_verify_with_profile( mbedtls_x509_crt *crt,
                      mbedtls_x509_crl *ca_crl,
                      const mbedtls_x509_crt_profile *profile,
                      const char *cn, uint32_t *flags,
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
                      int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
                      void *p_vrfy )
+#else
+                     void *f_vrfy,
+                     void *p_vrfy )
+#endif
 {
     size_t cn_len;
     int ret;

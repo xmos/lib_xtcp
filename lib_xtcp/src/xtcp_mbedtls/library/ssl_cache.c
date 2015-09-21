@@ -92,7 +92,7 @@ int mbedtls_ssl_cache_get( void *data, mbedtls_ssl_session *session )
                     entry->session.id_len ) != 0 )
             continue;
 
-        memcpy( session->master, entry->session.master, 48 );
+        memcpy( session->master_secret, entry->session.master_secret, 48 );
 
         session->verify_result = entry->session.verify_result;
 

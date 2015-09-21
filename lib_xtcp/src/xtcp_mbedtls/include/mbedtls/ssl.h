@@ -508,10 +508,13 @@ struct mbedtls_ssl_config
     void *p_sni;                    /*!< context for SNI callback           */
 #endif
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) && defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
     /** Callback to customize X.509 certificate chain verification          */
     int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *);
     void *p_vrfy;                   /*!< context for X.509 verify calllback */
+#else
+    void *f_vrfy;
+    void *p_vrfy;
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
@@ -940,8 +943,14 @@ void mbedtls_ssl_conf_authmode( mbedtls_ssl_config *conf, int authmode );
  * \param p_vrfy   verification parameter
  */
 void mbedtls_ssl_conf_verify( mbedtls_ssl_config *conf,
+#if defined(MBEDTLS_X509_CRT_VERIFY_CALLBACK_C)
                      int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
                      void *p_vrfy );
+#else
+                     void *f_vrfy,
+                     void *p_vrfy );
+#endif
+
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 /**
