@@ -7,7 +7,9 @@
 #include "xtcp_server.h"
 #include "xtcp_server_impl.h"
 #include "debug_print.h"
+#if LWIP_XTCP
 #include "lwip/pbuf.h"
+#endif
 
 static int notified[MAX_XTCP_CLIENTS];
 static int pending_event[MAX_XTCP_CLIENTS];
@@ -402,6 +404,7 @@ void xtcpd_recv(chanend xtcp[],
   return;
 }
 
+#if LWIP_XTCP
 unsafe static transaction do_pbuf_recv(chanend xtcp, int &client_ready,
                                        struct pbuf *unsafe p)
 {
@@ -442,25 +445,6 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
   return;
 }
 
-#pragma unsafe arrays
-int xtcpd_send(chanend c,
-               xtcp_event_type_t event,
-               xtcpd_state_t &s,
-               unsigned char data[],
-               int mss)
-{
-  int len;
-  s.conn.event = event;
-  s.conn.mss = mss;
-  send_conn_and_complete(c, s.conn);
-  master {
-    c :> len;
-    for (int i=0;i<len;i++)
-      c :> data[i];
-  }
-  return len;
-}
-
 int xtcpd_send_split_start(chanend c,
                            xtcp_event_type_t event,
                            xtcpd_state_t &s,
@@ -485,7 +469,26 @@ void xtcpd_send_split_data(chanend c, unsigned char *unsafe data, int pos, int l
     }
   }
 }
+#endif // LWIP_XTCP
 
+#pragma unsafe arrays
+int xtcpd_send(chanend c,
+               xtcp_event_type_t event,
+               xtcpd_state_t &s,
+               unsigned char data[],
+               int mss)
+{
+  int len;
+  s.conn.event = event;
+  s.conn.mss = mss;
+  send_conn_and_complete(c, s.conn);
+  master {
+    c :> len;
+    for (int i=0;i<len;i++)
+      c :> data[i];
+  }
+  return len;
+}
 
 #if XTCP_SUPPORT_DEPRECATED_1V3_FEATURES
 void xtcpd_send_config_event(chanend c,

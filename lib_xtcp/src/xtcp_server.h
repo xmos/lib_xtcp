@@ -6,7 +6,9 @@
 #include "xc2compat.h"
 #include "xtcp.h"
 #include "xtcp_server_conf.h"
+#if LWIP_XTCP
 #include "lwip/pbuf.h"
+#endif
 
 #if UIP_CONF_IPV6
 #include "process.h"
@@ -46,6 +48,7 @@ void xtcpd_recv(chanend xtcp[],
                 unsigned char data[],
                 int datalen);
 
+#if LWIP_XTCP
 int xtcpd_send_split_start(chanend c,
                            xtcp_event_type_t event,
                            REFERENCE_PARAM(xtcpd_state_t, s),
@@ -58,6 +61,7 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
                                 struct pbuf *unsafe p);
 
 void xtcpd_send_split_data(chanend c, unsigned char *unsafe data, int pos, int len);
+#endif
 
 int xtcpd_send(chanend c,
                xtcp_event_type_t event,
