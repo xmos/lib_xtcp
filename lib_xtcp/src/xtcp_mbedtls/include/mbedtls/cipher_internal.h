@@ -92,6 +92,26 @@ struct mbedtls_cipher_base_t
 
 };
 
+int cipher_do_ecb( mbedtls_cipher_id_t cipher, void *ctx, mbedtls_operation_t operation,
+        const unsigned char *input, unsigned char *output );
+
+int cipher_do_cbc( mbedtls_cipher_id_t cipher, void *ctx, mbedtls_operation_t operation, size_t length,
+        unsigned char *iv, const unsigned char *input, unsigned char *output );
+
+int cipher_do_ctr( mbedtls_cipher_id_t cipher, void *ctx, size_t length, size_t *nc_off,
+        unsigned char *nonce_counter, unsigned char *stream_block,
+        const unsigned char *input, unsigned char *output );
+
+int cipher_do_setkey_dec( mbedtls_cipher_id_t cipher,  void *ctx, const unsigned char *key,
+                                unsigned int key_bitlen );
+
+int cipher_do_setkey_enc( mbedtls_cipher_id_t cipher,  void *ctx, const unsigned char *key,
+                                unsigned int key_bitlen );
+
+void cipher_do_free( mbedtls_cipher_id_t cipher, void *ctx);
+
+void *cipher_do_alloc(mbedtls_cipher_id_t cipher);
+
 typedef struct
 {
     mbedtls_cipher_type_t type;

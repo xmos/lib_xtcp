@@ -1346,6 +1346,84 @@ static const mbedtls_cipher_info_t null_cipher_info = {
 };
 #endif /* defined(MBEDTLS_CIPHER_NULL_CIPHER) */
 
+
+int cipher_do_ecb( mbedtls_cipher_id_t cipher, void *ctx, mbedtls_operation_t operation,
+        const unsigned char *input, unsigned char *output )
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_crypt_ecb_wrap(ctx, operation, input, output);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int cipher_do_cbc( mbedtls_cipher_id_t cipher, void *ctx, mbedtls_operation_t operation, size_t length,
+        unsigned char *iv, const unsigned char *input, unsigned char *output )
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_crypt_cbc_wrap(ctx, operation, length, iv, input, output);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int cipher_do_ctr( mbedtls_cipher_id_t cipher, void *ctx, size_t length, size_t *nc_off,
+        unsigned char *nonce_counter, unsigned char *stream_block,
+        const unsigned char *input, unsigned char *output )
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C) && defined(MBEDTLS_CIPHER_MODE_CTR)
+        case MBEDTLS_CIPHER_ID_AES: return aes_crypt_ctr_wrap(ctx, length, nc_off, nonce_counter, stream_block, input, output);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int cipher_do_setkey_dec( mbedtls_cipher_id_t cipher,  void *ctx, const unsigned char *key,
+                                unsigned int key_bitlen )
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_setkey_dec_wrap(ctx, key, key_bitlen );
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int cipher_do_setkey_enc( mbedtls_cipher_id_t cipher,  void *ctx, const unsigned char *key,
+                                unsigned int key_bitlen )
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_setkey_enc_wrap(ctx, key, key_bitlen );
+#endif
+        default: __builtin_trap();
+    }
+}
+
+void cipher_do_free( mbedtls_cipher_id_t cipher, void *ctx)
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_ctx_free(ctx);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+
+void *cipher_do_alloc(mbedtls_cipher_id_t cipher)
+{
+    switch (cipher) {
+#if defined(MBEDTLS_AES_C)
+        case MBEDTLS_CIPHER_ID_AES: return aes_ctx_alloc();
+#endif
+        default: __builtin_trap();
+    }
+}
+
 const mbedtls_cipher_definition_t mbedtls_cipher_definitions[] =
 {
 #if defined(MBEDTLS_AES_C)
