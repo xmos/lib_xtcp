@@ -80,6 +80,34 @@ struct mbedtls_pk_info_t
     void (*debug_func)( const void *ctx, mbedtls_pk_debug_item *items );
 
 };
+
+void pk_do_free( mbedtls_pk_type_t type, void *ctx);
+void *pk_do_alloc( mbedtls_pk_type_t type);
+
+int pk_do_check_pair( mbedtls_pk_type_t type, const void *pub, const void *prv );
+
+int pk_do_encrypt( mbedtls_pk_type_t type, void *ctx,
+                const unsigned char *input, size_t ilen,
+                unsigned char *output, size_t *olen, size_t osize,
+                void *p_rng );
+int pk_do_decrypt( mbedtls_pk_type_t type, void *ctx,
+                const unsigned char *input, size_t ilen,
+                unsigned char *output, size_t *olen, size_t osize,
+                void *p_rng );
+
+int pk_do_sign( mbedtls_pk_type_t type, void *ctx, mbedtls_md_type_t md_alg,
+                   const unsigned char *hash, size_t hash_len,
+                   unsigned char *sig, size_t *sig_len,
+                   void *p_rng );
+
+int pk_do_verify( mbedtls_pk_type_t type, void *ctx, mbedtls_md_type_t md_alg,
+                   const unsigned char *hash, size_t hash_len,
+                   const unsigned char *sig, size_t sig_len );
+int pk_do_can_do( mbedtls_pk_type_t type );
+
+size_t pk_do_get_bitlen(mbedtls_pk_type_t type, const void *ctx);
+
+
 #if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
 /* Container for RSA-alt */
 typedef struct

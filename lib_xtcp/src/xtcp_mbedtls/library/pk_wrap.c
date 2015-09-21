@@ -77,7 +77,7 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
     if( sig_len < ((mbedtls_rsa_context *) ctx)->len )
         return( MBEDTLS_ERR_RSA_VERIFY_FAILED );
 
-    if( ( ret = mbedtls_rsa_pkcs1_verify( (mbedtls_rsa_context *) ctx, NULL, NULL,
+    if( ( ret = mbedtls_rsa_pkcs1_verify( (mbedtls_rsa_context *) ctx, NULL,
                                   MBEDTLS_RSA_PUBLIC, md_alg,
                                   (unsigned int) hash_len, hash, sig ) ) != 0 )
         return( ret );
@@ -404,7 +404,7 @@ static int rsa_alt_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 
     *sig_len = rsa_alt->key_len_func( rsa_alt->key );
 
-    return( rsa_alt->sign_func( rsa_alt->key, f_rng, p_rng, MBEDTLS_RSA_PRIVATE,
+    return( pk_do_sign_func( ctx->pk_info->type, rsa_alt->key, f_rng, p_rng, MBEDTLS_RSA_PRIVATE,
                 md_alg, (unsigned int) hash_len, hash, sig ) );
 }
 
@@ -421,7 +421,7 @@ static int rsa_alt_decrypt_wrap( void *ctx,
     if( ilen != rsa_alt->key_len_func( rsa_alt->key ) )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
-    return( rsa_alt->decrypt_func( rsa_alt->key,
+    return( pk_do_decrypt( ctx->pk_info->type, rsa_alt->key,
                 MBEDTLS_RSA_PRIVATE, olen, input, output, osize ) );
 }
 
@@ -491,5 +491,108 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 };
 
 #endif /* MBEDTLS_PK_RSA_ALT_SUPPORT */
+
+void pk_do_free( mbedtls_pk_type_t type, void *ctx)
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_free_wrap(ctx);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+
+void *pk_do_alloc( mbedtls_pk_type_t type)
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_alloc_wrap();
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int pk_do_check_pair( mbedtls_pk_type_t type, const void *pub, const void *prv )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_check_pair_wrap(pub, prv);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+
+int pk_do_encrypt( mbedtls_pk_type_t type, void *ctx,
+                const unsigned char *input, size_t ilen,
+                unsigned char *output, size_t *olen, size_t osize,
+                void *p_rng )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_encrypt_wrap(ctx, input, ilen, output, olen, osize, p_rng);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int pk_do_decrypt( mbedtls_pk_type_t type, void *ctx,
+                const unsigned char *input, size_t ilen,
+                unsigned char *output, size_t *olen, size_t osize,
+                void *p_rng )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_decrypt_wrap(ctx, input, ilen, output, olen, osize, p_rng);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int pk_do_sign( mbedtls_pk_type_t type, void *ctx, mbedtls_md_type_t md_alg,
+                   const unsigned char *hash, size_t hash_len,
+                   unsigned char *sig, size_t *sig_len,
+                   void *p_rng )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_sign_wrap(ctx, md_alg, hash, hash_len, sig, sig_len, p_rng);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int pk_do_verify( mbedtls_pk_type_t type, void *ctx, mbedtls_md_type_t md_alg,
+                   const unsigned char *hash, size_t hash_len,
+                   const unsigned char *sig, size_t sig_len )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_verify_wrap(ctx, md_alg, hash, hash_len, sig, sig_len);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+int pk_do_can_do( mbedtls_pk_type_t type )
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_can_do(type);
+#endif
+        default: __builtin_trap();
+    }
+}
+
+size_t pk_do_get_bitlen(mbedtls_pk_type_t type, const void *ctx)
+{
+    switch (type) {
+#if defined(MBEDTLS_RSA_C)
+        case MBEDTLS_PK_RSA: return rsa_get_bitlen(ctx);
+#endif
+        default: __builtin_trap();
+    }
+}
 
 #endif /* MBEDTLS_PK_C */

@@ -64,7 +64,7 @@ void mbedtls_pk_free( mbedtls_pk_context *ctx )
     if( ctx == NULL || ctx->pk_info == NULL )
         return;
 
-    ctx->pk_info->ctx_free_func( ctx->pk_ctx );
+    pk_do_free(ctx->pk_info->type, ctx->pk_ctx );
 
     mbedtls_zeroize( ctx, sizeof( mbedtls_pk_context ) );
 }
@@ -103,7 +103,7 @@ int mbedtls_pk_setup( mbedtls_pk_context *ctx, const mbedtls_pk_info_t *info )
     if( ctx == NULL || info == NULL || ctx->pk_info != NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    if( ( ctx->pk_ctx = info->ctx_alloc_func() ) == NULL )
+    if( ( ctx->pk_ctx = pk_do_alloc(info->type) ) == NULL )
         return( MBEDTLS_ERR_PK_ALLOC_FAILED );
 
     ctx->pk_info = info;
@@ -126,7 +126,7 @@ int mbedtls_pk_setup_rsa_alt( mbedtls_pk_context *ctx, void * key,
     if( ctx == NULL || ctx->pk_info != NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    if( ( ctx->pk_ctx = info->ctx_alloc_func() ) == NULL )
+    if( ( ctx->pk_ctx = pk_do_alloc(info->type) ) == NULL )
         return( MBEDTLS_ERR_PK_ALLOC_FAILED );
 
     ctx->pk_info = info;
@@ -151,7 +151,7 @@ int mbedtls_pk_can_do( const mbedtls_pk_context *ctx, mbedtls_pk_type_t type )
     if( ctx == NULL || ctx->pk_info == NULL )
         return( 0 );
 
-    return( ctx->pk_info->can_do( type ) );
+    return( pk_do_can_do( type ) );
 }
 
 /*
@@ -185,7 +185,7 @@ int mbedtls_pk_verify( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
     if( ctx->pk_info->verify_func == NULL )
         return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
 
-    return( ctx->pk_info->verify_func( ctx->pk_ctx, md_alg, hash, hash_len,
+    return( pk_do_verify( ctx->pk_info->type, ctx->pk_ctx, md_alg, hash, hash_len,
                                        sig, sig_len ) );
 }
 
@@ -218,7 +218,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
             return( MBEDTLS_ERR_RSA_VERIFY_FAILED );
 
         ret = mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_pk_rsa( *ctx ),
-                NULL, NULL, MBEDTLS_RSA_PUBLIC,
+                NULL, MBEDTLS_RSA_PUBLIC,
                 md_alg, (unsigned int) hash_len, hash,
                 pss_opts->mgf1_hash_id,
                 pss_opts->expected_salt_len,
@@ -320,7 +320,7 @@ int mbedtls_pk_check_pair( const mbedtls_pk_context *pub, const mbedtls_pk_conte
             return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
     }
 
-    return( prv->pk_info->check_pair_func( pub->pk_ctx, prv->pk_ctx ) );
+    return( pk_do_check_pair( prv->pk_info->type, pub->pk_ctx, prv->pk_ctx ) );
 }
 
 /*
@@ -331,7 +331,7 @@ size_t mbedtls_pk_get_bitlen( const mbedtls_pk_context *ctx )
     if( ctx == NULL || ctx->pk_info == NULL )
         return( 0 );
 
-    return( ctx->pk_info->get_bitlen( ctx->pk_ctx ) );
+    return( pk_do_get_bitlen(ctx->pk_info->type, ctx->pk_ctx ) );
 }
 
 /*
@@ -339,6 +339,7 @@ size_t mbedtls_pk_get_bitlen( const mbedtls_pk_context *ctx )
  */
 int mbedtls_pk_debug( const mbedtls_pk_context *ctx, mbedtls_pk_debug_item *items )
 {
+#if defined(MBEDTLS_DEBUG_C)
     if( ctx == NULL || ctx->pk_info == NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
@@ -346,6 +347,7 @@ int mbedtls_pk_debug( const mbedtls_pk_context *ctx, mbedtls_pk_debug_item *item
         return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
 
     ctx->pk_info->debug_func( ctx->pk_ctx, items );
+#endif
     return( 0 );
 }
 
