@@ -608,10 +608,10 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
 
             MBEDTLS_SSL_DEBUG_BUF( 3, "session hash", session_hash, hash_len );
 
-            ret = handshake->tls_prf( handshake->premaster, handshake->pmslen,
+            ret = ssl_do_tls_prf( ssl, handshake->premaster, handshake->pmslen,
                                       "extended master secret",
                                       session_hash, hash_len,
-                                      session->master, 48 );
+                                      session->master_secret, 48 );
             if( ret != 0 )
             {
                 MBEDTLS_SSL_DEBUG_RET( 1, "prf", ret );
@@ -621,10 +621,10 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
         }
         else
 #endif
-        ret = handshake->tls_prf( handshake->premaster, handshake->pmslen,
+        ret = ssl_do_tls_prf( ssl, handshake->premaster, handshake->pmslen,
                                   "master secret",
                                   handshake->randbytes, 64,
-                                  session->master, 48 );
+                                  session->master_secret, 48 );
         if( ret != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "prf", ret );
@@ -656,7 +656,7 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
      *  TLSv1:
      *    key block = PRF( master, "key expansion", randbytes )
      */
-    ret = handshake->tls_prf( session->master, 48, "key expansion",
+    ret = ssl_do_tls_prf( ssl, session->master_secret, 48, "key expansion",
                               handshake->randbytes, 64, keyblk, 256 );
     if( ret != 0 )
     {
@@ -666,7 +666,7 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
 
     MBEDTLS_SSL_DEBUG_MSG( 3, ( "ciphersuite = %s",
                    mbedtls_ssl_get_ciphersuite_name( session->ciphersuite ) ) );
-    MBEDTLS_SSL_DEBUG_BUF( 3, "master secret", session->master, 48 );
+    MBEDTLS_SSL_DEBUG_BUF( 3, "master secret", session->master_secret, 48 );
     MBEDTLS_SSL_DEBUG_BUF( 4, "random bytes", handshake->randbytes, 64 );
     MBEDTLS_SSL_DEBUG_BUF( 4, "key block", keyblk, 256 );
 
@@ -4427,25 +4427,25 @@ static void ssl_calc_finished_ssl(
     memset( padbuf, 0x36, 48 );
 
     mbedtls_md5_update( &md5, (const unsigned char *) sender, 4 );
-    mbedtls_md5_update( &md5, session->master, 48 );
+    mbedtls_md5_update( &md5, session->master_secret, 48 );
     mbedtls_md5_update( &md5, padbuf, 48 );
     mbedtls_md5_finish( &md5, md5sum );
 
     mbedtls_sha1_update( &sha1, (const unsigned char *) sender, 4 );
-    mbedtls_sha1_update( &sha1, session->master, 48 );
+    mbedtls_sha1_update( &sha1, session->master_secret, 48 );
     mbedtls_sha1_update( &sha1, padbuf, 40 );
     mbedtls_sha1_finish( &sha1, sha1sum );
 
     memset( padbuf, 0x5C, 48 );
 
     mbedtls_md5_starts( &md5 );
-    mbedtls_md5_update( &md5, session->master, 48 );
+    mbedtls_md5_update( &md5, session->master_secret, 48 );
     mbedtls_md5_update( &md5, padbuf, 48 );
     mbedtls_md5_update( &md5, md5sum, 16 );
     mbedtls_md5_finish( &md5, buf );
 
     mbedtls_sha1_starts( &sha1 );
-    mbedtls_sha1_update( &sha1, session->master, 48 );
+    mbedtls_sha1_update( &sha1, session->master_secret, 48 );
     mbedtls_sha1_update( &sha1, padbuf , 40 );
     mbedtls_sha1_update( &sha1, sha1sum, 20 );
     mbedtls_sha1_finish( &sha1, buf + 16 );
@@ -4508,7 +4508,7 @@ static void ssl_calc_finished_tls(
     mbedtls_md5_finish(  &md5, padbuf );
     mbedtls_sha1_finish( &sha1, padbuf + 16 );
 
-    ssl->handshake->tls_prf( session->master, 48, sender,
+    ssl_do_tls_prf( ssl, session->master_secret, 48, sender,
                              padbuf, 36, buf, len );
 
     MBEDTLS_SSL_DEBUG_BUF( 3, "calc finished result", buf, len );
@@ -4559,7 +4559,7 @@ static void ssl_calc_finished_tls_sha256(
 
     mbedtls_sha256_finish( &sha256, padbuf );
 
-    ssl->handshake->tls_prf( session->master, 48, sender,
+    ssl_do_tls_prf( ssl, session->master_secret, 48, sender,
                              padbuf, 32, buf, len );
 
     MBEDTLS_SSL_DEBUG_BUF( 3, "calc finished result", buf, len );
@@ -4608,7 +4608,7 @@ static void ssl_calc_finished_tls_sha384(
 
     mbedtls_sha512_finish( &sha512, padbuf );
 
-    ssl->handshake->tls_prf( session->master, 48, sender,
+    ssl_do_tls_prf( ssl, session->master_secret, 48, sender,
                              padbuf, 48, buf, len );
 
     MBEDTLS_SSL_DEBUG_BUF( 3, "calc finished result", buf, len );

@@ -449,7 +449,7 @@ struct mbedtls_ssl_session
     int compression;            /*!< chosen compression */
     size_t id_len;              /*!< session id length  */
     unsigned char id[32];       /*!< session identifier */
-    unsigned char master[48];   /*!< the master secret  */
+    unsigned char master_secret[48];   /*!< the master secret  */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
     mbedtls_x509_crt *peer_cert;        /*!< peer X.509 cert chain */
