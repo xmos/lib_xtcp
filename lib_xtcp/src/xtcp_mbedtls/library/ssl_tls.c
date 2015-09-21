@@ -38,6 +38,7 @@
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_internal.h"
+#include "xtcp_blocking_client.h"
 
 #include <string.h>
 
@@ -77,11 +78,7 @@ static inline size_t ssl_ep_len( const mbedtls_ssl_context *ssl )
  */
 static void ssl_set_timer( mbedtls_ssl_context *ssl, uint32_t millisecs )
 {
-    if( ssl->f_set_timer == NULL )
-        return;
-
-    MBEDTLS_SSL_DEBUG_MSG( 3, ( "set_timer to %d ms", (int) millisecs ) );
-    ssl->f_set_timer( ssl->p_timer, millisecs / 4, millisecs );
+    return;
 }
 
 /*
@@ -89,15 +86,6 @@ static void ssl_set_timer( mbedtls_ssl_context *ssl, uint32_t millisecs )
  */
 static int ssl_check_timer( mbedtls_ssl_context *ssl )
 {
-    if( ssl->f_get_timer == NULL )
-        return( 0 );
-
-    if( ssl->f_get_timer( ssl->p_timer ) == 2 )
-    {
-        MBEDTLS_SSL_DEBUG_MSG( 3, ( "timer expired" ) );
-        return( -1 );
-    }
-
     return( 0 );
 }
 
