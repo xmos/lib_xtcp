@@ -28,6 +28,11 @@
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
+#if 0
+#include "mbedtls/ctr_drbg.h"
+#else
+#include "mbedtls/ctr_drbg_xmos_wrap.h"
+#endif
 
 #include <stddef.h>
 #include <stdint.h>
@@ -640,7 +645,6 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
  *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
  */
 int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng );
 
 /**
@@ -681,7 +685,6 @@ int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
  *                 MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if X is not prime
  */
 int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
-                  int (*f_rng)(void *, unsigned char *, size_t),
                   void *p_rng );
 
 /**
@@ -699,7 +702,6 @@ int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
  *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if nbits is < 3
  */
 int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
-                   int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng );
 
 /**

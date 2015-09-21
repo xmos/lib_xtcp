@@ -1058,8 +1058,7 @@ cleanup:
  *
  * This countermeasure was first suggested in [2].
  */
-static int ecp_randomize_jac( const mbedtls_ecp_group *grp, mbedtls_ecp_point *pt,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+static int ecp_randomize_jac( const mbedtls_ecp_group *grp, mbedtls_ecp_point *pt, void *p_rng )
 {
     int ret;
     mbedtls_mpi l, ll;
@@ -1071,7 +1070,7 @@ static int ecp_randomize_jac( const mbedtls_ecp_group *grp, mbedtls_ecp_point *p
     /* Generate l such that 1 < l < p */
     do
     {
-        mbedtls_mpi_fill_random( &l, p_size, f_rng, p_rng );
+        mbedtls_mpi_fill_random( &l, p_size, p_rng );
 
         while( mbedtls_mpi_cmp_mpi( &l, &grp->P ) >= 0 )
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &l, 1 ) );
@@ -1256,7 +1255,6 @@ cleanup:
 static int ecp_mul_comb_core( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
                               const mbedtls_ecp_point T[], unsigned char t_len,
                               const unsigned char x[], size_t d,
-                              int (*f_rng)(void *, unsigned char *, size_t),
                               void *p_rng )
 {
     int ret;
@@ -1269,8 +1267,8 @@ static int ecp_mul_comb_core( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R
     i = d;
     MBEDTLS_MPI_CHK( ecp_select_comb( grp, R, T, t_len, x[i] ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &R->Z, 1 ) );
-    if( f_rng != 0 )
-        MBEDTLS_MPI_CHK( ecp_randomize_jac( grp, R, f_rng, p_rng ) );
+    if( p_rng != 0 )
+        MBEDTLS_MPI_CHK( ecp_randomize_jac( grp, R, p_rng ) );
 
     while( i-- != 0 )
     {
@@ -1291,7 +1289,6 @@ cleanup:
  */
 static int ecp_mul_comb( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
                          const mbedtls_mpi *m, const mbedtls_ecp_point *P,
-                         int (*f_rng)(void *, unsigned char *, size_t),
                          void *p_rng )
 {
     int ret;
@@ -1379,7 +1376,7 @@ static int ecp_mul_comb( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
      * Go for comb multiplication, R = M * P
      */
     ecp_comb_fixed( k, d, w, &M );
-    MBEDTLS_MPI_CHK( ecp_mul_comb_core( grp, R, T, pre_len, k, d, f_rng, p_rng ) );
+    MBEDTLS_MPI_CHK( ecp_mul_comb_core( grp, R, T, pre_len, k, d, p_rng ) );
 
     /*
      * Now get m * P from M * P and normalize it
@@ -1440,8 +1437,7 @@ cleanup:
  * This countermeasure was first suggested in [2].
  * Cost: 2M
  */
-static int ecp_randomize_mxz( const mbedtls_ecp_group *grp, mbedtls_ecp_point *P,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+static int ecp_randomize_mxz( const mbedtls_ecp_group *grp, mbedtls_ecp_point *P, void *p_rng )
 {
     int ret;
     mbedtls_mpi l;
@@ -1453,7 +1449,7 @@ static int ecp_randomize_mxz( const mbedtls_ecp_group *grp, mbedtls_ecp_point *P
     /* Generate l such that 1 < l < p */
     do
     {
-        mbedtls_mpi_fill_random( &l, p_size, f_rng, p_rng );
+        mbedtls_mpi_fill_random( &l, p_size, p_rng );
 
         while( mbedtls_mpi_cmp_mpi( &l, &grp->P ) >= 0 )
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &l, 1 ) );
@@ -1532,7 +1528,6 @@ cleanup:
  */
 static int ecp_mul_mxz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
                         const mbedtls_mpi *m, const mbedtls_ecp_point *P,
-                        int (*f_rng)(void *, unsigned char *, size_t),
                         void *p_rng )
 {
     int ret;
@@ -1556,8 +1551,8 @@ static int ecp_mul_mxz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
     MOD_ADD( RP.X );
 
     /* Randomize coordinates of the starting point */
-    if( f_rng != NULL )
-        MBEDTLS_MPI_CHK( ecp_randomize_mxz( grp, &RP, f_rng, p_rng ) );
+    if( p_rng != NULL )
+        MBEDTLS_MPI_CHK( ecp_randomize_mxz( grp, &RP, p_rng ) );
 
     /* Loop invariant: R = result so far, RP = R + P */
     i = mbedtls_mpi_bitlen( m ); /* one past the (zero-based) most significant bit */
@@ -1592,8 +1587,7 @@ cleanup:
  * Multiplication R = m * P
  */
 int mbedtls_ecp_mul( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
-             const mbedtls_mpi *m, const mbedtls_ecp_point *P,
-             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+             const mbedtls_mpi *m, const mbedtls_ecp_point *P, void *p_rng )
 {
     int ret;
 
@@ -1607,11 +1601,11 @@ int mbedtls_ecp_mul( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
 
 #if defined(ECP_MONTGOMERY)
     if( ecp_get_type( grp ) == ECP_TYPE_MONTGOMERY )
-        return( ecp_mul_mxz( grp, R, m, P, f_rng, p_rng ) );
+        return( ecp_mul_mxz( grp, R, m, P, p_rng ) );
 #endif
 #if defined(ECP_SHORTWEIERSTRASS)
     if( ecp_get_type( grp ) == ECP_TYPE_SHORT_WEIERSTRASS )
-        return( ecp_mul_comb( grp, R, m, P, f_rng, p_rng ) );
+        return( ecp_mul_comb( grp, R, m, P, p_rng ) );
 #endif
     return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 }
@@ -1681,8 +1675,8 @@ int mbedtls_ecp_muladd( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
 
     mbedtls_ecp_point_init( &mP );
 
-    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, &mP, m, P, NULL, NULL ) );
-    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, R,   n, Q, NULL, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, &mP, m, P, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, R,   n, Q, NULL ) );
     MBEDTLS_MPI_CHK( ecp_add_mixed( grp, R, &mP, R ) );
     MBEDTLS_MPI_CHK( ecp_normalize_jac( grp, R ) );
 
@@ -1764,7 +1758,6 @@ int mbedtls_ecp_check_privkey( const mbedtls_ecp_group *grp, const mbedtls_mpi *
  * Generate a keypair
  */
 int mbedtls_ecp_gen_keypair( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
     int ret;
@@ -1776,7 +1769,7 @@ int mbedtls_ecp_gen_keypair( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
         /* [M225] page 5 */
         size_t b;
 
-        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( d, n_size, f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( d, n_size, p_rng ) );
 
         /* Make sure the most significant bit is nbits */
         b = mbedtls_mpi_bitlen( d ) - 1; /* mbedtls_mpi_bitlen is one-based */
@@ -1808,7 +1801,7 @@ int mbedtls_ecp_gen_keypair( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
          */
         do
         {
-            MBEDTLS_MPI_CHK( f_rng( p_rng, rnd, n_size ) );
+            MBEDTLS_MPI_CHK( mbedtls_ctr_drbg_random( p_rng, rnd, n_size ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( d, rnd, n_size ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( d, 8 * n_size - grp->nbits ) );
 
@@ -1835,21 +1828,20 @@ cleanup:
     if( ret != 0 )
         return( ret );
 
-    return( mbedtls_ecp_mul( grp, Q, d, &grp->G, f_rng, p_rng ) );
+    return( mbedtls_ecp_mul( grp, Q, d, &grp->G, p_rng ) );
 }
 
 /*
  * Generate a keypair, prettier wrapper
  */
-int mbedtls_ecp_gen_key( mbedtls_ecp_group_id grp_id, mbedtls_ecp_keypair *key,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+int mbedtls_ecp_gen_key( mbedtls_ecp_group_id grp_id, mbedtls_ecp_keypair *key, void *p_rng )
 {
     int ret;
 
     if( ( ret = mbedtls_ecp_group_load( &key->grp, grp_id ) ) != 0 )
         return( ret );
 
-    return( mbedtls_ecp_gen_keypair( &key->grp, &key->d, &key->Q, f_rng, p_rng ) );
+    return( mbedtls_ecp_gen_keypair( &key->grp, &key->d, &key->Q, p_rng ) );
 }
 
 /*
@@ -1877,7 +1869,7 @@ int mbedtls_ecp_check_pub_priv( const mbedtls_ecp_keypair *pub, const mbedtls_ec
     mbedtls_ecp_group_copy( &grp, &prv->grp );
 
     /* Also checks d is valid */
-    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( &grp, &Q, &prv->d, &prv->grp.G, NULL, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( &grp, &Q, &prv->d, &prv->grp.G, NULL ) );
 
     if( mbedtls_mpi_cmp_mpi( &Q.X, &prv->Q.X ) ||
         mbedtls_mpi_cmp_mpi( &Q.Y, &prv->Q.Y ) ||

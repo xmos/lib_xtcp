@@ -69,7 +69,6 @@ mbedtls_ecdh_context;
  *                  or a MBEDTLS_ERR_ECP_XXX or MBEDTLS_MPI_XXX error code
  */
 int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng );
 
 /**
@@ -92,7 +91,6 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
  */
 int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
                          const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
-                         int (*f_rng)(void *, unsigned char *, size_t),
                          void *p_rng );
 
 /**
@@ -127,7 +125,6 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx );
  */
 int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng );
 
 /**
@@ -173,7 +170,6 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypai
  */
 int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng );
 
 /**
@@ -204,7 +200,6 @@ int mbedtls_ecdh_read_public( mbedtls_ecdh_context *ctx,
  */
 int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng );
 
 #if defined(__cplusplus) || defined(__XC__)

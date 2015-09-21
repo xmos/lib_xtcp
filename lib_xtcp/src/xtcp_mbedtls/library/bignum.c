@@ -1777,7 +1777,6 @@ cleanup:
  * deterministic, eg for tests).
  */
 int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
     int ret;
@@ -1786,7 +1785,7 @@ int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
     if( size > MBEDTLS_MPI_MAX_SIZE )
         return( MBEDTLS_ERR_MPI_BAD_INPUT_DATA );
 
-    MBEDTLS_MPI_CHK( f_rng( p_rng, buf, size ) );
+    MBEDTLS_MPI_CHK( mbedtls_ctr_drbg_random( p_rng, buf, size ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( X, buf, size ) );
 
 cleanup:
@@ -1952,7 +1951,6 @@ cleanup:
  * Miller-Rabin pseudo-primality test  (HAC 4.24)
  */
 static int mpi_miller_rabin( const mbedtls_mpi *X,
-                             int (*f_rng)(void *, unsigned char *, size_t),
                              void *p_rng )
 {
     int ret, count;
@@ -1984,7 +1982,7 @@ static int mpi_miller_rabin( const mbedtls_mpi *X,
         /*
          * pick a random A, 1 < A < |X| - 1
          */
-        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &A, X->n * ciL, f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &A, X->n * ciL, p_rng ) );
 
         if( mbedtls_mpi_cmp_mpi( &A, &W ) >= 0 )
         {
@@ -1995,7 +1993,7 @@ static int mpi_miller_rabin( const mbedtls_mpi *X,
 
         count = 0;
         do {
-            MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &A, X->n * ciL, f_rng, p_rng ) );
+            MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &A, X->n * ciL, p_rng ) );
 
             j = mbedtls_mpi_bitlen( &A );
             k = mbedtls_mpi_bitlen( &W );
@@ -2056,7 +2054,6 @@ cleanup:
  * Pseudo-primality test: small factors, then Miller-Rabin
  */
 int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
-                  int (*f_rng)(void *, unsigned char *, size_t),
                   void *p_rng )
 {
     int ret;
@@ -2081,14 +2078,13 @@ int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
         return( ret );
     }
 
-    return( mpi_miller_rabin( &XX, f_rng, p_rng ) );
+    return( mpi_miller_rabin( &XX, p_rng ) );
 }
 
 /*
  * Prime number generation
  */
 int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
-                   int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng )
 {
     int ret;
@@ -2103,7 +2099,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
 
     n = BITS_TO_LIMBS( nbits );
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( X, n * ciL, f_rng, p_rng ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( X, n * ciL, p_rng ) );
 
     k = mbedtls_mpi_bitlen( X );
     if( k > nbits ) MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( X, k - nbits + 1 ) );
@@ -2114,7 +2110,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
 
     if( dh_flag == 0 )
     {
-        while( ( ret = mbedtls_mpi_is_prime( X, f_rng, p_rng ) ) != 0 )
+        while( ( ret = mbedtls_mpi_is_prime( X, p_rng ) ) != 0 )
         {
             if( ret != MBEDTLS_ERR_MPI_NOT_ACCEPTABLE )
                 goto cleanup;
@@ -2150,8 +2146,8 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
              */
             if( ( ret = mpi_check_small_factors(  X         ) ) == 0 &&
                 ( ret = mpi_check_small_factors( &Y         ) ) == 0 &&
-                ( ret = mpi_miller_rabin(  X, f_rng, p_rng  ) ) == 0 &&
-                ( ret = mpi_miller_rabin( &Y, f_rng, p_rng  ) ) == 0 )
+                ( ret = mpi_miller_rabin(  X, p_rng  ) ) == 0 &&
+                ( ret = mpi_miller_rabin( &Y, p_rng  ) ) == 0 )
             {
                 break;
             }

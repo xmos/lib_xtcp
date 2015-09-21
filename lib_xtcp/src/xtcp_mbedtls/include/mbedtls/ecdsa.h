@@ -74,7 +74,7 @@ extern "C" {
  */
 int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
                 const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
+                void *p_rng );
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC)
 /**
@@ -143,7 +143,6 @@ int mbedtls_ecdsa_verify( mbedtls_ecp_group *grp,
 int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg,
                            const unsigned char *hash, size_t hlen,
                            unsigned char *sig, size_t *slen,
-                           int (*f_rng)(void *, unsigned char *, size_t),
                            void *p_rng );
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC)
@@ -214,8 +213,7 @@ int mbedtls_ecdsa_read_signature( mbedtls_ecdsa_context *ctx,
  *
  * \return          0 on success, or a MBEDTLS_ERR_ECP_XXX code.
  */
-int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
-                  int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
+int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid, void *p_rng );
 
 /**
  * \brief           Set an ECDSA context from an EC key pair

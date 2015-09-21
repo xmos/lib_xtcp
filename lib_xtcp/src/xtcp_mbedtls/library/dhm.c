@@ -147,7 +147,6 @@ int mbedtls_dhm_read_params( mbedtls_dhm_context *ctx,
  */
 int mbedtls_dhm_make_params( mbedtls_dhm_context *ctx, int x_size,
                      unsigned char *output, size_t *olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
     int ret, count = 0;
@@ -162,7 +161,7 @@ int mbedtls_dhm_make_params( mbedtls_dhm_context *ctx, int x_size,
      */
     do
     {
-        mbedtls_mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+        mbedtls_mpi_fill_random( &ctx->X, x_size, p_rng );
 
         while( mbedtls_mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &ctx->X, 1 ) );
@@ -232,7 +231,6 @@ int mbedtls_dhm_read_public( mbedtls_dhm_context *ctx,
  */
 int mbedtls_dhm_make_public( mbedtls_dhm_context *ctx, int x_size,
                      unsigned char *output, size_t olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
     int ret, count = 0;
@@ -248,7 +246,7 @@ int mbedtls_dhm_make_public( mbedtls_dhm_context *ctx, int x_size,
      */
     do
     {
-        mbedtls_mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+        mbedtls_mpi_fill_random( &ctx->X, x_size, p_rng );
 
         while( mbedtls_mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &ctx->X, 1 ) );
@@ -280,8 +278,7 @@ cleanup:
  *  DSS, and other systems. In : Advances in Cryptology-CRYPTO'96. Springer
  *  Berlin Heidelberg, 1996. p. 104-113.
  */
-static int dhm_update_blinding( mbedtls_dhm_context *ctx,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+static int dhm_update_blinding( mbedtls_dhm_context *ctx, void *p_rng )
 {
     int ret, count;
 
@@ -321,7 +318,7 @@ static int dhm_update_blinding( mbedtls_dhm_context *ctx,
     count = 0;
     do
     {
-        mbedtls_mpi_fill_random( &ctx->Vi, mbedtls_mpi_size( &ctx->P ), f_rng, p_rng );
+        mbedtls_mpi_fill_random( &ctx->Vi, mbedtls_mpi_size( &ctx->P ), p_rng );
 
         while( mbedtls_mpi_cmp_mpi( &ctx->Vi, &ctx->P ) >= 0 )
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &ctx->Vi, 1 ) );
@@ -344,7 +341,6 @@ cleanup:
  */
 int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
                      unsigned char *output, size_t output_size, size_t *olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
     int ret;
@@ -359,9 +355,9 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
     mbedtls_mpi_init( &GYb );
 
     /* Blind peer's value */
-    if( f_rng != NULL )
+    if( p_rng != NULL )
     {
-        MBEDTLS_MPI_CHK( dhm_update_blinding( ctx, f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( dhm_update_blinding( ctx, p_rng ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &GYb, &ctx->GY, &ctx->Vi ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &GYb, &GYb, &ctx->P ) );
     }
@@ -373,7 +369,7 @@ int mbedtls_dhm_calc_secret( mbedtls_dhm_context *ctx,
                           &ctx->P, &ctx->RP ) );
 
     /* Unblind secret value */
-    if( f_rng != NULL )
+    if( p_rng != NULL )
     {
         MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &ctx->K, &ctx->K, &ctx->Vf ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &ctx->K, &ctx->K, &ctx->P ) );

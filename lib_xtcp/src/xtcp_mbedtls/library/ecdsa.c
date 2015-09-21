@@ -71,7 +71,7 @@ cleanup:
  */
 int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
                 const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                void *p_rng )
 {
     int ret, key_tries, sign_tries, blind_tries;
     mbedtls_ecp_point R;
@@ -94,7 +94,7 @@ int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
         key_tries = 0;
         do
         {
-            MBEDTLS_MPI_CHK( mbedtls_ecp_gen_keypair( grp, &k, &R, f_rng, p_rng ) );
+            MBEDTLS_MPI_CHK( mbedtls_ecp_gen_keypair( grp, &k, &R, p_rng ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( r, &R.X, &grp->N ) );
 
             if( key_tries++ > 10 )
@@ -118,7 +118,7 @@ int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
         do
         {
             size_t n_size = ( grp->nbits + 7 ) / 8;
-            MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &t, n_size, f_rng, p_rng ) );
+            MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &t, n_size, p_rng ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &t, 8 * n_size - grp->nbits ) );
 
             /* See mbedtls_ecp_gen_keypair() */
@@ -308,7 +308,6 @@ static int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
 int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg,
                            const unsigned char *hash, size_t hlen,
                            unsigned char *sig, size_t *slen,
-                           int (*f_rng)(void *, unsigned char *, size_t),
                            void *p_rng )
 {
     int ret;
@@ -327,7 +326,7 @@ int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx, mbedtls_md_type_t
     (void) md_alg;
 
     MBEDTLS_MPI_CHK( mbedtls_ecdsa_sign( &ctx->grp, &r, &s, &ctx->d,
-                         hash, hlen, f_rng, p_rng ) );
+                         hash, hlen, p_rng ) );
 #endif
 
     MBEDTLS_MPI_CHK( ecdsa_signature_to_asn1( &r, &s, sig, slen ) );
@@ -406,10 +405,10 @@ cleanup:
  * Generate key pair
  */
 int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
-                  int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                          void *p_rng )
 {
     return( mbedtls_ecp_group_load( &ctx->grp, gid ) ||
-            mbedtls_ecp_gen_keypair( &ctx->grp, &ctx->d, &ctx->Q, f_rng, p_rng ) );
+            mbedtls_ecp_gen_keypair( &ctx->grp, &ctx->d, &ctx->Q, p_rng ) );
 }
 
 /*

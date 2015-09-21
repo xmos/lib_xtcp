@@ -42,10 +42,9 @@
  * Generate public key: simple wrapper around mbedtls_ecp_gen_keypair
  */
 int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_point *Q,
-                     int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-    return mbedtls_ecp_gen_keypair( grp, d, Q, f_rng, p_rng );
+    return mbedtls_ecp_gen_keypair( grp, d, Q, p_rng );
 }
 
 /*
@@ -53,7 +52,6 @@ int mbedtls_ecdh_gen_public( mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp
  */
 int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
                          const mbedtls_ecp_point *Q, const mbedtls_mpi *d,
-                         int (*f_rng)(void *, unsigned char *, size_t),
                          void *p_rng )
 {
     int ret;
@@ -66,7 +64,7 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
      */
     MBEDTLS_MPI_CHK( mbedtls_ecp_check_pubkey( grp, Q ) );
 
-    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, &P, d, Q, f_rng, p_rng ) );
+    MBEDTLS_MPI_CHK( mbedtls_ecp_mul( grp, &P, d, Q, p_rng ) );
 
     if( mbedtls_ecp_is_zero( &P ) )
     {
@@ -117,7 +115,6 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
  */
 int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng )
 {
     int ret;
@@ -126,7 +123,7 @@ int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
     if( ctx == NULL || ctx->grp.pbits == 0 )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    if( ( ret = mbedtls_ecdh_gen_public( &ctx->grp, &ctx->d, &ctx->Q, f_rng, p_rng ) )
+    if( ( ret = mbedtls_ecdh_gen_public( &ctx->grp, &ctx->d, &ctx->Q, p_rng ) )
                 != 0 )
         return( ret );
 
@@ -198,7 +195,6 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx, const mbedtls_ecp_keypai
  */
 int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng )
 {
     int ret;
@@ -206,7 +202,7 @@ int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
     if( ctx == NULL || ctx->grp.pbits == 0 )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    if( ( ret = mbedtls_ecdh_gen_public( &ctx->grp, &ctx->d, &ctx->Q, f_rng, p_rng ) )
+    if( ( ret = mbedtls_ecdh_gen_public( &ctx->grp, &ctx->d, &ctx->Q, p_rng ) )
                 != 0 )
         return( ret );
 
@@ -240,7 +236,6 @@ int mbedtls_ecdh_read_public( mbedtls_ecdh_context *ctx,
  */
 int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
                       unsigned char *buf, size_t blen,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng )
 {
     int ret;
@@ -249,7 +244,7 @@ int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     if( ( ret = mbedtls_ecdh_compute_shared( &ctx->grp, &ctx->z, &ctx->Qp, &ctx->d,
-                                     f_rng, p_rng ) ) != 0 )
+                                     p_rng ) ) != 0 )
     {
         return( ret );
     }

@@ -91,30 +91,30 @@ static int rsa_verify_wrap( void *ctx, mbedtls_md_type_t md_alg,
 static int rsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
                    const unsigned char *hash, size_t hash_len,
                    unsigned char *sig, size_t *sig_len,
-                   int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                   void *p_rng )
 {
     *sig_len = ((mbedtls_rsa_context *) ctx)->len;
 
-    return( mbedtls_rsa_pkcs1_sign( (mbedtls_rsa_context *) ctx, f_rng, p_rng, MBEDTLS_RSA_PRIVATE,
+    return( mbedtls_rsa_pkcs1_sign( (mbedtls_rsa_context *) ctx, p_rng, MBEDTLS_RSA_PRIVATE,
                 md_alg, (unsigned int) hash_len, hash, sig ) );
 }
 
 static int rsa_decrypt_wrap( void *ctx,
                     const unsigned char *input, size_t ilen,
                     unsigned char *output, size_t *olen, size_t osize,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                    void *p_rng )
 {
     if( ilen != ((mbedtls_rsa_context *) ctx)->len )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
-    return( mbedtls_rsa_pkcs1_decrypt( (mbedtls_rsa_context *) ctx, f_rng, p_rng,
+    return( mbedtls_rsa_pkcs1_decrypt( (mbedtls_rsa_context *) ctx, p_rng,
                 MBEDTLS_RSA_PRIVATE, olen, input, output, osize ) );
 }
 
 static int rsa_encrypt_wrap( void *ctx,
                     const unsigned char *input, size_t ilen,
                     unsigned char *output, size_t *olen, size_t osize,
-                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                    void *p_rng )
 {
     *olen = ((mbedtls_rsa_context *) ctx)->len;
 
@@ -122,7 +122,7 @@ static int rsa_encrypt_wrap( void *ctx,
         return( MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE );
 
     return( mbedtls_rsa_pkcs1_encrypt( (mbedtls_rsa_context *) ctx,
-                f_rng, p_rng, MBEDTLS_RSA_PUBLIC, ilen, input, output ) );
+                p_rng, MBEDTLS_RSA_PUBLIC, ilen, input, output ) );
 }
 
 static int rsa_check_pair_wrap( const void *pub, const void *prv )

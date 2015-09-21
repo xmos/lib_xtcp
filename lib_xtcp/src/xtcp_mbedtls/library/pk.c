@@ -248,7 +248,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
 int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
              const unsigned char *hash, size_t hash_len,
              unsigned char *sig, size_t *sig_len,
-             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+             void *p_rng )
 {
     if( ctx == NULL || ctx->pk_info == NULL ||
         pk_hashlen_helper( md_alg, &hash_len ) != 0 )
@@ -257,8 +257,8 @@ int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
     if( ctx->pk_info->sign_func == NULL )
         return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
 
-    return( ctx->pk_info->sign_func( ctx->pk_ctx, md_alg, hash, hash_len,
-                                     sig, sig_len, f_rng, p_rng ) );
+    return( pk_do_sign( ctx->pk_info->type, ctx->pk_ctx, md_alg, hash, hash_len,
+                                     sig, sig_len, p_rng ) );
 }
 
 /*
@@ -267,7 +267,7 @@ int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
 int mbedtls_pk_decrypt( mbedtls_pk_context *ctx,
                 const unsigned char *input, size_t ilen,
                 unsigned char *output, size_t *olen, size_t osize,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                void *p_rng )
 {
     if( ctx == NULL || ctx->pk_info == NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
@@ -275,8 +275,8 @@ int mbedtls_pk_decrypt( mbedtls_pk_context *ctx,
     if( ctx->pk_info->decrypt_func == NULL )
         return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
 
-    return( ctx->pk_info->decrypt_func( ctx->pk_ctx, input, ilen,
-                output, olen, osize, f_rng, p_rng ) );
+    return( pk_do_decrypt( ctx->pk_info->type, ctx->pk_ctx, input, ilen,
+                output, olen, osize, p_rng ) );
 }
 
 /*
@@ -285,7 +285,7 @@ int mbedtls_pk_decrypt( mbedtls_pk_context *ctx,
 int mbedtls_pk_encrypt( mbedtls_pk_context *ctx,
                 const unsigned char *input, size_t ilen,
                 unsigned char *output, size_t *olen, size_t osize,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+                void *p_rng )
 {
     if( ctx == NULL || ctx->pk_info == NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
@@ -293,8 +293,8 @@ int mbedtls_pk_encrypt( mbedtls_pk_context *ctx,
     if( ctx->pk_info->encrypt_func == NULL )
         return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
 
-    return( ctx->pk_info->encrypt_func( ctx->pk_ctx, input, ilen,
-                output, olen, osize, f_rng, p_rng ) );
+    return( pk_do_encrypt( ctx->pk_info->type, ctx->pk_ctx, input, ilen,
+                output, olen, osize, p_rng ) );
 }
 
 /*

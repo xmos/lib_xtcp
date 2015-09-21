@@ -341,7 +341,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
 int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
              const unsigned char *hash, size_t hash_len,
              unsigned char *sig, size_t *sig_len,
-             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
+             void *p_rng );
 
 /**
  * \brief           Decrypt message (including padding if relevant).
@@ -362,7 +362,7 @@ int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
 int mbedtls_pk_decrypt( mbedtls_pk_context *ctx,
                 const unsigned char *input, size_t ilen,
                 unsigned char *output, size_t *olen, size_t osize,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
+                void *p_rng );
 
 /**
  * \brief           Encrypt message (including padding if relevant).
@@ -383,7 +383,7 @@ int mbedtls_pk_decrypt( mbedtls_pk_context *ctx,
 int mbedtls_pk_encrypt( mbedtls_pk_context *ctx,
                 const unsigned char *input, size_t ilen,
                 unsigned char *output, size_t *olen, size_t osize,
-                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng );
+                void *p_rng );
 
 /**
  * \brief           Check if a public-private pair of keys matches.

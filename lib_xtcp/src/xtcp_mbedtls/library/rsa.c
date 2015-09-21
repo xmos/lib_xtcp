@@ -84,14 +84,13 @@ void mbedtls_rsa_set_padding( mbedtls_rsa_context *ctx, int padding, int hash_id
  * Generate an RSA keypair
  */
 int mbedtls_rsa_gen_key( mbedtls_rsa_context *ctx,
-                 int (*f_rng)(void *, unsigned char *, size_t),
                  void *p_rng,
                  unsigned int nbits, int exponent )
 {
     int ret;
     mbedtls_mpi P1, Q1, H, G;
 
-    if( f_rng == NULL || nbits < 128 || exponent < 3 )
+    if( nbits < 128 || exponent < 3 )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
     mbedtls_mpi_init( &P1 ); mbedtls_mpi_init( &Q1 ); mbedtls_mpi_init( &H ); mbedtls_mpi_init( &G );
@@ -105,10 +104,10 @@ int mbedtls_rsa_gen_key( mbedtls_rsa_context *ctx,
     do
     {
         MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->P, ( nbits + 1 ) >> 1, 0,
-                                f_rng, p_rng ) );
+                                p_rng ) );
 
         MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->Q, ( nbits + 1 ) >> 1, 0,
-                                f_rng, p_rng ) );
+                                p_rng ) );
 
         if( mbedtls_mpi_cmp_mpi( &ctx->P, &ctx->Q ) < 0 )
             mbedtls_mpi_swap( &ctx->P, &ctx->Q );
@@ -310,8 +309,7 @@ cleanup:
  *  DSS, and other systems. In : Advances in Cryptology-CRYPTO'96. Springer
  *  Berlin Heidelberg, 1996. p. 104-113.
  */
-static int rsa_prepare_blinding( mbedtls_rsa_context *ctx,
-                 int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+static int rsa_prepare_blinding( mbedtls_rsa_context *ctx, void *p_rng )
 {
     int ret, count = 0;
 
@@ -331,7 +329,7 @@ static int rsa_prepare_blinding( mbedtls_rsa_context *ctx,
         if( count++ > 10 )
             return( MBEDTLS_ERR_RSA_RNG_FAILED );
 
-        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &ctx->Vf, ctx->len - 1, f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &ctx->Vf, ctx->len - 1, p_rng ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_gcd( &ctx->Vi, &ctx->Vf, &ctx->N ) );
     } while( mbedtls_mpi_cmp_int( &ctx->Vi, 1 ) != 0 );
 
@@ -348,7 +346,6 @@ cleanup:
  * Do an RSA private key operation
  */
 int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
-                 int (*f_rng)(void *, unsigned char *, size_t),
                  void *p_rng,
                  const unsigned char *input,
                  unsigned char *output )
@@ -371,13 +368,13 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
         goto cleanup;
     }
 
-    if( f_rng != NULL )
+    if( p_rng != NULL )
     {
         /*
          * Blinding
          * T = T * Vi mod N
          */
-        MBEDTLS_MPI_CHK( rsa_prepare_blinding( ctx, f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( rsa_prepare_blinding( ctx, p_rng ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T, &T, &ctx->Vi ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &T, &ctx->N ) );
     }
@@ -408,7 +405,7 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
     MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &T, &T2, &T1 ) );
 #endif /* MBEDTLS_RSA_NO_CRT */
 
-    if( f_rng != NULL )
+    if( p_rng != NULL )
     {
         /*
          * Unblind
@@ -489,7 +486,6 @@ static void mgf_mask( unsigned char *dst, size_t dlen, unsigned char *src,
  * Implementation of the PKCS#1 v2.1 RSAES-OAEP-ENCRYPT function
  */
 int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
-                            int (*f_rng)(void *, unsigned char *, size_t),
                             void *p_rng,
                             int mode,
                             const unsigned char *label, size_t label_len,
@@ -505,9 +501,6 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
     mbedtls_md_context_t md_ctx;
 
     if( mode == MBEDTLS_RSA_PRIVATE && ctx->padding != MBEDTLS_RSA_PKCS_V21 )
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
-
-    if( f_rng == NULL )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
     md_info = mbedtls_md_info_from_type( (mbedtls_md_type_t) ctx->hash_id );
@@ -526,7 +519,7 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
 
     // Generate a random octet string seed
     //
-    if( ( ret = f_rng( p_rng, p, hlen ) ) != 0 )
+    if( ( ret = mbedtls_ctr_drbg_random( p_rng, p, hlen ) ) != 0 )
         return( MBEDTLS_ERR_RSA_RNG_FAILED + ret );
 
     p += hlen;
@@ -556,7 +549,7 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
 
     return( ( mode == MBEDTLS_RSA_PUBLIC )
             ? mbedtls_rsa_public(  ctx, output, output )
-            : mbedtls_rsa_private( ctx, f_rng, p_rng, output, output ) );
+            : mbedtls_rsa_private( ctx, p_rng, output, output ) );
 }
 #endif /* MBEDTLS_PKCS1_V21 */
 
@@ -565,7 +558,6 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSAES-PKCS1-V1_5-ENCRYPT function
  */
 int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
-                                 int (*f_rng)(void *, unsigned char *, size_t),
                                  void *p_rng,
                                  int mode, size_t ilen,
                                  const unsigned char *input,
@@ -576,9 +568,6 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
     unsigned char *p = output;
 
     if( mode == MBEDTLS_RSA_PRIVATE && ctx->padding != MBEDTLS_RSA_PKCS_V15 )
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
-
-    if( f_rng == NULL )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
     olen = ctx->len;
@@ -598,7 +587,7 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
             int rng_dl = 100;
 
             do {
-                ret = f_rng( p_rng, p, 1 );
+                ret = mbedtls_ctr_drbg_random( p_rng, p, 1 );
             } while( *p == 0 && --rng_dl && ret == 0 );
 
             // Check if RNG failed to generate data
@@ -622,7 +611,7 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
 
     return( ( mode == MBEDTLS_RSA_PUBLIC )
             ? mbedtls_rsa_public(  ctx, output, output )
-            : mbedtls_rsa_private( ctx, f_rng, p_rng, output, output ) );
+            : mbedtls_rsa_private( ctx, p_rng, output, output ) );
 }
 #endif /* MBEDTLS_PKCS1_V15 */
 
@@ -630,7 +619,6 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
  * Add the message padding, then do an RSA operation
  */
 int mbedtls_rsa_pkcs1_encrypt( mbedtls_rsa_context *ctx,
-                       int (*f_rng)(void *, unsigned char *, size_t),
                        void *p_rng,
                        int mode, size_t ilen,
                        const unsigned char *input,
@@ -640,13 +628,13 @@ int mbedtls_rsa_pkcs1_encrypt( mbedtls_rsa_context *ctx,
     {
 #if defined(MBEDTLS_PKCS1_V15)
         case MBEDTLS_RSA_PKCS_V15:
-            return mbedtls_rsa_rsaes_pkcs1_v15_encrypt( ctx, f_rng, p_rng, mode, ilen,
+            return mbedtls_rsa_rsaes_pkcs1_v15_encrypt( ctx, p_rng, mode, ilen,
                                                 input, output );
 #endif
 
 #if defined(MBEDTLS_PKCS1_V21)
         case MBEDTLS_RSA_PKCS_V21:
-            return mbedtls_rsa_rsaes_oaep_encrypt( ctx, f_rng, p_rng, mode, NULL, 0,
+            return mbedtls_rsa_rsaes_oaep_encrypt( ctx, p_rng, mode, NULL, 0,
                                            ilen, input, output );
 #endif
 
@@ -660,7 +648,6 @@ int mbedtls_rsa_pkcs1_encrypt( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSAES-OAEP-DECRYPT function
  */
 int mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_rsa_context *ctx,
-                            int (*f_rng)(void *, unsigned char *, size_t),
                             void *p_rng,
                             int mode,
                             const unsigned char *label, size_t label_len,
@@ -698,7 +685,7 @@ int mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_rsa_context *ctx,
      */
     ret = ( mode == MBEDTLS_RSA_PUBLIC )
           ? mbedtls_rsa_public(  ctx, input, buf )
-          : mbedtls_rsa_private( ctx, f_rng, p_rng, input, buf );
+          : mbedtls_rsa_private( ctx, p_rng, input, buf );
 
     if( ret != 0 )
         return( ret );
@@ -775,7 +762,6 @@ int mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSAES-PKCS1-V1_5-DECRYPT function
  */
 int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
-                                 int (*f_rng)(void *, unsigned char *, size_t),
                                  void *p_rng,
                                  int mode, size_t *olen,
                                  const unsigned char *input,
@@ -797,7 +783,7 @@ int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
 
     ret = ( mode == MBEDTLS_RSA_PUBLIC )
           ? mbedtls_rsa_public(  ctx, input, buf )
-          : mbedtls_rsa_private( ctx, f_rng, p_rng, input, buf );
+          : mbedtls_rsa_private( ctx, p_rng, input, buf );
 
     if( ret != 0 )
         return( ret );
@@ -859,7 +845,6 @@ int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
  * Do an RSA operation, then remove the message padding
  */
 int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
-                       int (*f_rng)(void *, unsigned char *, size_t),
                        void *p_rng,
                        int mode, size_t *olen,
                        const unsigned char *input,
@@ -870,13 +855,13 @@ int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
     {
 #if defined(MBEDTLS_PKCS1_V15)
         case MBEDTLS_RSA_PKCS_V15:
-            return mbedtls_rsa_rsaes_pkcs1_v15_decrypt( ctx, f_rng, p_rng, mode, olen,
+            return mbedtls_rsa_rsaes_pkcs1_v15_decrypt( ctx, p_rng, mode, olen,
                                                 input, output, output_max_len );
 #endif
 
 #if defined(MBEDTLS_PKCS1_V21)
         case MBEDTLS_RSA_PKCS_V21:
-            return mbedtls_rsa_rsaes_oaep_decrypt( ctx, f_rng, p_rng, mode, NULL, 0,
+            return mbedtls_rsa_rsaes_oaep_decrypt( ctx, p_rng, mode, NULL, 0,
                                            olen, input, output,
                                            output_max_len );
 #endif
@@ -891,7 +876,6 @@ int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSASSA-PSS-SIGN function
  */
 int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
-                         int (*f_rng)(void *, unsigned char *, size_t),
                          void *p_rng,
                          int mode,
                          mbedtls_md_type_t md_alg,
@@ -909,9 +893,6 @@ int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
     mbedtls_md_context_t md_ctx;
 
     if( mode == MBEDTLS_RSA_PRIVATE && ctx->padding != MBEDTLS_RSA_PKCS_V21 )
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
-
-    if( f_rng == NULL )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
     olen = ctx->len;
@@ -941,7 +922,7 @@ int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
 
     // Generate salt of length slen
     //
-    if( ( ret = f_rng( p_rng, salt, slen ) ) != 0 )
+    if( ( ret = mbedtls_ctr_drbg_random( p_rng, salt, slen ) ) != 0 )
         return( MBEDTLS_ERR_RSA_RNG_FAILED + ret );
 
     // Note: EMSA-PSS encoding is over the length of N - 1 bits
@@ -982,7 +963,7 @@ int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
 
     return( ( mode == MBEDTLS_RSA_PUBLIC )
             ? mbedtls_rsa_public(  ctx, sig, sig )
-            : mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig ) );
+            : mbedtls_rsa_private( ctx, p_rng, sig, sig ) );
 }
 #endif /* MBEDTLS_PKCS1_V21 */
 
@@ -994,7 +975,6 @@ int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
  * Do an RSA operation to sign the message digest
  */
 int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
-                               int (*f_rng)(void *, unsigned char *, size_t),
                                void *p_rng,
                                int mode,
                                mbedtls_md_type_t md_alg,
@@ -1069,7 +1049,7 @@ int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
 
     return( ( mode == MBEDTLS_RSA_PUBLIC )
             ? mbedtls_rsa_public(  ctx, sig, sig )
-            : mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig ) );
+            : mbedtls_rsa_private( ctx, p_rng, sig, sig ) );
 }
 #endif /* MBEDTLS_PKCS1_V15 */
 
@@ -1077,7 +1057,6 @@ int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
  * Do an RSA operation to sign the message digest
  */
 int mbedtls_rsa_pkcs1_sign( mbedtls_rsa_context *ctx,
-                    int (*f_rng)(void *, unsigned char *, size_t),
                     void *p_rng,
                     int mode,
                     mbedtls_md_type_t md_alg,
@@ -1089,13 +1068,13 @@ int mbedtls_rsa_pkcs1_sign( mbedtls_rsa_context *ctx,
     {
 #if defined(MBEDTLS_PKCS1_V15)
         case MBEDTLS_RSA_PKCS_V15:
-            return mbedtls_rsa_rsassa_pkcs1_v15_sign( ctx, f_rng, p_rng, mode, md_alg,
+            return mbedtls_rsa_rsassa_pkcs1_v15_sign( ctx, p_rng, mode, md_alg,
                                               hashlen, hash, sig );
 #endif
 
 #if defined(MBEDTLS_PKCS1_V21)
         case MBEDTLS_RSA_PKCS_V21:
-            return mbedtls_rsa_rsassa_pss_sign( ctx, f_rng, p_rng, mode, md_alg,
+            return mbedtls_rsa_rsassa_pss_sign( ctx, p_rng, mode, md_alg,
                                         hashlen, hash, sig );
 #endif
 
@@ -1109,7 +1088,6 @@ int mbedtls_rsa_pkcs1_sign( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSASSA-PSS-VERIFY function
  */
 int mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_rsa_context *ctx,
-                               int (*f_rng)(void *, unsigned char *, size_t),
                                void *p_rng,
                                int mode,
                                mbedtls_md_type_t md_alg,
@@ -1140,7 +1118,7 @@ int mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_rsa_context *ctx,
 
     ret = ( mode == MBEDTLS_RSA_PUBLIC )
           ? mbedtls_rsa_public(  ctx, sig, buf )
-          : mbedtls_rsa_private( ctx, f_rng, p_rng, sig, buf );
+          : mbedtls_rsa_private( ctx, p_rng, sig, buf );
 
     if( ret != 0 )
         return( ret );
@@ -1231,7 +1209,6 @@ int mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_rsa_context *ctx,
  * Simplified PKCS#1 v2.1 RSASSA-PSS-VERIFY function
  */
 int mbedtls_rsa_rsassa_pss_verify( mbedtls_rsa_context *ctx,
-                           int (*f_rng)(void *, unsigned char *, size_t),
                            void *p_rng,
                            int mode,
                            mbedtls_md_type_t md_alg,
@@ -1243,7 +1220,7 @@ int mbedtls_rsa_rsassa_pss_verify( mbedtls_rsa_context *ctx,
                              ? (mbedtls_md_type_t) ctx->hash_id
                              : md_alg;
 
-    return( mbedtls_rsa_rsassa_pss_verify_ext( ctx, f_rng, p_rng, mode,
+    return( mbedtls_rsa_rsassa_pss_verify_ext( ctx, p_rng, mode,
                                        md_alg, hashlen, hash,
                                        mgf1_hash_id, MBEDTLS_RSA_SALT_LEN_ANY,
                                        sig ) );
@@ -1256,7 +1233,6 @@ int mbedtls_rsa_rsassa_pss_verify( mbedtls_rsa_context *ctx,
  * Implementation of the PKCS#1 v2.1 RSASSA-PKCS1-v1_5-VERIFY function
  */
 int mbedtls_rsa_rsassa_pkcs1_v15_verify( mbedtls_rsa_context *ctx,
-                                 int (*f_rng)(void *, unsigned char *, size_t),
                                  void *p_rng,
                                  int mode,
                                  mbedtls_md_type_t md_alg,
@@ -1282,7 +1258,7 @@ int mbedtls_rsa_rsassa_pkcs1_v15_verify( mbedtls_rsa_context *ctx,
 
     ret = ( mode == MBEDTLS_RSA_PUBLIC )
           ? mbedtls_rsa_public(  ctx, sig, buf )
-          : mbedtls_rsa_private( ctx, f_rng, p_rng, sig, buf );
+          : mbedtls_rsa_private( ctx, p_rng, sig, buf );
 
     if( ret != 0 )
         return( ret );
@@ -1373,7 +1349,6 @@ int mbedtls_rsa_rsassa_pkcs1_v15_verify( mbedtls_rsa_context *ctx,
  * Do an RSA operation and check the message digest
  */
 int mbedtls_rsa_pkcs1_verify( mbedtls_rsa_context *ctx,
-                      int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng,
                       int mode,
                       mbedtls_md_type_t md_alg,
@@ -1385,13 +1360,13 @@ int mbedtls_rsa_pkcs1_verify( mbedtls_rsa_context *ctx,
     {
 #if defined(MBEDTLS_PKCS1_V15)
         case MBEDTLS_RSA_PKCS_V15:
-            return mbedtls_rsa_rsassa_pkcs1_v15_verify( ctx, f_rng, p_rng, mode, md_alg,
+            return mbedtls_rsa_rsassa_pkcs1_v15_verify( ctx, p_rng, mode, md_alg,
                                                 hashlen, hash, sig );
 #endif
 
 #if defined(MBEDTLS_PKCS1_V21)
         case MBEDTLS_RSA_PKCS_V21:
-            return mbedtls_rsa_rsassa_pss_verify( ctx, f_rng, p_rng, mode, md_alg,
+            return mbedtls_rsa_rsassa_pss_verify( ctx, p_rng, mode, md_alg,
                                           hashlen, hash, sig );
 #endif
 
