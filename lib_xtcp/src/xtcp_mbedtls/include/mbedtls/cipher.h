@@ -396,7 +396,7 @@ static inline mbedtls_cipher_type_t mbedtls_cipher_get_type( const mbedtls_ciphe
 static inline const char *mbedtls_cipher_get_name( const mbedtls_cipher_context_t *ctx )
 {
     if( NULL == ctx || NULL == ctx->cipher_info )
-        return 0;
+        return NULL;
 
     return ctx->cipher_info->name;
 }
