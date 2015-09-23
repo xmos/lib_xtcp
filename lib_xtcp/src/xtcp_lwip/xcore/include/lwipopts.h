@@ -3,6 +3,8 @@
 #define LWIP_SOCKET 0
 #define NO_SYS_NO_TIMERS 1
 
+#define LWIP_DNS 1
+#define DNS_MAX_NAME_LENGTH 64
 #define LWIP_DHCP 1
 #define LWIP_SNMP 0
 #define LWIP_AUTOIP 1
