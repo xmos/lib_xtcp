@@ -123,14 +123,8 @@ struct local_hostlist_entry {
 #endif /* DNS_LOCAL_HOSTLIST_IS_DYNAMIC */
 #endif /* DNS_LOCAL_HOSTLIST */
 
-/** Callback which is invoked when a hostname is found.
- * A function of this type must be implemented by the application using the DNS resolver.
- * @param name pointer to the name that was looked up.
- * @param ipaddr pointer to an ip_addr_t containing the IP address of the hostname,
- *        or NULL if the name could not be found (or on any other error).
- * @param callback_arg a user-specified callback argument passed to dns_gethostbyname
-*/
-typedef void (*dns_found_callback)(const char *name, ip_addr_t *ipaddr, void *callback_arg);
+void lwip_xtcpd_handle_dns_response(ip_addr_t *ipaddr, int linknum);
+
 void dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t udpport);
 err_t dns_lookup(const char *name, ip_addr_t *addr);
 err_t dns_enqueue(size_t hostnamelen, void *callback_arg, int entry_index);
