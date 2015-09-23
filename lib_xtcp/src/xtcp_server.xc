@@ -9,6 +9,7 @@
 #include "debug_print.h"
 #if LWIP_XTCP
 #include "lwip/pbuf.h"
+#include "lwip/dns.h"
 #endif
 
 static int notified[MAX_XTCP_CLIENTS];
@@ -241,7 +242,34 @@ static void handle_xtcp_cmd(chanend c,
       break;
     }
 #endif
+#if LWIP_XTCP
+    case XTCP_CMD_REQUEST_HOST_BY_NAME: {
+      size_t name_len;
+      struct dns_table_entry *unsafe dns;
+      int table_entry;
+      slave {
+        c :> name_len;
+        if (name_len >= DNS_MAX_NAME_LENGTH) fail("DNS host name len exceeds DNS_MAX_NAME_LENGTH");
+        // Check if a DNS table entry is available before commiting
+        dns = dns_find_entry(&table_entry);
+        for (int i=0; i < name_len; i++) {
+          if (dns) {
+            unsafe { c :> dns->name[i]; }
+            // DNS stack handles NUL
+          }
+          else {
+            c :> char _;
+          }
+        }
+      }
+
+      if (dns) {
+        unsafe { dns_enqueue(name_len, (void *)i, table_entry); }
+      }
+      break;
     }
+#endif
+  }
 }
 
 static void send_conn_and_complete(chanend c,

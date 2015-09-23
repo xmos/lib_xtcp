@@ -13,6 +13,7 @@
 #include "uip_xtcp.h"
 #include "lwip/tcp.h"
 #include "lwip/netif.h"
+#include "lwip/dns.h"
 
 #define DHCPC_SERVER_PORT  67
 #define DHCPC_CLIENT_PORT  68
@@ -363,6 +364,18 @@ void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb)
     }
     s->s.send_request--;
   }
+}
+
+void lwip_xtcpd_handle_dns_response(ip_addr_t *ipaddr, int linknum)
+{
+  xtcpd_state_t s; // This is hacky. We don't need a full state structure.
+  memset(&s, 0, sizeof(xtcpd_state_t));
+  s.linknum = linknum;
+  if (ipaddr) {
+    IPADDR2_COPY(&s.conn.remote_addr, ipaddr);
+  }
+
+  xtcpd_event(XTCP_DNS_RESULT, &s);
 }
 
 err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,

@@ -3,6 +3,7 @@
 #include <xs1.h>
 #include <print.h>
 #include <xccompat.h>
+#include <string.h>
 #include "xtcp.h"
 #include "xtcp_cmd.h"
 
@@ -324,4 +325,17 @@ void xtcp_accept_partial_ack(chanend c_xtcp,
                              REFERENCE_PARAM(xtcp_connection_t,conn))
 {
   send_cmd(c_xtcp, XTCP_CMD_ACCEPT_PARTIAL_ACK, conn.id);
+}
+
+void xtcp_request_host_by_name(chanend c_xtcp, const char hostname[])
+{
+  size_t namelen = strlen(hostname);
+  if (namelen > 64) return;
+  send_cmd(c_xtcp, XTCP_CMD_REQUEST_HOST_BY_NAME, 0);
+  master {
+    c_xtcp <: namelen;
+    for (int i=0; i < namelen; i++) {
+      c_xtcp <: hostname[i];
+    }
+  }
 }

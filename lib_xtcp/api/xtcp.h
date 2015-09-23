@@ -168,6 +168,8 @@ typedef enum xtcp_event_type_t {
   XTCP_IFDOWN,         /**<   This event occurs when the link goes down.
                               This event has no associated connection. */
 
+  XTCP_DNS_RESULT,
+
   XTCP_ALREADY_HANDLED /**<   This event type does not get set by the server
                               but can be set by the client to show an event
                               has been handled */
@@ -564,6 +566,8 @@ void xtcp_unpause(chanend c_xtcp,
  */
 void xtcp_accept_partial_ack(chanend c_xtcp,
                              REFERENCE_PARAM(xtcp_connection_t,conn));
+
+void xtcp_request_host_by_name(chanend c_xtcp, const char hostname[]);
 
 #ifdef __XC__
 
