@@ -854,6 +854,28 @@ again:
   return txid;
 }
 
+static err_t dns_init_and_send(struct dns_table_entry *entry)
+{
+  err_t err;
+  u16_t txid;
+  /* initialize new entry */
+  txid = dns_create_txid();
+  entry->txid = txid;
+  entry->state = DNS_STATE_ASKING;
+  entry->server_idx = 0;
+  entry->tmr = 1;
+  entry->retries = 0;
+
+  /* send DNS packet for this entry */
+  err = dns_send(entry);
+  if (err != ERR_OK) {
+    LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_WARNING,
+                ("dns_send returned error: %s\n", lwip_strerr(err)));
+  }
+
+  return err;
+}
+
 /**
  * dns_check_entry() - see if entry has not yet been queried and, if so, sends out a query.
  * Check an entry in the dns_table:
@@ -874,21 +896,7 @@ dns_check_entry(u8_t i)
   switch (entry->state) {
 
     case DNS_STATE_NEW: {
-      u16_t txid;
-      /* initialize new entry */
-      txid = dns_create_txid();
-      entry->txid = txid;
-      entry->state = DNS_STATE_ASKING;
-      entry->server_idx = 0;
-      entry->tmr = 1;
-      entry->retries = 0;
-
-      /* send DNS packet for this entry */
-      err = dns_send(entry);
-      if (err != ERR_OK) {
-        LWIP_DEBUGF(DNS_DEBUG | LWIP_DBG_LEVEL_WARNING,
-                    ("dns_send returned error: %s\n", lwip_strerr(err)));
-      }
+      err = dns_init_and_send(entry);
       break;
     }
 
@@ -1182,7 +1190,7 @@ dns_enqueue(size_t hostnamelen,
   dns_seqno++;
 
   /* force to send query without waiting timer */
-  dns_check_entry(i);
+  dns_init_and_send(entry);
 
   /* dns query is enqueued */
   return ERR_INPROGRESS;
