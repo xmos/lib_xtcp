@@ -1103,6 +1103,46 @@ memerr:
   return;
 }
 
+struct dns_table_entry *dns_find_entry(int *table_entry)
+{
+  u8_t i;
+  u8_t lseq, lseqi;
+  struct dns_table_entry *found_entry = NULL;
+  /* search an unused entry, or the oldest one */
+  lseq = 0;
+  lseqi = DNS_TABLE_SIZE;
+  for (i = 0; i < DNS_TABLE_SIZE; ++i) {
+    found_entry = &dns_table[i];
+    /* is it an unused entry ? */
+    if (found_entry->state == DNS_STATE_UNUSED) {
+      break;
+    }
+    /* check if this is the oldest completed entry */
+    if (found_entry->state == DNS_STATE_DONE) {
+      if ((u8_t)(dns_seqno - found_entry->seqno) > lseq) {
+        lseq = dns_seqno - found_entry->seqno;
+        lseqi = i;
+      }
+    }
+  }
+
+  /* if we don't have found an unused entry, use the oldest completed one */
+  if (i == DNS_TABLE_SIZE) {
+    if ((lseqi >= DNS_TABLE_SIZE) || (dns_table[lseqi].state != DNS_STATE_DONE)) {
+      /* no entry can be used now, table is full */
+      LWIP_DEBUGF(DNS_DEBUG, ("dns_enqueue: DNS entries table is full\n"));
+      found_entry = NULL;
+    } else {
+      /* use the oldest completed one */
+      i = lseqi;
+      found_entry = &dns_table[i];
+    }
+  }
+
+  *table_entry = i;
+  return found_entry;
+}
+
 /**
  * Queues a new hostname to resolve and sends out a DNS query for that hostname
  *
