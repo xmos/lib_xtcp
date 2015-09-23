@@ -35,7 +35,7 @@ static void low_level_init(struct netif &netif, char mac_address[6])
   /* maximum transfer unit */
   netif.mtu = 1500;
   /* device capabilities */
-  netif.flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
+  netif.flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
 }
 
 typedef enum {
@@ -141,14 +141,10 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
 
   low_level_init(my_netif, mac_address); // Needs to be called after netif_add which zeroes everything
 
-  // Start DHCP?
-  netif_set_up(netif);
   if (ipconfig.ipaddr[0] == 0) {
-    autoip_start(netif);
+    if (dhcp_start(netif) != ERR_OK) fail("DHCP error");
   }
-  else {
-    lwip_xtcp_up();
-  }
+  netif_set_up(netif);
 
   int time_now;
   timers[0] :> time_now;
@@ -211,7 +207,39 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
       timers[i] when timerafter(timeout[i]) :> unsigned current:
 
       switch (i) {
-      case ARP_TIMEOUT: etharp_tmr(); break;
+      case ARP_TIMEOUT: {
+        etharp_tmr();
+        // Check for the link state
+        if (!isnull(i_smi))
+        {
+          static int linkstate=0;
+          ethernet_link_state_t status = smi_get_link_state(i_smi, phy_address);
+          if (!status && linkstate) {
+            if (!isnull(i_eth_cfg)) {
+              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+            }
+            netif_set_link_down(netif);
+            lwip_xtcp_down();
+          }
+          if (status && !linkstate) {
+            if (!isnull(i_eth_cfg)) {
+              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
+            }
+            netif_set_link_up(netif);
+          }
+          linkstate = status;
+        }
+
+        if (!get_uip_xtcp_ifstate() && dhcp_supplied_address(netif)) {
+          uint32_t ip = ip4_addr_get_u32(&netif->ip_addr);
+          debug_printf("DHCP: Got %d.%d.%d.%d\n", ip4_addr1(&ip),
+                                                  ip4_addr2(&ip),
+                                                  ip4_addr3(&ip),
+                                                  ip4_addr4(&ip));
+          lwip_xtcp_up();
+        }
+        break;
+      }
       case AUTOIP_TIMEOUT: autoip_tmr(); break;
       case TCP_TIMEOUT: tcp_tmr(); break;
       case IGMP_TIMEOUT: igmp_tmr(); break;

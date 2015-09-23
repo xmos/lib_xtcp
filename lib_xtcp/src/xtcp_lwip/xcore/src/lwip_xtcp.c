@@ -490,7 +490,7 @@ void lwip_xtcp_up() {
   uip_ifstate = 1;
 }
 
-void uip_xtcp_down() {
+void lwip_xtcp_down() {
   uip_ifstate = 0;
 }
 
