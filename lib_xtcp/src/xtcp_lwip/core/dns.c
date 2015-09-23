@@ -1156,7 +1156,6 @@ dns_enqueue(size_t hostnamelen,
             void *callback_arg, int entry_index)
 {
   u8_t i;
-  u8_t lseq, lseqi;
   size_t namelen;
   struct dns_req_entry* req;
   struct dns_table_entry *entry = &dns_table[entry_index];
