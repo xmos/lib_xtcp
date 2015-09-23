@@ -41,7 +41,7 @@ int xtcp_write(chanend tcp_svr,
                int len)
 {
   int finished = 0;
-  int success = 1;
+  int success = len;
   int index = 0, prev = 0;
   int id = conn.id;
   xtcp_init_send(tcp_svr, conn);
