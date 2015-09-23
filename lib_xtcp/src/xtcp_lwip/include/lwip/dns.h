@@ -35,10 +35,12 @@
 #define LWIP_HDR_DNS_H
 
 #include "lwip/opt.h"
+#include "lwip/udp.h"
+#include "lwip/ip_addr.h"
 
 #if LWIP_DNS
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 extern "C" {
 #endif
 
@@ -69,6 +71,40 @@ extern "C" {
 #define DNS_RRCLASS_CH            3     /* the CHAOS class */
 #define DNS_RRCLASS_HS            4     /* Hesiod [Dyer 87] */
 #define DNS_RRCLASS_FLUSH         0x800 /* Flush bit */
+
+/** DNS server port address */
+#ifndef DNS_SERVER_PORT
+#define DNS_SERVER_PORT           53
+#endif
+
+/* A list of DNS security features follows */
+#define LWIP_DNS_SECURE_RAND_XID                1
+#define LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING 2
+#define LWIP_DNS_SECURE_RAND_SRC_PORT           4
+/** Use all DNS security features by default.
+ * This is overridable but should only be needed by very small targets
+ * or when using against non standard DNS servers. */
+#ifndef LWIP_DNS_SECURE
+#define LWIP_DNS_SECURE (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT)
+#endif
+
+
+/** DNS table entry */
+struct dns_table_entry {
+  u32_t ttl;
+  ip_addr_t ipaddr;
+  u16_t txid;
+  u8_t  state;
+  u8_t  server_idx;
+  u8_t  tmr;
+  u8_t  retries;
+  u8_t  seqno;
+#if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_SRC_PORT) != 0)
+  u8_t pcb_idx;
+#endif
+  char name[DNS_MAX_NAME_LENGTH];
+};
+
 
 #if DNS_LOCAL_HOSTLIST
 /** struct used for local host-list */

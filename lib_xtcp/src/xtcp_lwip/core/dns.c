@@ -85,17 +85,6 @@
 
 #include <string.h>
 
-/* A list of DNS security features follows */
-#define LWIP_DNS_SECURE_RAND_XID                1
-#define LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING 2
-#define LWIP_DNS_SECURE_RAND_SRC_PORT           4
-/** Use all DNS security features by default.
- * This is overridable but should only be needed by very small targets
- * or when using against non standard DNS servers. */
-#ifndef LWIP_DNS_SECURE
-#define LWIP_DNS_SECURE (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT)
-#endif
-
 /** Random generator function to create random TXIDs and source ports for queries */
 #ifndef DNS_RAND_TXID
 #if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_XID) != 0)
@@ -118,11 +107,6 @@ static u16_t dns_txid;
 #else
 #define DNS_SERVER_ADDRESS(ipaddr)        ipaddr_aton("2001:4860:4860::8888", ipaddr)
 #endif
-#endif
-
-/** DNS server port address */
-#ifndef DNS_SERVER_PORT
-#define DNS_SERVER_PORT           53
 #endif
 
 /** DNS maximum number of retries when asking for a name, before "timeout". */
@@ -224,22 +208,6 @@ struct dns_answer {
 #define SIZEOF_DNS_ANSWER 10
 /* maximum allowed size for the struct due to non-packed */
 #define SIZEOF_DNS_ANSWER_ASSERT 12
-
-/** DNS table entry */
-struct dns_table_entry {
-  u32_t ttl;
-  ip_addr_t ipaddr;
-  u16_t txid;
-  u8_t  state;
-  u8_t  server_idx;
-  u8_t  tmr;
-  u8_t  retries;
-  u8_t  seqno;
-#if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_RAND_SRC_PORT) != 0)
-  u8_t pcb_idx;
-#endif
-  char name[DNS_MAX_NAME_LENGTH];
-};
 
 /** DNS request table entry: used when dns_gehostbyname cannot answer the
  * request from the DNS table */
