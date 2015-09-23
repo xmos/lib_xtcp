@@ -133,7 +133,7 @@ void           dns_init(void);
 void           dns_tmr(void);
 void           dns_setserver(u8_t numdns, ip_addr_t *dnsserver);
 ip_addr_t      dns_getserver(u8_t numdns);
-err_t          dns_gethostbyname(const char *hostname, ip_addr_t *addr, void *callback_arg);
+
 struct dns_table_entry *dns_find_entry(int *table_entry);
 
 #if DNS_LOCAL_HOSTLIST && DNS_LOCAL_HOSTLIST_IS_DYNAMIC
