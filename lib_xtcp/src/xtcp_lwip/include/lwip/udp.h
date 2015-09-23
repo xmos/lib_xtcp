@@ -86,7 +86,7 @@ struct udp_pcb;
  * @param port the remote port from which the packet was received
  */
 void udp_recv_event(void *arg, struct udp_pcb *pcb, struct pbuf *p,
-    const ip_addr_t *addr, u16_t port);
+    const ip_addr_t *addr, u16_t udpport);
 
 struct udp_pcb {
 /* Common members of all PCB types */
@@ -123,9 +123,9 @@ extern struct udp_pcb *udp_pcbs;
 struct udp_pcb * udp_new        (void);
 void             udp_remove     (struct udp_pcb *pcb);
 err_t            udp_bind       (struct udp_pcb *pcb, const ip_addr_t *ipaddr,
-                                 u16_t port);
+                                 u16_t udpport);
 err_t            udp_connect    (struct udp_pcb *pcb, const ip_addr_t *ipaddr,
-                                 u16_t port);
+                                 u16_t udpport);
 void             udp_disconnect (struct udp_pcb *pcb);
 
 err_t            udp_sendto_if  (struct udp_pcb *pcb, struct pbuf *p,
