@@ -18,6 +18,9 @@ void xtcp_wait_for_ifup(chanend tcp_svr);
  */
 xtcp_connection_t xtcp_wait_for_connection(chanend tcp_svr);
 
+
+void xtcp_get_host_by_name(chanend tcp_svr, const char hostname[], REFERENCE_PARAM(xtcp_ipaddr_t, ipaddr));
+
 //!@{
 //! \name Blocking client API
 

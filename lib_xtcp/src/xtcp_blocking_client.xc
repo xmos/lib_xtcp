@@ -1,6 +1,8 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
 
 #include "xtcp.h"
+#include "debug_print.h"
+#include <string.h>
 
 void xtcp_wait_for_ifup(chanend tcp_svr)
 {
@@ -20,6 +22,17 @@ xtcp_connection_t xtcp_wait_for_connection(chanend tcp_svr)
     slave xtcp_event(tcp_svr, conn);
   } while (conn.event != XTCP_NEW_CONNECTION);
   return conn;
+}
+
+void xtcp_get_host_by_name(chanend tcp_svr, const char hostname[], xtcp_ipaddr_t &ipaddr)
+{
+  xtcp_connection_t conn;
+  xtcp_request_host_by_name(tcp_svr, hostname);
+  do {
+    slave xtcp_event(tcp_svr, conn);
+  } while (conn.event != XTCP_DNS_RESULT);
+
+  memcpy(ipaddr, conn.remote_addr, sizeof(xtcp_ipaddr_t));
 }
 
 int xtcp_write(chanend tcp_svr,
