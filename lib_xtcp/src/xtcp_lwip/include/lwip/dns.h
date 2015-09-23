@@ -131,20 +131,23 @@ struct local_hostlist_entry {
  * @param callback_arg a user-specified callback argument passed to dns_gethostbyname
 */
 typedef void (*dns_found_callback)(const char *name, ip_addr_t *ipaddr, void *callback_arg);
+void dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t udpport);
+err_t dns_lookup(const char *name, ip_addr_t *addr);
+err_t dns_enqueue(size_t hostnamelen, void *callback_arg, int entry_index);
 
 void           dns_init(void);
 void           dns_tmr(void);
 void           dns_setserver(u8_t numdns, ip_addr_t *dnsserver);
 ip_addr_t      dns_getserver(u8_t numdns);
-err_t          dns_gethostbyname(const char *hostname, ip_addr_t *addr,
-                                 dns_found_callback found, void *callback_arg);
+err_t          dns_gethostbyname(const char *hostname, ip_addr_t *addr, void *callback_arg);
+struct dns_table_entry *dns_find_entry(int *table_entry);
 
 #if DNS_LOCAL_HOSTLIST && DNS_LOCAL_HOSTLIST_IS_DYNAMIC
 int            dns_local_removehost(const char *hostname, const ip_addr_t *addr);
 err_t          dns_local_addhost(const char *hostname, const ip_addr_t *addr);
 #endif /* DNS_LOCAL_HOSTLIST && DNS_LOCAL_HOSTLIST_IS_DYNAMIC */
 
-#ifdef __cplusplus
+#if defined(__cplusplus) || defined(__XC__)
 }
 #endif
 
