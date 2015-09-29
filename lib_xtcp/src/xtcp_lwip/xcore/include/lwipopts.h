@@ -29,6 +29,7 @@
 #define IP_FRAG 0
 
 #define LWIP_NETIF_TX_SINGLE_PBUF 1
+
 #define LWIP_DHCP_AUTOIP_COOP 1
 
 #define CHECKSUM_CHECK_TCP 0
@@ -38,10 +39,10 @@
 #define MEM_ALIGNMENT 4
 
 
-#define TCP_MSS                         128
-#define TCP_SND_BUF                     12*TCP_MSS
-#define TCP_QUEUE_OOSEQ                 0
+#define TCP_MSS                         1460
+#define TCP_SND_BUF                     4096
+#define TCP_QUEUE_OOSEQ                 1
 #define MEMP_NUM_TCP_SEG                8*(TCP_WND + TCP_SND_BUF)/ TCP_MSS
 #define TCP_SND_QUEUELEN                (4 * (TCP_SND_BUF/TCP_MSS))
 #define MEMP_NUM_TCP_PCB                6
-#define TCP_WND                         448
+#define TCP_WND                         4096
