@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef __XCORE_NETIF_H__
 #define __XCORE_NETIF_H__
 #include <xccompat.h>

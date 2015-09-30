@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #define NO_SYS 1
 #define LWIP_NETCONN 0
 #define LWIP_SOCKET 0

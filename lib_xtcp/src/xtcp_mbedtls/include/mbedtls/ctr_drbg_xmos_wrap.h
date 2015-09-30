@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #ifndef MBEDTLS_CTR_DRBG_XMOS_WRAP_H
 #define MBEDTLS_CTR_DRBG_XMOS_WRAP_H
 

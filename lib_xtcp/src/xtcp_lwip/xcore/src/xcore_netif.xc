@@ -1,3 +1,4 @@
+// Copyright (c) 2015, XMOS Ltd, All rights reserved
 #include "ethernet.h"
 #include "mii.h"
 #include "lwip/ip_addr.h"
