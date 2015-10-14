@@ -4,6 +4,8 @@
 #include <print.h>
 #include <xccompat.h>
 #include <string.h>
+#include "xassert.h"
+#include "debug_print.h"
 #include "xtcp.h"
 #include "xtcp_cmd.h"
 
@@ -207,16 +209,17 @@ void xtcp_sendi(chanend c_xtcp,
                 int index,
                 int len)
 {
+  xassert(index == 0);
   c_xtcp <: len;
   int more_data = len;
   while (more_data) {
     slave {
       int chunk_len;
       c_xtcp :> chunk_len;
+      c_xtcp :> index;
       for (int i=index; i<index+chunk_len; i++) {
         c_xtcp <: data[i];
       }
-      index = index+chunk_len;
       more_data -= chunk_len;
     }
   }

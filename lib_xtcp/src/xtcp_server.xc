@@ -491,7 +491,8 @@ void xtcpd_send_split_data(chanend c, unsigned char *unsafe data, int pos, int l
   unsafe {
     master {
       c <: len;
-      for (int i=pos; i<len; i++) {
+      c <: pos;
+      for (int i=0; i<len; i++) {
         c :> data[i];
       }
     }
