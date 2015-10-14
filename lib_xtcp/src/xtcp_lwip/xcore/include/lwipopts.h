@@ -46,3 +46,5 @@
 #define MEMP_NUM_TCP_SEG                8*(TCP_WND + TCP_SND_BUF)/ TCP_MSS
 #define MEMP_NUM_TCP_PCB                6
 #define TCP_WND                         8192
+#define TCP_OVERSIZE                    1
+#define TCP_OVERSIZE_DBGCHECK           1
