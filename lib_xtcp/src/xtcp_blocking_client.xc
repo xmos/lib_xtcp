@@ -3,6 +3,7 @@
 #include "xtcp.h"
 #include "debug_print.h"
 #include <string.h>
+#include "xassert.h"
 
 void xtcp_wait_for_ifup(chanend tcp_svr)
 {
@@ -44,6 +45,7 @@ int xtcp_write(chanend tcp_svr,
   int success = len;
   int index = 0, prev = 0;
   int id = conn.id;
+
   xtcp_init_send(tcp_svr, conn);
   while (!finished) {
     slave xtcp_event(tcp_svr, conn);
@@ -68,9 +70,8 @@ int xtcp_write(chanend tcp_svr,
         xtcp_sendi(tcp_svr, buf, prev, (index-prev));
         break;
       case XTCP_RECV_DATA:
+        fail("Received while writing");
         slave { tcp_svr <: 0; } // delay packet receive
-        if (prev != len)
-          success = 0;
         finished = 1;
         break;
       case XTCP_TIMED_OUT:
@@ -79,11 +80,13 @@ int xtcp_write(chanend tcp_svr,
         if (conn.id == id) {
           finished = 1;
           success = 0;
+          fail("Closed during write");
         }
         break;
       case XTCP_IFDOWN:
         finished = 1;
         success = 0;
+        fail("IF down during write");
         break;
       }
   }
@@ -103,6 +106,7 @@ int xtcp_read(chanend tcp_svr,
     switch (conn.event)
       {
       case XTCP_NEW_CONNECTION:
+        fail("New connection during read");
         xtcp_close(tcp_svr, conn);
         break;
       case XTCP_RECV_DATA:
@@ -120,8 +124,9 @@ int xtcp_read(chanend tcp_svr,
       case XTCP_TIMED_OUT:
       case XTCP_ABORTED:
       case XTCP_CLOSED:
-        if (conn.id == id)
+        if (conn.id == id) {
           return -1;
+        }
         break;
       case XTCP_IFDOWN:
         return -1;
