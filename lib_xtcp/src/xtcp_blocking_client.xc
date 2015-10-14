@@ -54,15 +54,14 @@ int xtcp_write(chanend tcp_svr,
         break;
       case XTCP_REQUEST_DATA:
       case XTCP_SENT_DATA:
-        { int sendlen = (len - index);
+        {
+          int sendlen = len;
+
           if (sendlen > conn.mss)
             sendlen = conn.mss;
 
-          xtcp_sendi(tcp_svr, buf, index, sendlen);
-          prev = index;
-          index += sendlen;
-          if (sendlen == 0)
-            finished = 1;
+          xtcp_send(tcp_svr, buf, len);
+          finished = 1;
         }
         break;
       case XTCP_RESEND_DATA:
