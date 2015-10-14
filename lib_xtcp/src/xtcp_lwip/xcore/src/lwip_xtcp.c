@@ -348,13 +348,14 @@ void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb)
 {
   if (s->s.send_request) {
     int len;
-    if (s->linknum != -1) {
+    if (s->linknum != -1 && (tcp_sndbuf(pcb) >= tcp_mss(pcb))) {
       len = do_xtcpd_send(xtcp_links[s->linknum],
                        XTCP_REQUEST_DATA,
                        s,
                        tcp_mss(pcb));
       if (len) {
-        tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+        err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+        if (r != ERR_OK) fail("tcp_write() failed");
         tcp_output(pcb);
       }
       else {
@@ -413,7 +414,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
 
           xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
 
-          if (p == NULL) __builtin_trap();
+          xassert(p != NULL);
           xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
         }
         tcp_recved(pcb, p->tot_len);
@@ -435,14 +436,15 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
     }
     case LWIP_EVENT_SENT: {
       int len;
-      if (s->linknum != -1) {
+      if (s->linknum != -1 && (tcp_sndbuf(pcb) >= tcp_mss(pcb))) {
         len = do_xtcpd_send(xtcp_links[s->linknum],
                             XTCP_SENT_DATA,
                             s,
                             tcp_mss(pcb));
         if (len) {
-          tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
-          tcp_output(pcb);
+        err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+        if (r != ERR_OK) fail("tcp_write() failed");
+        tcp_output(pcb);
         }
       }
       break;
