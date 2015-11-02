@@ -14,6 +14,8 @@
  */
 void xtcp_wait_for_ifup(chanend tcp_svr);
 
+void xtcp_wait_for_closed(chanend tcp_svr);
+
 /** \brief Block until a connection attempt to is made
  */
 xtcp_connection_t xtcp_wait_for_connection(chanend tcp_svr);

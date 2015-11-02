@@ -25,6 +25,16 @@ xtcp_connection_t xtcp_wait_for_connection(chanend tcp_svr)
   return conn;
 }
 
+void xtcp_wait_for_closed(chanend tcp_svr)
+{
+  xtcp_connection_t conn;
+  conn.event = XTCP_ALREADY_HANDLED;
+  do {
+    slave xtcp_event(tcp_svr, conn);
+  } while (conn.event != XTCP_CLOSED);
+  return;
+}
+
 void xtcp_get_host_by_name(chanend tcp_svr, const char hostname[], xtcp_ipaddr_t &ipaddr)
 {
   xtcp_connection_t conn;
