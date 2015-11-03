@@ -2195,8 +2195,6 @@ int mbedtls_ssl_fetch_input( mbedtls_ssl_context *ssl, size_t nb_want )
         return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
     }
 
-    uint32_t timeout;
-
     /* Just to be sure */
 
     /*

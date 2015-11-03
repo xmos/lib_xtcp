@@ -667,7 +667,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
       p->tot_len += oversize_used;
       if (p->next == NULL) {
         if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
-          xtcpd_send_split_data((unsigned)arg, (char *)p->payload + p->len, 0, oversize_used);
+          xtcpd_send_split_data((unsigned)arg, (unsigned char *)p->payload + p->len, 0, oversize_used);
         }
         else {
           TCP_DATA_COPY((char *)p->payload + p->len, arg, oversize_used, last_unsent);
