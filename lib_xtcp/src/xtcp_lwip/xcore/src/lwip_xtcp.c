@@ -427,9 +427,12 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
         }
         xscope_int(LWIP_EVENT_RECV_STOP, p->tot_len);
       } else if (err == ERR_OK) {
-        xtcpd_event(XTCP_CLOSED, s);
-        s->s.close_request = 0;
-        tcp_close(pcb);
+        if (s->s.closed == 0) {
+          xtcpd_event(XTCP_CLOSED, s);
+          s->s.close_request = 0;
+          s->s.closed = 1;
+          tcp_close(pcb);
+        }
       }
       break;
     }
