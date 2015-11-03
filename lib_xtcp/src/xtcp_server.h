@@ -40,6 +40,9 @@ void xtcpd_service_clients(chanend xtcp[], int num_xtcp);
 void xtcpd_service_clients_until_ready(int waiting_link,
                                        chanend xtcp[],
                                        int num_xtcp);
+int xtcpd_service_client_if_ready(int waiting_link,
+                                 chanend xtcp[],
+                                 int num_xtcp);
 
 void xtcpd_recv(chanend xtcp[],
                 int linknum,

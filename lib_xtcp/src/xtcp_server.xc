@@ -14,6 +14,7 @@
 
 static int notified[MAX_XTCP_CLIENTS];
 static int pending_event[MAX_XTCP_CLIENTS];
+static int pending_recv[MAX_XTCP_CLIENTS];
 
 static xtcp_connection_t dummy_conn;
 
@@ -292,6 +293,9 @@ void xtcpd_service_client(chanend xtcp, int i)
   tok = inct(xtcp);
   if (tok == XS1_CT_END) {
     // the other side has responded to the transaction
+    if (pending_recv[i] == 1) {
+      pending_recv[i] = 2;
+    }
     notified[i] = 0;
     if (pending_event[i] != -1) {
       dummy_conn.event = pending_event[i];
@@ -384,6 +388,26 @@ void xtcpd_service_clients_until_ready(int waiting_link,
   }
 }
 
+#pragma unsafe arrays
+int xtcpd_service_client_if_ready(int waiting_link,
+                                 chanend xtcp[],
+                                 int num_xtcp)
+{
+  if (pending_recv[waiting_link] == 2) {
+    pending_recv[waiting_link] = 0;
+    return 1;
+  }
+  if (!notified[waiting_link]) {
+    debug_printf("Notified from 1\n");
+    outct(xtcp[waiting_link], XS1_CT_END);
+    notified[waiting_link] = 1;
+  }
+  int ret = xtcpd_service_client0(xtcp[waiting_link], waiting_link, waiting_link);
+  if (!ret) {
+    pending_recv[waiting_link] = 1;
+  }
+  return ret;
+}
 
 
 void xtcpd_send_event(chanend c,

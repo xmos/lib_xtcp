@@ -1,5 +1,5 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
-
+#include <xscope.h>
 #include <string.h>
 #include <print.h>
 #include "uip.h"
@@ -348,6 +348,7 @@ void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb)
 {
   if (s->s.send_request) {
     int len;
+    xscope_int(TCP_SEND_BUF, tcp_sndbuf(pcb));
     if (s->linknum != -1 && (tcp_sndbuf(pcb) >= tcp_mss(pcb))) {
       len = do_xtcpd_send(xtcp_links[s->linknum],
                        XTCP_REQUEST_DATA,
@@ -385,6 +386,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
          u16_t size,
          err_t err) {
 
+  xassert(pcb != NULL);
   xtcpd_state_t *s = &(pcb->xtcp_state);
 
   switch (e) {
@@ -410,16 +412,23 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
     }
     case LWIP_EVENT_RECV: {
       if (p != NULL) {
+        debug_printf("LWIP_EVENT_RECV: %d\n", p->tot_len);
+        xscope_int(LWIP_EVENT_RECV_START, p->tot_len);
         if (s->linknum != -1) {
 
-          xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
-
-          xassert(p != NULL);
-          xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
+          if (xtcpd_service_client_if_ready(s->linknum, xtcp_links, xtcp_num)) {
+            xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
+            tcp_recved(pcb, p->tot_len);
+            pbuf_free(p);
+          }
+          else {
+            return ERR_MEM;
+          }
         }
-        tcp_recved(pcb, p->tot_len);
-        pbuf_free(p);
+        xscope_int(LWIP_EVENT_RECV_STOP, p->tot_len);
       } else if (err == ERR_OK) {
+        xtcpd_event(XTCP_CLOSED, s);
+        s->s.close_request = 0;
         tcp_close(pcb);
       }
       break;
@@ -430,12 +439,15 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
           s->s.closed = 1;
           xtcpd_event(XTCP_CLOSED, s);
         }
+        debug_printf("CLOSING... %d\n", s->conn.id);
+        s->s.close_request = 0;
         tcp_close(pcb);
       }
       break;
     }
     case LWIP_EVENT_SENT: {
       int len;
+      xscope_int(TCP_SEND_BUF, tcp_sndbuf(pcb));
       if (s->linknum != -1 && (tcp_sndbuf(pcb) >= tcp_mss(pcb))) {
         len = do_xtcpd_send(xtcp_links[s->linknum],
                             XTCP_SENT_DATA,
