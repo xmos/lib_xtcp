@@ -47,4 +47,3 @@
 #define MEMP_NUM_TCP_PCB                6
 #define TCP_WND                         8192
 #define TCP_OVERSIZE                    1
-#define TCP_OVERSIZE_DBGCHECK           1
