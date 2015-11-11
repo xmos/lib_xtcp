@@ -41,9 +41,21 @@
 
 
 #define TCP_MSS                         1460
-#define TCP_SND_BUF                     8192
+#define TCP_SND_BUF                     16384
 #define TCP_QUEUE_OOSEQ                 1
 #define MEMP_NUM_TCP_SEG                8*(TCP_WND + TCP_SND_BUF)/ TCP_MSS
 #define MEMP_NUM_TCP_PCB                6
+#define PBUF_POOL_SIZE                  8
 #define TCP_WND                         8192
 #define TCP_OVERSIZE                    1
+// #define LWIP_WND_SCALE 1
+// #define TCP_RCV_SCALE 2
+// #define TCP_WND_UPDATE_THRESHOLD   (TCP_WND / 16)
+
+#define LWIP_DEBUG 1
+#define TCP_RST_DEBUG LWIP_DBG_ON
+// #define TCP_DEBUG LWIP_DBG_ON
+#define TCP_WND_DEBUG LWIP_DBG_ON
+// #define TCP_QLEN_DEBUG LWIP_DBG_ON
+// #define TCP_INPUT_DEBUG LWIP_DBG_ON
+// #define TCP_OUTPUT_DEBUG LWIP_DBG_ON
