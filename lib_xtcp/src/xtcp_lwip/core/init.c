@@ -61,6 +61,8 @@
 #include "lwip/mld6.h"
 #include "lwip/api.h"
 #include "netif/ppp/ppp_impl.h"
+#include "hwlock.h"
+#include "xassert.h"
 
 /* Compile-time sanity checks for configuration errors.
  * These can be done independently of LWIP_DEBUG, without penalty.
@@ -307,12 +309,15 @@
 #endif /* LWIP_TCP */
 #endif /* !LWIP_DISABLE_TCP_SANITY_CHECKS */
 
+extern hwlock_t lwip_lock;
 /**
  * Perform Sanity check of user-configurable values, and initialize all modules.
  */
 void
 lwip_init(void)
 {
+  lwip_lock = hwlock_alloc();
+  if (lwip_lock == HWLOCK_NOT_ALLOCATED) fail();
   /* Modules initialization */
   stats_init();
 #if !NO_SYS
