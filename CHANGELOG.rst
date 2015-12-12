@@ -13,6 +13,9 @@ TCP/IP Library Change Log
   * Updated to use new lib_ethernet
 
 
+Legacy release history
+----------------------
+
 3.2.1
 -----
 
