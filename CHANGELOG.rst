@@ -1,6 +1,9 @@
 TCP/IP Library Change Log
 =========================
 
+4.0.2
+-----
+
 4.0.1
 -----
   * Fixed issue with link up/down events being ignored when SMI is not polled within XTCP
