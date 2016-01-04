@@ -1,18 +1,6 @@
 TCP/IP Library Change Log
 =========================
 
-4.0.2
------
-
-  * Changes to dependencies:
-
-    - lib_ethernet: 3.0.3 -> 3.1.1
-
-      + Fixed issue with application filter data not being forwarded to clients
-        of 100Mb MACs
-      + Added VLAN tag stripping option to RT 100Mb Ethernet MAC configuration
-        interface
-
 4.0.1
 -----
 
