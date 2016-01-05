@@ -1,4 +1,4 @@
-// Copyright (c) 2015, XMOS Ltd, All rights reserved
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 
 #ifndef   _xtcp_cmd_h_
 #define   _xtcp_cmd_h_
