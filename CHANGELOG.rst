@@ -6,13 +6,6 @@ TCP/IP Library Change Log
 
   * Changes to dependencies:
 
-    - lib_ethernet: 3.0.3 -> 3.1.1
-
-      + Fixed issue with application filter data not being forwarded to clients
-        of 100Mb MACs
-      + Added VLAN tag stripping option to RT 100Mb Ethernet MAC configuration
-        interface
-
     - lib_crypto: Added dependency 1.0.0
 
 4.0.1
@@ -22,26 +15,6 @@ TCP/IP Library Change Log
     within XTCP
   * MAC address parameter to xtcp() is now qualified as const to allow parallel
     usage
-
-  * Changes to dependencies:
-
-    - lib_locks: 2.0.0 -> 2.0.1
-
-      + Update to use lock resource macro from the standard library to prevent
-        compile warning
-
-    - lib_ethernet: 3.0.0 -> 3.0.3
-
-      + Update RGMII port delays to use best candidate from testing
-      + Improve interoperability of PHY speed and link detection via RGMII
-        inter-frame data
-      + Fix 64-bit alignment of MII lite to prevent crash on XS2
-      + Fixed issue with optimisation build flags not being overridden by the
-        module
-      + Added missing extern declaration for inline interface function
-        send_timed_packet()
-      + Added ability to override the number of Ethertype filters from the
-        ethernet_conf.h
 
 4.0.0
 -----
