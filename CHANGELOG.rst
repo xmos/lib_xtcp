@@ -1,6 +1,12 @@
 TCP/IP Library Change Log
 =========================
 
+4.0.2
+-----
+
+  * Change uIP timer.h to uip_timer.h to avoid conflict with xcore timer.h
+  * Update to source code license and copyright
+
 4.0.1
 -----
 
