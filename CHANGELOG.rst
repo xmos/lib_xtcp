@@ -1,10 +1,20 @@
 TCP/IP Library Change Log
 =========================
 
+5.0.0
+-----
+
+  * Changes to dependencies:
+
+    - lib_crypto: Added dependency 1.0.0
+
 4.0.1
 -----
-  * Fixed issue with link up/down events being ignored when SMI is not polled within XTCP
-  * MAC address parameter to xtcp() is now qualified as const to allow parallel usage
+
+  * Fixed issue with link up/down events being ignored when SMI is not polled
+    within XTCP
+  * MAC address parameter to xtcp() is now qualified as const to allow parallel
+    usage
 
 4.0.0
 -----
@@ -12,6 +22,23 @@ TCP/IP Library Change Log
   * Moved over to new file structure
   * Updated to use new lib_ethernet
 
+  * Changes to dependencies:
+
+    - lib_gpio: Added dependency 1.0.0
+
+    - lib_otpinfo: Added dependency 2.0.0
+
+    - lib_locks: Added dependency 2.0.0
+
+    - lib_ethernet: Added dependency 3.0.0
+
+    - lib_xassert: Added dependency 2.0.0
+
+    - lib_logging: Added dependency 2.0.0
+
+
+Legacy release history
+----------------------
 
 3.2.1
 -----
