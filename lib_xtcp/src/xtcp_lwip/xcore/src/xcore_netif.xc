@@ -39,9 +39,10 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
     }
 
     if (byte_cnt < 60) {
-      for (int i=byte_cnt; i<60; i++)
+      for (int i=byte_cnt; i<60; i++) {
         (txbuf, unsigned char[])[i] = 0;
-        byte_cnt = 60;
+      }
+      byte_cnt = 60;
     }
 
     xtcp_i_mii->send_packet(txbuf, byte_cnt);
