@@ -275,5 +275,5 @@ Parties
       non-exclusive jurisdiction of the English courts.
 
 Schedule
-XMOS TCP/IP Library sofware
+XMOS TCP/IP Library software
 No license fee.
