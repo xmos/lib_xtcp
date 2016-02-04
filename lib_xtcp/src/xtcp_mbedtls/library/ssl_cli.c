@@ -18,7 +18,7 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-
+#include <xscope.h>
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -560,6 +560,14 @@ static int ssl_write_client_hello( mbedtls_ssl_context *ssl )
     }
 
     memcpy( p, ssl->handshake->randbytes, 32 );
+
+    {
+      // Client Random
+      unsigned char msg_type = 'c';
+      xscope_bytes(0, 1, (unsigned char *)&msg_type);
+      xscope_bytes(0, 32, (unsigned char *)ssl->handshake->randbytes);
+    }
+
     MBEDTLS_SSL_DEBUG_BUF( 3, "client hello, random bytes", p, 32 );
     p += 32;
 
@@ -1795,6 +1803,12 @@ static int ssl_write_encrypted_pms( mbedtls_ssl_context *ssl,
     }
 #endif
 
+    {
+      // Raw Pre Master
+      unsigned char msg_type = 'r';
+      xscope_bytes(0, 1, (unsigned char *)&msg_type);
+      xscope_bytes(0, 48, (unsigned char *)p);
+    }
     return( 0 );
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_RSA_ENABLED ||
