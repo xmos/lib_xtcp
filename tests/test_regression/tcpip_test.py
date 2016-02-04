@@ -5,7 +5,7 @@ import time
 import os, commands
 import sys
 
-HOST='10.0.102.200'
+HOST='192.168.0.41'
 DEST_PORT=49468
 SRC_PORT=49454
 SRC_PORT2=49455
@@ -27,14 +27,7 @@ def socket_send(s, length):
 	for i in range(0, length):
 		data += chr(i % 256)
 	print "Sending",len(data),"bytes"
-#	t1 = time.time()
-	s.send(data)	
-#	t2 = time.time()
-#	t3 = t2 - t1;
-#	if t3 > 0:
-#		print t3, "seconds"	
-#		bytes_sec = length / (t2 - t1)
-#		print int(bytes_sec * 8), "bits per second"
+	s.sendall(data)
 
 def socket_recv(s, length):
 	data = ""
@@ -47,29 +40,29 @@ def socket_recv(s, length):
 	
 def echo_test(protocol):
 
-	len = 1024
+	data_len = 1024
 	i = 0
 
 	time.sleep(1)
 	
 	# Client
-	while len:
+	while data_len:
 		s = socket.socket(socket.AF_INET, protocol)
 		s.settimeout(10.0)
 		i = i + 1
 		print DEST_PORT + i
 		s.connect((HOST, DEST_PORT + i))
-		socket_send(s, len)
-		socket_recv(s, len)
+		socket_send(s, data_len)
+		socket_recv(s, data_len)
 		s.close()
 		time.sleep(0.2)
-		len = len / 2
+		data_len = data_len / 2
 
-	len = 1024
+	data_len = 1024
 	i = 0
 		
 	# Server
-	while len:
+	while data_len:
 		data = ""
 		s = socket.socket(socket.AF_INET, protocol)
 		s.settimeout(10.0)
@@ -81,17 +74,17 @@ def echo_test(protocol):
 			s.listen(1)
 			s, address = s.accept()
 			s.settimeout(10.0)
-			data, tmp = socket_recv_d(s, len, data)
+			data, tmp = socket_recv_d(s, data_len, data)
 		else:
-			data, address = socket_recv_d(s, len, data)
+			data, address = socket_recv_d(s, data_len, data)
 			
-		socket_send_d(address, s, len, data)
+		socket_send_d(address, s, data_len, data)
 		
 		if (protocol == socket.SOCK_STREAM):
 			s.shutdown(2)
 			
 		s.close()
-		len = len / 2
+		data_len = data_len / 2
 
 
 def echo_test2(protocol):
@@ -158,15 +151,15 @@ def runtests():
 		print "Test machine 1"
 	
 	if host2 == False:
-		#echo_test(socket.SOCK_DGRAM)
-		#echo_test(socket.SOCK_STREAM)
+		echo_test(socket.SOCK_DGRAM)
+		echo_test(socket.SOCK_STREAM)
 		speed_test(socket.SOCK_STREAM)
-		#speed_test(socket.SOCK_DGRAM)
+		speed_test(socket.SOCK_DGRAM)
 		
 	echo_test2(socket.SOCK_STREAM)
 	
 	if host2 == False:
-		ping_test("10.0.102.200")
+		ping_test(HOST)
 	
 	print "Done"       
 	
