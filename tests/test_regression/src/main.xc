@@ -7,30 +7,30 @@
 #include "otp_board_info.h"
 #include "debug_print.h"
 
-port p_eth_rxclk  = on tile[1]: XS1_PORT_1J;
-port p_eth_rxd    = on tile[1]: XS1_PORT_4E;
-port p_eth_txd    = on tile[1]: XS1_PORT_4F;
-port p_eth_rxdv   = on tile[1]: XS1_PORT_1K;
-port p_eth_txen   = on tile[1]: XS1_PORT_1L;
-port p_eth_txclk  = on tile[1]: XS1_PORT_1I;
-port p_eth_int    = on tile[1]: XS1_PORT_1O;
-port p_eth_rxerr  = on tile[1]: XS1_PORT_1P;
+port p_eth_rxclk  = on tile[1]: XS1_PORT_1A;
+port p_eth_rxd    = on tile[1]: XS1_PORT_4C;
+port p_eth_txd    = on tile[1]: XS1_PORT_4D;
+port p_eth_rxdv   = on tile[1]: XS1_PORT_1D;
+port p_eth_txen   = on tile[1]: XS1_PORT_1E;
+port p_eth_txclk  = on tile[1]: XS1_PORT_1C;
+port p_eth_rxerr  = on tile[1]: XS1_PORT_1B;
 port p_eth_timing = on tile[1]: XS1_PORT_8C;
+port p_eth_rst    = on tile[1]: XS1_PORT_1H;
 
 clock eth_rxclk   = on tile[1]: XS1_CLKBLK_1;
 clock eth_txclk   = on tile[1]: XS1_CLKBLK_2;
 
-port p_smi_mdc = on tile[1]: XS1_PORT_1N;
-port p_smi_mdio = on tile[1]: XS1_PORT_1M;
+port p_smi_mdc = on tile[1]: XS1_PORT_1I;
+port p_smi_mdio = on tile[1]: XS1_PORT_1G;
 
 otp_ports_t otp_ports = on tile[1]: OTP_PORTS_INITIALIZER;
 
 #ifndef DEVICE_ADDRESS
-#define DEVICE_ADDRESS 10,0,102,200
+#define DEVICE_ADDRESS 192,168,0,41
 #endif
 
 #ifndef HOST1_ADDRESS
-#define HOST1_ADDRESS 10,0,102,42
+#define HOST1_ADDRESS 192,168,0,42
 #endif
 
 #ifndef HOST2_ADDRESS
@@ -356,11 +356,14 @@ int main(void)
     smi_if i_smi;
 
     par {
-    on tile[1]: mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
+    on tile[1]: {
+        p_eth_rst <: 1;
+        mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
                     p_eth_txclk, p_eth_txen, p_eth_txd, p_eth_timing,
                     eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE);
+    }
 
-    on tile[1]: xtcp(c_xtcp, 1, i_mii,
+    on tile[1]: xtcp(c_xtcp, 2, i_mii,
                      null, null, null,
                      i_smi, 0,
                      null, otp_ports, ipconfig);
