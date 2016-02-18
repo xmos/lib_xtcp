@@ -1,6 +1,6 @@
-VERSION = 4.0.2
+VERSION = 4.0.3
 
-DEPENDENT_MODULES = lib_ethernet(>=3.0.3) lib_otpinfo(>=2.0.0)
+DEPENDENT_MODULES = lib_ethernet(>=3.2.0) lib_otpinfo(>=2.0.0)
 
 ifeq ($(CONFIG),IPV6)
 XTCP_SOURCE_DIRS = src src/xtcp_uip6/*

@@ -1,6 +1,11 @@
 TCP/IP Library Change Log
 =========================
 
+4.0.3
+-----
+
+  * Update to support enabling link status notifications
+
 4.0.2
 -----
 

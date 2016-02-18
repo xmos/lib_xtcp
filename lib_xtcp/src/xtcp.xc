@@ -103,13 +103,20 @@ void xtcp(chanend xtcp[n], size_t n,
       i_eth_cfg.add_macaddr_filter(index, 0, macaddr_filter);
 
       // Add broadcast filter
-      for (size_t i = 0; i < 6; i++)
+      for (size_t i = 0; i < 6; i++) {
         macaddr_filter.addr[i] = 0xff;
+      }
       i_eth_cfg.add_macaddr_filter(index, 0, macaddr_filter);
 
       // Only allow ARP and IP packets to the stack
       i_eth_cfg.add_ethertype_filter(index, 0x0806);
       i_eth_cfg.add_ethertype_filter(index, 0x0800);
+
+      if (isnull(i_smi)) {
+        // If there is no SMI interface to determine link up/down then request
+        // notifications over the RX channel.
+        i_eth_cfg.enable_link_status_notification(index);
+      }
     }
   }
 
