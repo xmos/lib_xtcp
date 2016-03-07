@@ -317,7 +317,7 @@ void
 lwip_init(void)
 {
   lwip_lock = hwlock_alloc();
-  if (lwip_lock == HWLOCK_NOT_ALLOCATED) fail();
+  if (lwip_lock == HWLOCK_NOT_ALLOCATED) fail("");
   /* Modules initialization */
   stats_init();
 #if !NO_SYS
