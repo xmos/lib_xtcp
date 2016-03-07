@@ -7,6 +7,7 @@
 #include "ethernet.h"
 #include "otp_board_info.h"
 #include <xccompat.h>
+#include "wifi.h"
 
 #include "xtcp_conf_derived.h"
 #ifndef XTCP_CLIENT_BUF_SIZE
@@ -630,6 +631,15 @@ void xtcp_lwip(chanend c_xtcp[n], size_t n,
           const char (&?mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
+
+// TODO: document
+void xtcp_lwip_wifi(chanend xtcp[n], size_t n,
+                    client interface wifi_hal_if i_wifi_hal,
+                    client interface wifi_network_config_if i_wifi_config,
+                    client interface wifi_network_data_if i_wifi_data,
+                    // const char (&?mac_address0)[6],
+                    // otp_ports_t &?otp_ports,
+                    xtcp_ipconfig_t &ipconfig);
 #endif
 
 /** Utility functions **/

@@ -259,3 +259,67 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
     }
   }
 }
+
+// TODO: See if xtcp_lwip_wifi can be merged with xtcp_lwip
+void xtcp_lwip_wifi(chanend xtcp[n], size_t n,
+                    client interface wifi_hal_if i_wifi_hal,
+                    client interface wifi_network_config_if i_wifi_config,
+                    client interface wifi_network_data_if i_wifi_data,
+                    // const char (&?mac_address0)[6],
+                    // otp_ports_t &?otp_ports,
+                    xtcp_ipconfig_t &ipconfig)
+{
+  timer timers[NUM_TIMEOUTS];
+  unsigned timeout[NUM_TIMEOUTS];
+  unsigned period[NUM_TIMEOUTS];
+
+  char mac_address[6];
+  struct netif my_netif;
+  struct netif *unsafe netif;
+
+  xtcpd_init(xtcp, n);
+
+  // Initialise lwip to enable the use of pbufs in lib_wifi
+  lwip_init();
+
+  // Signal to lib_wifi that it can now start the driver and boot the radio
+  delay_seconds(1);
+  debug_printf("call init_radio()\n");
+  i_wifi_hal.init_radio();
+  debug_printf("init_radio() done\n");
+
+  // Get the MAC address from the WiFi radio module
+  if (i_wifi_config.get_mac_address(mac_address) != WIFI_SUCCESS) {
+    fail("Error while getting MAC address of WiFi radio\n");
+  }
+
+  ip4_addr_t ipaddr, netmask, gateway;
+  memcpy(&ipaddr, ipconfig.ipaddr, sizeof(xtcp_ipaddr_t));
+  memcpy(&netmask, ipconfig.netmask, sizeof(xtcp_ipaddr_t));
+  memcpy(&gateway, ipconfig.gateway, sizeof(xtcp_ipaddr_t));
+
+  unsafe {
+    netif = &my_netif;
+    netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL);
+    netif_set_default(netif);
+  }
+
+  low_level_init(my_netif, mac_address); // Needs to be called after netif_add which zeroes everything
+
+  if (ipconfig.ipaddr[0] == 0) {
+    if (dhcp_start(netif) != ERR_OK) fail("DHCP error");
+  }
+  netif_set_up(netif);
+
+  int time_now;
+  timers[0] :> time_now;
+  init_timers(period, timeout, time_now);
+
+  while (1) {
+    select {
+      // TODO: read wifi data interface
+      // TODO: write wifi data interface
+      // TODO: timeout cases
+    }
+  }
+}
