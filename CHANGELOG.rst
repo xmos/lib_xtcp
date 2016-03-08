@@ -1,6 +1,15 @@
 TCP/IP Library Change Log
 =========================
 
+5.1.0
+-----
+
+  * Add support for using lib_wifi to provide the physical transport
+
+  * Changes to dependencies:
+
+    - lib_wifi: Added dependency 0.0.1
+
 5.0.0
 -----
 
