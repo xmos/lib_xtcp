@@ -4,6 +4,8 @@ TCP/IP Library Change Log
 5.0.0
 -----
 
+  * Add port of LwIP TCP/IP stack
+
   * Changes to dependencies:
 
     - lib_crypto: Added dependency 1.0.0
