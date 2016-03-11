@@ -26,8 +26,12 @@ extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
 extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
 
+// Variable for storing the data interface  used by the xcore_netif.xc for
+// sending packets
+extern client interface wifi_network_data_if * unsafe xtcp_i_wifi_data;
+
 static void low_level_init(struct netif &netif, char mac_address[6])
-{  
+{
   /* set MAC hardware address length */
   netif.hwaddr_len = ETHARP_HWADDR_LEN;
   /* set MAC hardware address */
@@ -276,6 +280,10 @@ void xtcp_lwip_wifi(chanend xtcp[n], size_t n,
   char mac_address[6];
   struct netif my_netif;
   struct netif *unsafe netif;
+
+  unsafe {
+     xtcp_i_wifi_data = (client wifi_network_data_if * unsafe) &i_wifi_data;
+  }
 
   xtcpd_init(xtcp, n);
 
