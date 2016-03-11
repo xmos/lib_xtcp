@@ -26,8 +26,12 @@ extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
 extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
 
+// Variable for storing the data interface  used by the xcore_netif.xc for
+// sending packets
+extern client interface wifi_network_data_if * unsafe xtcp_i_wifi_data;
+
 static void low_level_init(struct netif &netif, char mac_address[6])
-{  
+{
   /* set MAC hardware address length */
   netif.hwaddr_len = ETHARP_HWADDR_LEN;
   /* set MAC hardware address */
@@ -277,6 +281,10 @@ void xtcp_lwip_wifi(chanend xtcp[n], size_t n,
   struct netif my_netif;
   struct netif *unsafe netif;
 
+  unsafe {
+     xtcp_i_wifi_data = (client wifi_network_data_if * unsafe) &i_wifi_data;
+  }
+
   xtcpd_init(xtcp, n);
 
   // Initialise lwip to enable the use of pbufs in lib_wifi
@@ -316,10 +324,60 @@ void xtcp_lwip_wifi(chanend xtcp[n], size_t n,
   init_timers(period, timeout, time_now);
 
   while (1) {
+    unsafe {
     select {
-      // TODO: read wifi data interface
-      // TODO: write wifi data interface
-      // TODO: timeout cases
+    case i_wifi_data.packet_ready():
+      struct pbuf *unsafe p = i_wifi_data.receive_packet();
+      ethernet_input(p, netif); // Process the packet
+      break;
+
+    case (int i=0;i<n;i++) xtcpd_service_client(xtcp[i], i):
+      break;
+
+    case(size_t i = 0; i < NUM_TIMEOUTS; i++)
+      timers[i] when timerafter(timeout[i]) :> unsigned current:
+
+      switch (i) {
+      case ARP_TIMEOUT: {
+        etharp_tmr();
+        // Check for the link state
+        static int linkstate=0;
+        ethernet_link_state_t status = i_wifi_config.get_link_state();
+        if (!status && linkstate) {
+          netif_set_link_down(netif);
+          lwip_xtcp_down();
+        }
+        if (status && !linkstate) {
+          netif_set_link_up(netif);
+        }
+        linkstate = status;
+
+        if (!get_uip_xtcp_ifstate() && dhcp_supplied_address(netif)) {
+          uint32_t ip = ip4_addr_get_u32(&netif->ip_addr);
+          debug_printf("DHCP: Got %d.%d.%d.%d\n", ip4_addr1(&ip),
+                                                  ip4_addr2(&ip),
+                                                  ip4_addr3(&ip),
+                                                  ip4_addr4(&ip));
+          lwip_xtcp_up();
+        }
+        break;
+      }
+      case AUTOIP_TIMEOUT: autoip_tmr(); break;
+      case TCP_TIMEOUT: tcp_tmr(); break;
+      case IGMP_TIMEOUT: igmp_tmr(); break;
+      case DHCP_COARSE_TIMEOUT: dhcp_coarse_tmr(); break;
+      case DHCP_FINE_TIMEOUT: dhcp_fine_tmr(); break;
+      default: fail("Bad timer\n"); break;
+      }
+
+      timeout[i] = current + period[i];
+      uip_xtcp_checkstate();
+
+      break;
+    default:
+      xtcpd_check_connection_poll();
+      break;
+    }
     }
   }
 }
