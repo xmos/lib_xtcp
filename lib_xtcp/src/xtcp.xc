@@ -127,11 +127,6 @@ void xtcp(chanend xtcp[n], size_t n,
 
   while (1) {
 
-    xtcpd_service_clients(xtcp, n);
-    xtcpd_check_connection_poll();
-    uip_xtcp_checkstate();
-    xtcp_process_udp_acks();
-
     unsafe {
     select {
     case !isnull(i_mii) => mii_incoming_packet(mii_info):
@@ -205,6 +200,12 @@ void xtcp(chanend xtcp[n], size_t n,
 
       xtcp_process_periodic_timer();
       break;
+    default:
+        xtcpd_service_clients(xtcp, n);
+        xtcpd_check_connection_poll();
+        uip_xtcp_checkstate();
+        xtcp_process_udp_acks();
+        break;
     }
     }
   }
