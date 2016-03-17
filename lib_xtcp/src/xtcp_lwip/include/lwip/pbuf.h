@@ -140,6 +140,12 @@ struct pbuf {
    * the stack itself, or pbuf->next pointers from a chain.
    */
   u16_t ref;
+
+  /**
+   * As stated in wwd_network_send_ethernet_data the BDC header is
+   * pre-pended to the packet. Need to allow room for this to happen.
+   */
+  unsigned bdc_pad[7];
 };
 
 
