@@ -58,6 +58,7 @@
 #include "lwip/sys.h"
 #endif
 
+void xtcpd_send_split_data(chanend c, unsigned char *data, int pos, int len);
 #include <string.h>
 
 /* Define some copy-macros for checksum-on-copy so that the code looks
