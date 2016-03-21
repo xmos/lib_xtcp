@@ -205,6 +205,8 @@ void xtcp(chanend xtcp[n], size_t n,
 
       xtcp_process_periodic_timer();
       break;
+    default:
+      break;
     }
     }
   }
