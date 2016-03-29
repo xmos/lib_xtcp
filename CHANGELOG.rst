@@ -6,10 +6,6 @@ TCP/IP Library Change Log
 
   * Add support for using lib_wifi to provide the physical transport
 
-  * Changes to dependencies:
-
-    - lib_wifi: Added dependency 0.0.1
-
 5.0.0
 -----
 
@@ -33,17 +29,17 @@ TCP/IP Library Change Log
 
   * Changes to dependencies:
 
-    - lib_gpio: Added dependency 1.0.0
+    - lib_ethernet: Added dependency 3.0.0
 
-    - lib_otpinfo: Added dependency 2.0.0
+    - lib_gpio: Added dependency 1.0.0
 
     - lib_locks: Added dependency 2.0.0
 
-    - lib_ethernet: Added dependency 3.0.0
+    - lib_logging: Added dependency 2.0.0
+
+    - lib_otpinfo: Added dependency 2.0.0
 
     - lib_xassert: Added dependency 2.0.0
-
-    - lib_logging: Added dependency 2.0.0
 
 
 Legacy release history

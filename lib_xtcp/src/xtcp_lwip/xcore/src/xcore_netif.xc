@@ -1,4 +1,5 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
+#include "xtcp.h"
 #include "ethernet.h"
 #include "mii.h"
 #include "lwip/ip_addr.h"
@@ -6,14 +7,11 @@
 #include "lwip/pbuf.h"
 #include "xassert.h"
 
-// TODO: Need to sort out where this interface is defined
-#include "wifi.h"
-
 client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx = NULL;
 client interface mii_if * unsafe xtcp_i_mii = NULL;
 mii_info_t xtcp_mii_info;
 
-client interface wifi_network_data_if * unsafe xtcp_i_wifi_data;
+client interface xtcp_pbuf_if * unsafe xtcp_i_pbuf_data;
 
 unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
                                    const ip4_addr_t *unsafe group,
@@ -22,9 +20,9 @@ unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
 }
 
 err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
-  if (xtcp_i_wifi_data) {
+  if (xtcp_i_pbuf_data) {
     unsafe {
-      xtcp_i_wifi_data->send_packet(p);
+      xtcp_i_pbuf_data->send_packet(p);
     }
     return ERR_OK;
 
