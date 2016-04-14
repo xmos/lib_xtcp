@@ -15,9 +15,6 @@
 #include "lwip/netif.h"
 #include "lwip/dns.h"
 
-void xtcpd_recv_lwip_pbuf(chanend xtcp[], int linknum, int num_xtcp,
-  xtcpd_state_t *s, struct pbuf *p);
-
 #define DHCPC_SERVER_PORT  67
 #define DHCPC_CLIENT_PORT  68
 

@@ -549,10 +549,10 @@ pbuf_header_impl(struct pbuf *p, s16_t header_size_increment, u8_t force)
     /* set new payload pointer */
     p->payload = (u8_t *)p->payload - header_size_increment;
     /* boundary check fails? */
-    if ((u8_t *)p->payload < (u8_t *)&p->bdc_pad) {
+    if ((u8_t *)p->payload < (u8_t *)p + SIZEOF_STRUCT_PBUF) {
       LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
         ("pbuf_header: failed as %p < %p (not enough space for new header size)\n",
-        (void *)p->payload, (void *)(&p->bdc_pad)));
+        (void *)p->payload, (void *)(p + 1)));
       /* restore old payload pointer */
       p->payload = payload;
       /* bail out unsuccessfully */
