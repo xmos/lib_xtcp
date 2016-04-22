@@ -1295,7 +1295,10 @@
  * for an additional encapsulation header before ethernet headers (e.g. 802.11)
  */
 #ifndef PBUF_LINK_ENCAPSULATION_HLEN
-#define PBUF_LINK_ENCAPSULATION_HLEN    0
+/* Should be defined as WICED_PHYSICAL_HEADER, but this would create a circular
+ * dependency between lib_xtcp and lib_wifi
+ */
+#define PBUF_LINK_ENCAPSULATION_HLEN    26
 #endif
 
 /**
