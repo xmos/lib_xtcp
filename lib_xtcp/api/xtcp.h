@@ -7,7 +7,9 @@
 #include "ethernet.h"
 #include "otp_board_info.h"
 #include <xccompat.h>
+#if LWIP_XTCP
 #include "lwip/netif.h"
+#endif  // LWIP_XTCP
 
 #include "xtcp_conf_derived.h"
 #ifndef XTCP_CLIENT_BUF_SIZE
@@ -572,6 +574,8 @@ void xtcp_request_host_by_name(chanend c_xtcp, const char hostname[]);
 
 #ifdef __XC__
 
+#if LWIP_XTCP
+
 typedef struct pbuf * unsafe pbuf_p;
 
 /** WiFi/xtcp data interface - mii.h equivalent
@@ -607,6 +611,8 @@ void xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6]);
 void xtcp_lwip_init_timers(unsigned period[NUM_TIMEOUTS],
                            unsigned timeout[NUM_TIMEOUTS],
                            unsigned time_now);
+
+#endif // LWIP_XTCP
 
 /** Function implement the TCP/IP stack task.
  *
@@ -657,6 +663,7 @@ void xtcp(chanend c_xtcp[n], size_t n,
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
 
+#if LWIP_XTCP
 void xtcp_lwip(chanend c_xtcp[n], size_t n,
           client mii_if ?i_mii,
           client ethernet_cfg_if ?i_eth_cfg,
@@ -667,6 +674,7 @@ void xtcp_lwip(chanend c_xtcp[n], size_t n,
           const char (&?mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
+#endif  // LWIP_XTCP
 
 #endif
 
