@@ -29,7 +29,7 @@ extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
 
 static void low_level_init(struct netif &netif, char mac_address[6])
-{  
+{
   /* set MAC hardware address length */
   netif.hwaddr_len = ETHARP_HWADDR_LEN;
   /* set MAC hardware address */
@@ -160,7 +160,14 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
     }
   }
 
-  // uip_server_init(xtcp, n, &ipconfig, mac_address);
+  int using_fixed_ip = 0;
+  for (int i = 0; i < sizeof(ipconfig.ipaddr); i++) {
+    if (((unsigned char *)ipconfig.ipaddr)[i]) {
+      using_fixed_ip = 1;
+      break;
+    }
+  }
+
   xtcpd_init(xtcp, n);
 
   lwip_init();
@@ -253,13 +260,17 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
           linkstate = status;
         }
 
-        if (!get_uip_xtcp_ifstate() && dhcp_supplied_address(netif)) {
-          uint32_t ip = ip4_addr_get_u32(&netif->ip_addr);
-          debug_printf("DHCP: Got %d.%d.%d.%d\n", ip4_addr1(&ip),
-                                                  ip4_addr2(&ip),
-                                                  ip4_addr3(&ip),
-                                                  ip4_addr4(&ip));
-          lwip_xtcp_up();
+        if (!get_uip_xtcp_ifstate()) {
+          if (dhcp_supplied_address(netif)) {
+            uint32_t ip = ip4_addr_get_u32(&netif->ip_addr);
+            debug_printf("DHCP: Got %d.%d.%d.%d\n", ip4_addr1(&ip),
+                                                    ip4_addr2(&ip),
+                                                    ip4_addr3(&ip),
+                                                    ip4_addr4(&ip));
+            lwip_xtcp_up();
+          } else if (using_fixed_ip) {
+            lwip_xtcp_up();
+          }
         }
         break;
       }
