@@ -41,6 +41,7 @@
 #include "lwip/ip_addr.h"
 #include "lwip/ip.h"
 #include "lwip/ip6_addr.h"
+#include "xtcp_server.h"
 
 #if defined(__cplusplus) || defined(__XC__)
 extern "C" {
@@ -91,6 +92,8 @@ void udp_recv_event(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 struct udp_pcb {
 /* Common members of all PCB types */
   IP_PCB;
+  /* Link with the XTCP state */
+  xtcpd_state_t xtcp_state;
 
 /* Protocol specific PCB members */
 

@@ -30,8 +30,8 @@ static int guid = 1;
   #error "Cannot have more connections than GUIDs"
 #endif
 
-static chanend *xtcp_links;
-static int xtcp_num;
+chanend *xtcp_links;
+int xtcp_num;
 
 #define NUM_TCP_LISTENERS 10
 #define NUM_UDP_LISTENERS 10
@@ -123,8 +123,8 @@ void xtcpd_init_state(xtcpd_state_t *s,
 }
 
 
-static void xtcpd_event(xtcp_event_type_t event,
-                        xtcpd_state_t *s)
+void xtcpd_event(xtcp_event_type_t event,
+                 xtcpd_state_t *s)
 {
   if (s->linknum != -1) {
     xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
@@ -169,7 +169,6 @@ static void register_listener(struct listener_info_t listeners[],
 
 void xtcpd_unlisten(int linknum, int port_number){
   unregister_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
-  // uip_unlisten(HTONS(port_number));
 }
 
 void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
@@ -179,13 +178,13 @@ void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
     register_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
     struct tcp_pcb *pcb = tcp_new();
     tcp_bind(pcb, NULL, port_number);
-    pcb = tcp_listen(pcb);
+    tcp_listen(pcb);
   }
   else {
     register_listener(udp_listeners, linknum, port_number, NUM_UDP_LISTENERS);
-    // uip_udp_listen(HTONS(port_number));
+    struct udp_pcb *pcb = udp_new();
+    udp_bind(pcb, NULL, port_number);
   }
-  return;
 }
 
 
@@ -193,10 +192,11 @@ void xtcpd_bind_local(int linknum, int conn_id, int port_number)
 {
   xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   s->conn.local_port = port_number;
-  if (s->conn.protocol == XTCP_PROTOCOL_UDP)
+  if (s->conn.protocol == XTCP_PROTOCOL_UDP) {
     ((struct uip_udp_conn *) s->s.uip_conn)->lport = HTONS(port_number);
-  else
+  } else {
     ((struct uip_conn *) s->s.uip_conn)->lport = HTONS(port_number);
+  }
 }
 
 void xtcpd_bind_remote(int linknum,
@@ -228,15 +228,28 @@ void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
       s->linknum = linknum;
       s->s.connect_request = 1;
       s->conn.connection_type = XTCP_CLIENT_CONNECTION;
+      s->conn.protocol = XTCP_PROTOCOL_TCP;
     }
     else {
-      fail("Couldn't TCP connect");
+      fail("TCP connect failed");
     }
   }
   else {
-    // UDP TODO
+    struct udp_pcb *pcb = udp_new();
+    ip_addr_t dst;
+    IPADDR2_COPY(&dst, addr);
+    err_t res = udp_connect(pcb, &dst, port_number);
+    if (res == ERR_OK) {
+      xtcpd_state_t *s = (xtcpd_state_t *) &(pcb->xtcp_state);
+      s->linknum = linknum;
+      s->s.connect_request = 1;
+      s->conn.connection_type = XTCP_CLIENT_CONNECTION;
+      s->conn.protocol = XTCP_PROTOCOL_UDP;
+    }
+    else {
+      fail("UDP connect failed");
+    }
   }
-  return;
 }
 
 
