@@ -49,11 +49,11 @@ struct listener_info_t udp_listeners[NUM_UDP_LISTENERS] = {{0}};
 
 void xtcpd_init(chanend xtcp_links_init[], int n)
 {
-  int i;
   xtcp_links = xtcp_links_init;
   xtcp_num = n;
-  for(i=0;i<MAX_XTCP_CLIENTS;i++)
+  for (int i = 0; i < MAX_XTCP_CLIENTS; i++) {
     prev_ifstate[i] = -1;
+  }
   xtcpd_server_init();
 }
 
@@ -62,8 +62,8 @@ static int get_listener_linknum(struct listener_info_t listeners[],
                                 int n,
                                 int local_port)
 {
-  int i, linknum = -1;
-  for (i=0;i<n;i++) {
+  int linknum = -1;
+  for (int i = 0; i < n; i++) {
     if (listeners[i].active &&
         local_port == listeners[i].port_number) {
       linknum = listeners[i].linknum;
@@ -101,11 +101,11 @@ void xtcpd_init_state(xtcpd_state_t *s,
   memset(s, 0, sizeof(xtcpd_state_t));
 
   // Find and use a GUID that is not being used by another connection
-  while (xtcpd_lookup_tcp_state(guid) != NULL)
-  {
+  while (xtcpd_lookup_tcp_state(guid) != NULL) {
     guid++;
-    if (guid > MAX_GUID)
+    if (guid > MAX_GUID) {
       guid = 1;
+    }
   }
 
   s->conn.connection_type = connection_type;
@@ -118,8 +118,9 @@ void xtcpd_init_state(xtcpd_state_t *s,
 #ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
   s->s.accepts_partial_ack = 0;
 #endif
-  for (i=0;i<4;i++)
+  for (i=0;i<4;i++) {
     s->conn.remote_addr[i] = remote_addr[i];
+  }
 }
 
 
@@ -137,8 +138,7 @@ static void unregister_listener(struct listener_info_t listeners[],
                                 int port_number,
                                 int n){
 
-  int i;
-  for (i=0;i<n;i++){
+  for (int i = 0; i < n; i++) {
     if (listeners[i].port_number == port_number &&
         listeners[i].active) {
       listeners[i].active = 0;
@@ -153,9 +153,11 @@ static void register_listener(struct listener_info_t listeners[],
 {
   int i;
 
-  for (i=0;i<n;i++)
-    if (!listeners[i].active)
+  for (i=0;i<n;i++) {
+    if (!listeners[i].active) {
       break;
+    }
+  }
 
   if (i==n) {
     // Error: max number of listeners reached
@@ -262,7 +264,6 @@ void xtcpd_init_send(int linknum, int conn_id)
   }
 }
 
-
 void xtcpd_init_send_from_uip(struct uip_conn *conn)
 {
   xtcpd_state_t *s = &(conn->appstate);
@@ -276,7 +277,6 @@ void xtcpd_set_appstate(int linknum, int conn_id, xtcp_appstate_t appstate)
     s->conn.appstate = appstate;
   }
 }
-
 
 void xtcpd_abort(int linknum, int conn_id)
 {
@@ -428,7 +428,6 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
         debug_printf("LWIP_EVENT_RECV: %d\n", p->tot_len);
         xscope_int(LWIP_EVENT_RECV_START, p->tot_len);
         if (s->linknum != -1) {
-
           if (xtcpd_service_client_if_ready(s->linknum, xtcp_links, xtcp_num)) {
             xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
             tcp_recved(pcb, p->tot_len);
@@ -470,9 +469,9 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
                             s,
                             tcp_mss(pcb));
         if (len) {
-        err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
-        if (r != ERR_OK) fail("tcp_write() failed");
-        tcp_output(pcb);
+          err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+          if (r != ERR_OK) fail("tcp_write() failed");
+          tcp_output(pcb);
         }
       }
       break;
@@ -516,9 +515,7 @@ void uip_xtcp_checkstate()
       prev_ifstate[i] = uip_ifstate;
     }
   }
-
 }
-
 
 void lwip_xtcp_up() {
   uip_ifstate = 1;
@@ -533,7 +530,6 @@ int get_uip_xtcp_ifstate()
 {
   return uip_ifstate;
 }
-
 
 void xtcpd_set_poll_interval(int linknum, int conn_id, int poll_interval)
 {

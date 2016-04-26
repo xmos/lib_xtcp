@@ -306,15 +306,17 @@ void xtcpd_service_client(chanend xtcp, int i)
   }
   else {
     outct(xtcp, XS1_CT_END);
-    if (!notified[i])
+    if (!notified[i]) {
       outct(xtcp, XS1_CT_END);
+    }
     cmd = inuint(xtcp);
     conn_id = inuint(xtcp);
     chkct(xtcp, XS1_CT_END);
     outct(xtcp, XS1_CT_END);
     handle_xtcp_cmd(xtcp, i, cmd, conn_id);
-    if (notified[i])
+    if (notified[i]) {
       outct(xtcp, XS1_CT_END);
+    }
   }
 }
 
@@ -424,7 +426,7 @@ static transaction do_recv(chanend xtcp, int &client_ready,
   xtcp :> client_ready;
   if (client_ready) {
     xtcp <: datalen;
-    for (int i=0;i<datalen;i++)
+    for (int i = 0; i < datalen; i++) {
       xtcp <: data[i];
   }
 }
@@ -479,9 +481,6 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
                                  struct pbuf *unsafe p)
 {
   int client_ready = 0;
-  if (linknum != 0){
-    client_ready = 0;
-  }
 
   do {
     s.conn.event = XTCP_RECV_DATA;
@@ -493,8 +492,6 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
   } while (!client_ready);
 
   outct(xtcp[linknum], XS1_CT_END);
-
-  return;
 }
 
 int xtcpd_send_split_start(chanend c,
@@ -556,8 +553,6 @@ void xtcpd_send_config_event(chanend c,
 }
 #endif
 
-
-
 #pragma unsafe arrays
 void xtcpd_server_init() {
   for (int i=0;i<MAX_XTCP_CLIENTS;i++) {
@@ -574,5 +569,4 @@ void xtcpd_queue_event(chanend c, int linknum, int event)
     outct(c, XS1_CT_END);
     notified[linknum] = 1;
   }
-  return;
 }

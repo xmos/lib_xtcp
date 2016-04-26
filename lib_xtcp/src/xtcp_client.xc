@@ -83,7 +83,7 @@ void xtcp_bind_remote(chanend c_xtcp, xtcp_connection_t &conn,
 #pragma unsafe arrays
 transaction xtcp_event(chanend c_xtcp, xtcp_connection_t &conn)
 {
-  for(int i=0;i<sizeof(conn)>>2;i++) {
+  for (int i = 0; i < sizeof(conn)>>2; i++) {
 	  c_xtcp :> (conn,unsigned int[])[i];
   }
 }
@@ -145,17 +145,15 @@ void xtcp_unpause(chanend c_xtcp,
   send_cmd(c_xtcp, XTCP_CMD_UNPAUSE, conn.id);
 }
 
-
-
 int xtcp_recvi(chanend c_xtcp, unsigned char data[], int index)
 {
 	int len;
-	slave
-	{
+	slave {
 		c_xtcp <: 1;
 		c_xtcp :> len;
-		for (int i=index;i<index+len;i++)
+		for (int i = index; i < index+len; i++) {
 			c_xtcp :> data[i];
+    }
 	}
 
   chkct(c_xtcp, XS1_CT_END);
@@ -167,13 +165,12 @@ int xtcp_recvi(chanend c_xtcp, unsigned char data[], int index)
 int xtcp_recv_count(chanend c_xtcp, char data[], int count)
  {
 	int len, rxc;
-	slave
-	{
+	slave {
 		c_xtcp <: 1;
 		c_xtcp :> len;
 		rxc = (count < len) ? count : len;
 
-		for (int i=0;i<len;i++) {
+		for (int i = 0; i < len; i++) {
 			char c;
 			c_xtcp :> c;
 			if (i<rxc) data[i] = c;
@@ -188,7 +185,6 @@ int xtcp_recv_count(chanend c_xtcp, char data[], int count)
 int xtcp_recv(chanend c_xtcp, unsigned char data[]) {
 	return xtcp_recvi(c_xtcp, data, 0);
 }
-
 
 void xtcp_ignore_recv(chanend c_xtcp)
 {
@@ -217,7 +213,7 @@ void xtcp_sendi(chanend c_xtcp,
       int chunk_len;
       c_xtcp :> chunk_len;
       c_xtcp :> index;
-      for (int i=index; i<index+chunk_len; i++) {
+      for (int i = index; i < index+chunk_len; i++) {
         c_xtcp <: data[i];
       }
       more_data -= chunk_len;
