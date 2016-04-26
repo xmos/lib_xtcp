@@ -215,6 +215,7 @@ err_t pbuf_fill_chksum(struct pbuf *p, u16_t start_offset, const void *dataptr,
 #endif /* LWIP_CHECKSUM_ON_COPY */
 #if LWIP_TCP && TCP_QUEUE_OOSEQ && LWIP_WND_SCALE
 void pbuf_split_64k(struct pbuf *p, struct pbuf **rest);
+void pbuf_split_1k5(struct pbuf *p, struct pbuf **rest);
 #endif /* LWIP_TCP && TCP_QUEUE_OOSEQ && LWIP_WND_SCALE */
 
 u8_t pbuf_get_at(struct pbuf* p, u16_t offset);

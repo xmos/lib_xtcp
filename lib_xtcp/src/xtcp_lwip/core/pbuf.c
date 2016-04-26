@@ -1041,6 +1041,42 @@ void pbuf_split_64k(struct pbuf *p, struct pbuf **rest)
     }
   }
 }
+
+void pbuf_split_1k5(struct pbuf *p, struct pbuf **rest)
+{
+  *rest = NULL;
+  if ((p != NULL) && (p->next != NULL)) {
+    u16_t tot_len_front = p->len;
+    struct pbuf *i = p;
+    struct pbuf *r = p->next;
+
+    /* continue until the total length (summed up as u16_t) overflows */
+    while ((r != NULL) && ((tot_len_front + r->len) < 1500)) {
+      tot_len_front += r->len;
+      i = r;
+      r = r->next;
+    }
+    /* i now points to last packet of the first segment. Set next
+       pointer to NULL */
+    i->next = NULL;
+
+    if (r != NULL) {
+      /* Update the tot_len field in the first part */
+      for (i = p; i != NULL; i = i->next) {
+        i->tot_len -= r->tot_len;
+        LWIP_ASSERT("tot_len/len mismatch in last pbuf",
+                    (i->next != NULL) || (i->tot_len == i->len));
+      }
+      if (p->flags & PBUF_FLAG_TCP_FIN) {
+        r->flags |= PBUF_FLAG_TCP_FIN;
+      }
+
+      /* tot_len field in rest does not need modifications */
+      /* reference counters do not need modifications */
+      *rest = r;
+    }
+  }
+}
 #endif /* LWIP_TCP && TCP_QUEUE_OOSEQ && LWIP_WND_SCALE */
 
 /**

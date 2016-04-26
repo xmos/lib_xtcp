@@ -403,7 +403,10 @@ tcp_input(struct pbuf *p, struct netif *inp)
 #if TCP_QUEUE_OOSEQ && LWIP_WND_SCALE
         while (recv_data != NULL) {
           struct pbuf *rest = NULL;
-          pbuf_split_64k(recv_data, &rest);
+          // The XTCP clients cannot cope with receiving up to 64k of data at
+          // once, so split into 1.5k chunks instead.
+          // pbuf_split_64k(recv_data, &rest);
+          pbuf_split_1k5(recv_data, &rest);
 #else /* TCP_QUEUE_OOSEQ && LWIP_WND_SCALE */
         if (recv_data != NULL) {
 #endif /* TCP_QUEUE_OOSEQ && LWIP_WND_SCALE */

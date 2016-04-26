@@ -1186,7 +1186,10 @@ tcp_process_refused_data(struct tcp_pcb *pcb)
        closes the pcb */
     struct pbuf *refused_data = pcb->refused_data;
 #if TCP_QUEUE_OOSEQ && LWIP_WND_SCALE
-    pbuf_split_64k(refused_data, &rest);
+    // The XTCP clients cannot cope with receiving up to 64k of data at
+    // once, so split into 1.5k chunks instead.
+    // pbuf_split_64k(refused_data, &rest);
+    pbuf_split_1k5(refused_data, &rest);
     pcb->refused_data = rest;
 #else /* TCP_QUEUE_OOSEQ && LWIP_WND_SCALE */
     pcb->refused_data = NULL;

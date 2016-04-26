@@ -49,8 +49,11 @@
 #define PBUF_POOL_SIZE                  8
 #define TCP_WND                         8192
 #define TCP_OVERSIZE                    1
-// #define LWIP_WND_SCALE 1
-// #define TCP_RCV_SCALE 2
+
+// Required in order to get LWIP to split the packets into chunks before sending
+// to the application. Otherwise it sends all the chained data at once
+#define LWIP_WND_SCALE 1
+#define TCP_RCV_SCALE 2
 // #define TCP_WND_UPDATE_THRESHOLD   (TCP_WND / 16)
 
 #define LWIP_DEBUG 1
