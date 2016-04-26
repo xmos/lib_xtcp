@@ -306,28 +306,40 @@ void xtcpd_service_client(chanend xtcp, int i)
   }
   else {
     outct(xtcp, XS1_CT_END);
-    if (!notified[i])
+    if (!notified[i]) {
       outct(xtcp, XS1_CT_END);
+    }
     cmd = inuint(xtcp);
     conn_id = inuint(xtcp);
     chkct(xtcp, XS1_CT_END);
     outct(xtcp, XS1_CT_END);
     handle_xtcp_cmd(xtcp, i, cmd, conn_id);
-    if (notified[i])
+    if (notified[i]) {
       outct(xtcp, XS1_CT_END);
+    }
   }
 }
 
 #pragma unsafe arrays
-int xtcpd_service_client0(chanend xtcp, int i, int waiting_link)
+int xtcpd_service_client0(chanend xtcp, int i, int waiting_link, int use_timer)
 {
-  int activity = 1;
+  timer tmr;
+  static const int notification_delay = 50;
+  int activity = 0;
   unsigned char tok;
   unsigned int cmd;
   unsigned int conn_id;
-  select
-      {
+
+  int use_default = !use_timer;
+  int time;
+
+  if (use_timer) {
+    tmr :> time;
+  }
+
+  select {
       case inct_byref(xtcp, tok):
+        activity = 1;
         if (tok == XS1_CT_END) {
           // the other side has responded to the transaction
           notified[i] = 0;
@@ -344,19 +356,22 @@ int xtcpd_service_client0(chanend xtcp, int i, int waiting_link)
         }
         else {
           outct(xtcp, XS1_CT_END);
-          if (!notified[i])
+          if (!notified[i]) {
             outct(xtcp, XS1_CT_END);
+          }
           cmd = inuint(xtcp);
           conn_id = inuint(xtcp);
           chkct(xtcp, XS1_CT_END);
           outct(xtcp, XS1_CT_END);
           handle_xtcp_cmd(xtcp, i, cmd, conn_id);
-          if (notified[i])
+          if (notified[i]) {
             outct(xtcp, XS1_CT_END);
+          }
         }
         break;
-      default:
-        activity = 0;
+      case use_timer => tmr when timerafter(time + notification_delay) :> void:
+        break;
+      use_default => default:
         break;
       }
   return activity;
@@ -368,7 +383,7 @@ void xtcpd_service_clients(chanend xtcp[], int num_xtcp){
     while (activity) {
       activity = 0;
       for (int i=0;i<num_xtcp;i++)
-        activity |= xtcpd_service_client0(xtcp[i], i, -1);
+        activity |= xtcpd_service_client0(xtcp[i], i, -1, 0);
 
   }
 }
@@ -383,8 +398,9 @@ void xtcpd_service_clients_until_ready(int waiting_link,
     notified[waiting_link] = 1;
   }
   while (notified[waiting_link]) {
-    for (int i=0;i<num_xtcp;i++)
-      xtcpd_service_client0(xtcp[i], i, waiting_link);
+    for (int i=0;i<num_xtcp;i++) {
+      xtcpd_service_client0(xtcp[i], i, waiting_link, 0);
+    }
   }
 }
 
@@ -402,7 +418,7 @@ int xtcpd_service_client_if_ready(int waiting_link,
     outct(xtcp[waiting_link], XS1_CT_END);
     notified[waiting_link] = 1;
   }
-  int ret = xtcpd_service_client0(xtcp[waiting_link], waiting_link, waiting_link);
+  int ret = xtcpd_service_client0(xtcp[waiting_link], waiting_link, waiting_link, 1);
   if (!ret) {
     pending_recv[waiting_link] = 1;
   }
@@ -424,8 +440,9 @@ static transaction do_recv(chanend xtcp, int &client_ready,
   xtcp :> client_ready;
   if (client_ready) {
     xtcp <: datalen;
-    for (int i=0;i<datalen;i++)
+    for (int i = 0; i < datalen; i++) {
       xtcp <: data[i];
+    }
   }
 }
 
@@ -479,9 +496,6 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
                                  struct pbuf *unsafe p)
 {
   int client_ready = 0;
-  if (linknum != 0){
-    client_ready = 0;
-  }
 
   do {
     s.conn.event = XTCP_RECV_DATA;
@@ -493,8 +507,6 @@ unsafe void xtcpd_recv_lwip_pbuf(chanend xtcp[],
   } while (!client_ready);
 
   outct(xtcp[linknum], XS1_CT_END);
-
-  return;
 }
 
 int xtcpd_send_split_start(chanend c,
@@ -556,12 +568,11 @@ void xtcpd_send_config_event(chanend c,
 }
 #endif
 
-
-
 #pragma unsafe arrays
 void xtcpd_server_init() {
   for (int i=0;i<MAX_XTCP_CLIENTS;i++) {
     notified[i] = 0;
+    pending_recv[i] = 0;
     pending_event[i] = -1;
   }
 }
@@ -574,5 +585,4 @@ void xtcpd_queue_event(chanend c, int linknum, int event)
     outct(c, XS1_CT_END);
     notified[linknum] = 1;
   }
-  return;
 }

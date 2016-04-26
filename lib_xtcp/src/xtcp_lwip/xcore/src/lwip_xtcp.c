@@ -30,8 +30,8 @@ static int guid = 1;
   #error "Cannot have more connections than GUIDs"
 #endif
 
-static chanend *xtcp_links;
-static int xtcp_num;
+chanend *xtcp_links;
+int xtcp_num;
 
 #define NUM_TCP_LISTENERS 10
 #define NUM_UDP_LISTENERS 10
@@ -49,11 +49,11 @@ struct listener_info_t udp_listeners[NUM_UDP_LISTENERS] = {{0}};
 
 void xtcpd_init(chanend xtcp_links_init[], int n)
 {
-  int i;
   xtcp_links = xtcp_links_init;
   xtcp_num = n;
-  for(i=0;i<MAX_XTCP_CLIENTS;i++)
+  for (int i = 0; i < MAX_XTCP_CLIENTS; i++) {
     prev_ifstate[i] = -1;
+  }
   xtcpd_server_init();
 }
 
@@ -62,8 +62,8 @@ static int get_listener_linknum(struct listener_info_t listeners[],
                                 int n,
                                 int local_port)
 {
-  int i, linknum = -1;
-  for (i=0;i<n;i++) {
+  int linknum = -1;
+  for (int i = 0; i < n; i++) {
     if (listeners[i].active &&
         local_port == listeners[i].port_number) {
       linknum = listeners[i].linknum;
@@ -101,11 +101,11 @@ void xtcpd_init_state(xtcpd_state_t *s,
   memset(s, 0, sizeof(xtcpd_state_t));
 
   // Find and use a GUID that is not being used by another connection
-  while (xtcpd_lookup_tcp_state(guid) != NULL)
-  {
+  while (xtcpd_lookup_tcp_state(guid) != NULL) {
     guid++;
-    if (guid > MAX_GUID)
+    if (guid > MAX_GUID) {
       guid = 1;
+    }
   }
 
   s->conn.connection_type = connection_type;
@@ -118,13 +118,14 @@ void xtcpd_init_state(xtcpd_state_t *s,
 #ifdef XTCP_ENABLE_PARTIAL_PACKET_ACK
   s->s.accepts_partial_ack = 0;
 #endif
-  for (i=0;i<4;i++)
+  for (i=0;i<4;i++) {
     s->conn.remote_addr[i] = remote_addr[i];
+  }
 }
 
 
-static void xtcpd_event(xtcp_event_type_t event,
-                        xtcpd_state_t *s)
+void xtcpd_event(xtcp_event_type_t event,
+                 xtcpd_state_t *s)
 {
   if (s->linknum != -1) {
     xtcpd_service_clients_until_ready(s->linknum, xtcp_links, xtcp_num);
@@ -137,8 +138,7 @@ static void unregister_listener(struct listener_info_t listeners[],
                                 int port_number,
                                 int n){
 
-  int i;
-  for (i=0;i<n;i++){
+  for (int i = 0; i < n; i++) {
     if (listeners[i].port_number == port_number &&
         listeners[i].active) {
       listeners[i].active = 0;
@@ -153,9 +153,11 @@ static void register_listener(struct listener_info_t listeners[],
 {
   int i;
 
-  for (i=0;i<n;i++)
-    if (!listeners[i].active)
+  for (i=0;i<n;i++) {
+    if (!listeners[i].active) {
       break;
+    }
+  }
 
   if (i==n) {
     // Error: max number of listeners reached
@@ -169,7 +171,6 @@ static void register_listener(struct listener_info_t listeners[],
 
 void xtcpd_unlisten(int linknum, int port_number){
   unregister_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
-  // uip_unlisten(HTONS(port_number));
 }
 
 void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
@@ -179,13 +180,13 @@ void xtcpd_listen(int linknum, int port_number, xtcp_protocol_t p)
     register_listener(tcp_listeners, linknum, port_number, NUM_TCP_LISTENERS);
     struct tcp_pcb *pcb = tcp_new();
     tcp_bind(pcb, NULL, port_number);
-    pcb = tcp_listen(pcb);
+    tcp_listen(pcb);
   }
   else {
     register_listener(udp_listeners, linknum, port_number, NUM_UDP_LISTENERS);
-    // uip_udp_listen(HTONS(port_number));
+    struct udp_pcb *pcb = udp_new();
+    udp_bind(pcb, NULL, port_number);
   }
-  return;
 }
 
 
@@ -193,10 +194,11 @@ void xtcpd_bind_local(int linknum, int conn_id, int port_number)
 {
   xtcpd_state_t *s = xtcpd_lookup_tcp_state(conn_id);
   s->conn.local_port = port_number;
-  if (s->conn.protocol == XTCP_PROTOCOL_UDP)
+  if (s->conn.protocol == XTCP_PROTOCOL_UDP) {
     ((struct uip_udp_conn *) s->s.uip_conn)->lport = HTONS(port_number);
-  else
+  } else {
     ((struct uip_conn *) s->s.uip_conn)->lport = HTONS(port_number);
+  }
 }
 
 void xtcpd_bind_remote(int linknum,
@@ -228,15 +230,28 @@ void xtcpd_connect(int linknum, int port_number, xtcp_ipaddr_t addr,
       s->linknum = linknum;
       s->s.connect_request = 1;
       s->conn.connection_type = XTCP_CLIENT_CONNECTION;
+      s->conn.protocol = XTCP_PROTOCOL_TCP;
     }
     else {
-      fail("Couldn't TCP connect");
+      fail("TCP connect failed");
     }
   }
   else {
-    // UDP TODO
+    struct udp_pcb *pcb = udp_new();
+    ip_addr_t dst;
+    IPADDR2_COPY(&dst, addr);
+    err_t res = udp_connect(pcb, &dst, port_number);
+    if (res == ERR_OK) {
+      xtcpd_state_t *s = (xtcpd_state_t *) &(pcb->xtcp_state);
+      s->linknum = linknum;
+      s->s.connect_request = 1;
+      s->conn.connection_type = XTCP_CLIENT_CONNECTION;
+      s->conn.protocol = XTCP_PROTOCOL_UDP;
+    }
+    else {
+      fail("UDP connect failed");
+    }
   }
-  return;
 }
 
 
@@ -248,7 +263,6 @@ void xtcpd_init_send(int linknum, int conn_id)
     s->s.send_request++;
   }
 }
-
 
 void xtcpd_init_send_from_uip(struct uip_conn *conn)
 {
@@ -263,7 +277,6 @@ void xtcpd_set_appstate(int linknum, int conn_id, xtcp_appstate_t appstate)
     s->conn.appstate = appstate;
   }
 }
-
 
 void xtcpd_abort(int linknum, int conn_id)
 {
@@ -386,7 +399,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
          u16_t size,
          err_t err) {
 
-  xassert(pcb != NULL);
+  xassert(e == LWIP_EVENT_ERR || pcb != NULL);
   xtcpd_state_t *s = &(pcb->xtcp_state);
 
   switch (e) {
@@ -415,7 +428,6 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
         debug_printf("LWIP_EVENT_RECV: %d\n", p->tot_len);
         xscope_int(LWIP_EVENT_RECV_START, p->tot_len);
         if (s->linknum != -1) {
-
           if (xtcpd_service_client_if_ready(s->linknum, xtcp_links, xtcp_num)) {
             xtcpd_recv_lwip_pbuf(xtcp_links, s->linknum, xtcp_num, s, p);
             tcp_recved(pcb, p->tot_len);
@@ -457,11 +469,15 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
                             s,
                             tcp_mss(pcb));
         if (len) {
-        err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
-        if (r != ERR_OK) fail("tcp_write() failed");
-        tcp_output(pcb);
+          err_t r = tcp_write(pcb, (void *)xtcp_links[s->linknum], len, TCP_WRITE_FLAG_XCORE_CHAN_COPY);
+          if (r != ERR_OK) fail("tcp_write() failed");
+          tcp_output(pcb);
         }
       }
+      break;
+    }
+    case LWIP_EVENT_ERR: {
+      debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
       break;
     }
   }
@@ -499,9 +515,7 @@ void uip_xtcp_checkstate()
       prev_ifstate[i] = uip_ifstate;
     }
   }
-
 }
-
 
 void lwip_xtcp_up() {
   uip_ifstate = 1;
@@ -516,7 +530,6 @@ int get_uip_xtcp_ifstate()
 {
   return uip_ifstate;
 }
-
 
 void xtcpd_set_poll_interval(int linknum, int conn_id, int poll_interval)
 {

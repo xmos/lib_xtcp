@@ -4,6 +4,7 @@
 #include "lwip/ip_addr.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
+#include "xassert.h"
 
 client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx = NULL;
 client interface mii_if * unsafe xtcp_i_mii = NULL;
@@ -17,7 +18,7 @@ unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
 
 err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
   static int txbuf[(ETHERNET_MAX_PACKET_SIZE+3)/4];
-  static int tx_buf_in_use=0;
+  static int tx_buf_in_use = 0;
 
   if (tx_buf_in_use) {
     select {
@@ -26,9 +27,9 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
     }
   }
 
-#if ETH_PAD_SIZE
-  pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-#endif
+  if (ETH_PAD_SIZE) {
+    pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
+  }
 
   struct pbuf *unsafe q;
   unsigned byte_cnt = 0;
@@ -45,13 +46,19 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
       byte_cnt = 60;
     }
 
-    xtcp_i_mii->send_packet(txbuf, byte_cnt);
+    if (xtcp_i_mii) {
+      xtcp_i_mii->send_packet(txbuf, byte_cnt);
+      tx_buf_in_use = 1;
+    } else if (xtcp_i_eth_tx) {
+      xtcp_i_eth_tx->send_packet((char*)txbuf, byte_cnt, ETHERNET_ALL_INTERFACES);
+    } else {
+      fail("Not implemented");
+    }
   }
-  tx_buf_in_use=1;
 
-#if ETH_PAD_SIZE
-  pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-#endif
+  if (ETH_PAD_SIZE) {
+    pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
+  }
 
   return ERR_OK;
 }
