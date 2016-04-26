@@ -399,7 +399,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
          u16_t size,
          err_t err) {
 
-  xassert(pcb != NULL);
+  xassert(e == LWIP_EVENT_ERR || pcb != NULL);
   xtcpd_state_t *s = &(pcb->xtcp_state);
 
   switch (e) {
@@ -475,6 +475,10 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
         tcp_output(pcb);
         }
       }
+      break;
+    }
+    case LWIP_EVENT_ERR: {
+      debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
       break;
     }
   }
