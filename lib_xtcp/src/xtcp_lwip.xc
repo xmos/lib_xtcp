@@ -20,6 +20,8 @@
 #include "lwip/igmp.h"
 #include "lwip/dhcp.h"
 
+#define MAX_PACKET_BYTES 1518
+
 // These pointers are used to store connections for sending in
 // xcoredev.xc
 extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
@@ -61,6 +63,41 @@ static void init_timers(unsigned period[NUM_TIMEOUTS],
 
   for (int i=0; i < NUM_TIMEOUTS; i++) {
     timeout[i] = time_now + period[i];
+  }
+}
+
+static unsafe void process_rx_packet(char buffer[], size_t n_bytes,
+  struct netif *unsafe netif)
+{
+  struct pbuf *unsafe p, *unsafe q;
+  if (ETH_PAD_SIZE) {
+    n_bytes += ETH_PAD_SIZE; /* allow room for Ethernet padding */
+  }
+  /* We allocate a pbuf chain of pbufs from the pool. */
+  p = pbuf_alloc(PBUF_RAW, n_bytes, PBUF_POOL);
+
+  if (p != NULL) {
+    if (ETH_PAD_SIZE) {
+      pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
+    }
+    /* We iterate over the pbuf chain until we have read the entire
+     * packet into the pbuf. */
+    unsigned byte_cnt = 0;
+    for (q = p; q != NULL; q = q->next) {
+      /* Read enough bytes to fill this pbuf in the chain. The
+       * available data in the pbuf is given by the q->len
+       * variable. */
+      memcpy(q->payload, (char *unsafe)&buffer[byte_cnt], q->len);
+      byte_cnt += q->len;
+    }
+
+    if (ETH_PAD_SIZE) {
+      pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
+    }
+
+    ethernet_input(p, netif); // Process the packet
+  } else {
+    debug_printf("No buffers free\n");
   }
 }
 
@@ -160,44 +197,30 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
         unsigned timestamp;
         {data, nbytes, timestamp} = i_mii.get_incoming_packet();
         if (data) {
-          struct pbuf *unsafe p, *unsafe q;
-
-          if (ETH_PAD_SIZE) {
-            nbytes += ETH_PAD_SIZE; /* allow room for Ethernet padding */
-          }
-          /* We allocate a pbuf chain of pbufs from the pool. */
-          p = pbuf_alloc(PBUF_RAW, nbytes, PBUF_POOL);
-
-          if (p != NULL) {
-            if (ETH_PAD_SIZE) {
-              pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-            }
-            /* We iterate over the pbuf chain until we have read the entire
-             * packet into the pbuf. */
-            unsigned byte_cnt = 0;
-            for (q = p; q != NULL; q = q->next) {
-              /* Read enough bytes to fill this pbuf in the chain. The
-               * available data in the pbuf is given by the q->len
-               * variable. */
-              memcpy(q->payload, (char *unsafe)&data[byte_cnt], q->len);
-              byte_cnt += q->len;
-            }
-            // acknowledge that packet has been read
-            i_mii.release_packet(data);
-
-            if (ETH_PAD_SIZE) {
-              pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-            }
-            ethernet_input(p, netif); // Process the packet
-          }
-          else {
-            i_mii.release_packet(data);
-          }
+          process_rx_packet((char *)data, nbytes, netif);
+          i_mii.release_packet(data);
         }
       } while (data != NULL);
       break;
     case !isnull(i_eth_rx) => i_eth_rx.packet_ready():
-      /* TODO */
+      debug_printf("select packet_ready\n");
+      char buffer[MAX_PACKET_BYTES];
+      ethernet_packet_info_t desc;
+      i_eth_rx.get_packet(desc, (char *) buffer, MAX_PACKET_BYTES);
+
+      if (desc.type == ETH_DATA) {
+        process_rx_packet(buffer, desc.len, netif);
+      }
+      else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
+        if (((unsigned char *)buffer)[0] == ETHERNET_LINK_UP) {
+          netif_set_link_up(netif);
+          lwip_xtcp_up();
+        }
+        else {
+          netif_set_link_down(netif);
+          lwip_xtcp_down();
+        }
+      }
       break;
 
     case (int i=0;i<n;i++) xtcpd_service_client(xtcp[i], i):
