@@ -7,6 +7,9 @@
 #include "ethernet.h"
 #include "otp_board_info.h"
 #include <xccompat.h>
+#if LWIP_XTCP
+#include "lwip/netif.h"
+#endif  // LWIP_XTCP
 
 #include "xtcp_conf_derived.h"
 #ifndef XTCP_CLIENT_BUF_SIZE
@@ -571,6 +574,46 @@ void xtcp_request_host_by_name(chanend c_xtcp, const char hostname[]);
 
 #ifdef __XC__
 
+#if LWIP_XTCP
+
+typedef struct pbuf * unsafe pbuf_p;
+
+/** WiFi/xtcp data interface - mii.h equivalent
+ * TODO: document
+ */
+typedef interface xtcp_pbuf_if {
+
+  /** TODO: document */
+  [[clears_notification]]
+  pbuf_p receive_packet();
+
+  [[notification]]
+  slave void packet_ready();
+
+  /** TODO: document */
+  void send_packet(pbuf_p p);
+
+  // TODO: Add function to notify clients of received packets
+} xtcp_pbuf_if;
+
+typedef enum {
+  ARP_TIMEOUT = 0,
+  AUTOIP_TIMEOUT,
+  TCP_TIMEOUT,
+  IGMP_TIMEOUT,
+  DHCP_COARSE_TIMEOUT,
+  DHCP_FINE_TIMEOUT,
+  NUM_TIMEOUTS
+} xtcp_lwip_timeout_type;
+
+void xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6]);
+
+void xtcp_lwip_init_timers(unsigned period[NUM_TIMEOUTS],
+                           unsigned timeout[NUM_TIMEOUTS],
+                           unsigned time_now);
+
+#endif // LWIP_XTCP
+
 /** Function implement the TCP/IP stack task.
  *
  *  This functions implements a TCP/IP stack that clients can access via
@@ -620,6 +663,7 @@ void xtcp(chanend c_xtcp[n], size_t n,
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
 
+#if LWIP_XTCP
 void xtcp_lwip(chanend c_xtcp[n], size_t n,
           client mii_if ?i_mii,
           client ethernet_cfg_if ?i_eth_cfg,
@@ -630,6 +674,8 @@ void xtcp_lwip(chanend c_xtcp[n], size_t n,
           const char (&?mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig);
+#endif  // LWIP_XTCP
+
 #endif
 
 /** Utility functions **/

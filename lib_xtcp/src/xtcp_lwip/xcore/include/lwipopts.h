@@ -1,4 +1,6 @@
 // Copyright (c) 2015, XMOS Ltd, All rights reserved
+#include "xtcp_conf_derived.h"
+
 #define NO_SYS 1
 #define LWIP_NETCONN 0
 #define LWIP_SOCKET 0
