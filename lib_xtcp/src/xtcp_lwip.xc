@@ -28,7 +28,7 @@ extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
 extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
 
-static void low_level_init(struct netif &netif, char mac_address[6])
+void xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6])
 {
   /* set MAC hardware address length */
   netif.hwaddr_len = ETHARP_HWADDR_LEN;
@@ -40,19 +40,9 @@ static void low_level_init(struct netif &netif, char mac_address[6])
   netif.flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_UP;
 }
 
-typedef enum {
-  ARP_TIMEOUT = 0,
-  AUTOIP_TIMEOUT,
-  TCP_TIMEOUT,
-  IGMP_TIMEOUT,
-  DHCP_COARSE_TIMEOUT,
-  DHCP_FINE_TIMEOUT,
-  NUM_TIMEOUTS
-} timeout_type;
-
-static void init_timers(unsigned period[NUM_TIMEOUTS],
-                        unsigned timeout[NUM_TIMEOUTS],
-                        unsigned time_now)
+void xtcp_lwip_init_timers(unsigned period[NUM_TIMEOUTS],
+                           unsigned timeout[NUM_TIMEOUTS],
+                           unsigned time_now)
 {
   period[ARP_TIMEOUT] = ARP_TMR_INTERVAL * XS1_TIMER_KHZ;
   period[AUTOIP_TIMEOUT] = AUTOIP_TMR_INTERVAL * XS1_TIMER_KHZ;
@@ -183,7 +173,7 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
     netif_set_default(netif);
   }
 
-  low_level_init(my_netif, mac_address); // Needs to be called after netif_add which zeroes everything
+  xtcp_lwip_low_level_init(my_netif, mac_address); // Needs to be called after netif_add which zeroes everything
 
   if (ipconfig.ipaddr[0] == 0) {
     if (dhcp_start(netif) != ERR_OK) fail("DHCP error");
@@ -192,7 +182,7 @@ void xtcp_lwip(chanend xtcp[n], size_t n,
 
   int time_now;
   timers[0] :> time_now;
-  init_timers(period, timeout, time_now);
+  xtcp_lwip_init_timers(period, timeout, time_now);
 
   while (1) {
     unsafe {
