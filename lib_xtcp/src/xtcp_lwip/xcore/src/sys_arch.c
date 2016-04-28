@@ -1,3 +1,4 @@
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 #include "lwip/sys.h"
 #include "lwip/opt.h"
 #include "arch/sys_arch.h"
