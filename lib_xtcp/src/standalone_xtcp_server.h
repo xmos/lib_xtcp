@@ -1,4 +1,4 @@
-// Copyright (c) 2015, XMOS Ltd, All rights reserved
+// Copyright (c) 2016, XMOS Ltd, All rights reserved
 #ifndef __standalone_xtcp_server_h__
 #define __standalone_xtcp_server_h__
 
