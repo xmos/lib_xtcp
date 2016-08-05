@@ -5084,15 +5084,22 @@ int mbedtls_ssl_setup( mbedtls_ssl_context *ssl,
 
     /*
      * Prepare base structures
+     *
+     * Modified to use static memory allocation on xCORE. in_buf and out_buf
+     * must be declared and assigned before calling mbedtls_ssl_setup().
+     *
+     * Originally used calloc, so we memset here to ensure buffers are zerod.
      */
-    if( ( ssl-> in_buf = mbedtls_calloc( 1, len ) ) == NULL ||
-        ( ssl->out_buf = mbedtls_calloc( 1, len ) ) == NULL )
+    if( ( ssl-> in_buf == NULL ) ||
+        ( ssl->out_buf == NULL ) )
+    // if( ( ssl-> in_buf = mbedtls_calloc( 1, len ) ) == NULL ||
+    //     ( ssl->out_buf = mbedtls_calloc( 1, len ) ) == NULL )
     {
-        MBEDTLS_SSL_DEBUG_MSG( 1, ( "alloc(%d bytes) failed", len ) );
-        mbedtls_free( ssl->in_buf );
-        ssl->in_buf = NULL;
+        debug_printf( "SSL buffers must be allocated before calling mbedtls_ssl_setup()" );
         return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
     }
+    memset(ssl->in_buf, 0, len);
+    memset(ssl->out_buf, 0, len);
 
 #if defined(MBEDTLS_SSL_PROTO_DTLS)
     if( conf->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM )
@@ -6680,13 +6687,13 @@ void mbedtls_ssl_free( mbedtls_ssl_context *ssl )
     if( ssl->out_buf != NULL )
     {
         mbedtls_zeroize( ssl->out_buf, MBEDTLS_SSL_BUFFER_LEN );
-        mbedtls_free( ssl->out_buf );
+        // mbedtls_free( ssl->out_buf );
     }
 
     if( ssl->in_buf != NULL )
     {
         mbedtls_zeroize( ssl->in_buf, MBEDTLS_SSL_BUFFER_LEN );
-        mbedtls_free( ssl->in_buf );
+        // mbedtls_free( ssl->in_buf );
     }
 
 #if defined(MBEDTLS_ZLIB_SUPPORT)
