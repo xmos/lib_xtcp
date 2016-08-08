@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2011-2016, XMOS Ltd, All rights reserved
 
 #define XTCP_BUFFERED_API 1
 #define XTCP_VERBOSE_DEBUG

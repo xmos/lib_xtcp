@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2012-2016, XMOS Ltd, All rights reserved
 /*
   To build this on Windows, open a visual studio (express) C++ command prompt and type:
 
