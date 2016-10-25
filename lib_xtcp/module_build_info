@@ -25,16 +25,15 @@ LWIP_EXCLUDE_FILES += xtcp_uip.xc xtcp_uip_includes.h
 XCC_FLAGS_xcoredev.xc = $(XCC_XC_FLAGS) -fsubword-select
 
 
-ifeq ($(XTCP_STACK), UIP)
-SOURCE_DIRS   += $(UIP_SOURCE_DIRS)
-INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api
-EXCLUDE_FILES += $(UIP_EXCLUDE_FILES)
-
-else ifeq ($(XTCP_STACK), LWIP)
+ifeq ($(XTCP_STACK), LWIP)
 SOURCE_DIRS   += $(LWIP_SOURCE_DIRS)
 INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api
 EXCLUDE_FILES += $(LWIP_EXCLUDE_FILES)
 
+# Default to UIP
 else
-$(error In your makefile you must specify XTCP_STACK as either UIP or LWIP)
+SOURCE_DIRS   += $(UIP_SOURCE_DIRS)
+INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api
+EXCLUDE_FILES += $(UIP_EXCLUDE_FILES)
+
 endif

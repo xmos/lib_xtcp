@@ -63,6 +63,7 @@
 // #define TCP_WND_UPDATE_THRESHOLD   (TCP_WND / 16)
 
 #define LWIP_DEBUG 1
+// #define PBUF_DEBUG LWIP_DBG_ON
 // #define TCP_RST_DEBUG LWIP_DBG_ON
 // #define TCP_DEBUG LWIP_DBG_ON
 // #define TCP_WND_DEBUG LWIP_DBG_ON

@@ -82,6 +82,7 @@
 #include "lwip/mem.h"
 #include "lwip/memp.h"
 #include "lwip/dns.h"
+#include "xc2compat.h"
 
 #include <string.h>
 

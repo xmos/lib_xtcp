@@ -326,7 +326,7 @@ create_xtcp_state(int client_num,
                   unsigned char * unsafe remote_addr,
                   int local_port,
                   int remote_port,
-                  void * unsafe uip_conn)
+                  void * unsafe stack_conn)
 {
   xassert(client_num >= 0 && client_num < n_xtcp);
   
@@ -339,7 +339,7 @@ create_xtcp_state(int client_num,
     conn.remote_addr[i] = remote_addr[i];
   conn.remote_port = remote_port;
   conn.local_port = local_port;
-  conn.uip_conn = (int) uip_conn;
+  conn.stack_conn = (int) stack_conn;
 
   return conn;
 }
@@ -377,11 +377,11 @@ get_and_set_appstate(xtcp_connection_t conn)
 {
   xtcp_connection_t * unsafe xtcp_conn;
   if(conn.protocol == XTCP_PROTOCOL_UDP) {
-    uip_udp_conn = (struct uip_udp_conn * unsafe) conn.uip_conn;
+    uip_udp_conn = (struct uip_udp_conn * unsafe) conn.stack_conn;
     // uip_conn = NULL;
     return &(uip_udp_conn->appstate);
   } else {
-    uip_conn = (struct uip_conn * unsafe) conn.uip_conn;
+    uip_conn = (struct uip_conn * unsafe) conn.stack_conn;
     // uip_udp_conn = NULL;
     return &(uip_conn->appstate);
   }
@@ -604,9 +604,6 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
           enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(conn->appstate));
         }
       }
-      break;
-
-    case i_xtcp[int i].send_with_index(xtcp_connection_t conn, char data[], unsigned index, unsigned len):
       break;
 
     case i_xtcp[int i].send(xtcp_connection_t conn, char data[], unsigned len):

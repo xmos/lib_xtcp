@@ -135,6 +135,7 @@ def reflect_test():
     # Each process on the xC device has a pool of ports it can
     # read from, with each pool spaced 10 apart
     port_pool = [ j + (10*i) for i in range(0, args.remote_processes) for j in range(args.start_port, args.start_port + args.remote_ports)]
+    # port_pool = [15533, 15533, 15533, 15533]
     # .get(9999999) is added to avoid this bug: https://bugs.python.org/issue8296
     pool.map_async(process_test, port_pool, 1, callback=print_errors).get(9999999)
 
@@ -257,13 +258,13 @@ def check_and_set_args():
 
 if __name__ == '__main__':
     # Defaults
-    packets = 10000
+    packets = 100000
     packet_size_limit = 50
     delay_between_packets = 0
     remote_processes = 2
     remote_ports = 2
     local_port_udp = 15999
-    protocol = "TCP"
+    protocol = "UDP"
 
     parser = argparse.ArgumentParser(description='TCP/UDP tester')
     # Non-default arguments

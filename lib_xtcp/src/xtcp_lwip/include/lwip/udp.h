@@ -86,6 +86,7 @@ struct udp_pcb;
  * @param addr the remote IP address from which the packet was received
  * @param port the remote port from which the packet was received
  */
+
 #ifdef __XC__
 unsafe void udp_recv_event(void *unsafe arg, struct udp_pcb *unsafe pcb, struct pbuf *unsafe p,
     const ip_addr_t *unsafe addr, u16_t udpport);
@@ -99,6 +100,8 @@ struct udp_pcb {
   IP_PCB;
   /* Link with the XTCP state */
   xtcp_connection_t xtcp_conn;
+  unsigned connection_ports[CONNECTIONS_PER_UDP_PORT];
+  unsigned char connection_addrs[CONNECTIONS_PER_UDP_PORT][4];
 
 /* Protocol specific PCB members */
 

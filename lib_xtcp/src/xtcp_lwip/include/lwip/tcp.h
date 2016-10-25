@@ -50,10 +50,6 @@
 extern "C" {
 #endif
 
-#ifdef __XC__
-#define port ip_port
-#endif
-
 struct tcp_pcb;
 
 #if LWIP_CALLBACK_API
@@ -341,7 +337,10 @@ enum lwip_event {
   LWIP_EVENT_ERR
 };
 
-// void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb);
+
+/* XMOS */
+struct tcp_pcb *xtcp_lookup_tcp_pcb_state(int conn_id);
+struct tcp_pcb *xtcp_lookup_tcp_pcb_state_from_port(int port_number);
 
 #ifdef __XC__
 unsafe err_t 

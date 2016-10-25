@@ -193,11 +193,16 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
         switch(conn.event) {
           case XTCP_IFUP:
             debug_printf("UP!\n");
+            i_xtcp.request_host_by_name("www.google.com", 14);
             break;
           case XTCP_IFDOWN:
             // debug_printf("DOWN!\n");
             break;
           case XTCP_RECV_DATA:
+            // // debug_printf("DATA!\n");
+            if(rx_buffer[0] == 'a') {
+              exit(0);
+            }
             for(int copy=0; copy<return_len; copy++)
               tx_buffer[copy] = rx_buffer[return_len - copy - 1];
             i_xtcp.send(conn, tx_buffer, return_len);
@@ -207,14 +212,6 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
             break;
           case XTCP_NEW_CONNECTION:
             // debug_printf("NEW CONN CLIENT!\n");
-            break;
-
-          case XTCP_ABORTED:
-            // debug_printf("ABORTED!");
-            break;
-
-          case XTCP_CLOSED:
-            // debug_printf("CLOSED!\n");
             break;
         }
         break;
@@ -286,6 +283,7 @@ void udp_bind_local_and_remote(client xtcp_if i_xtcp, int local_port, int remote
         switch(conn.event) {
           case XTCP_IFUP:
             /* Listen on wrong local port */
+            debug_printf("UP!\n");
             i_xtcp.connect(local_port+10, ipaddr, XTCP_PROTOCOL_UDP);
             break;
           case XTCP_RECV_DATA:
@@ -302,6 +300,7 @@ void udp_bind_local_and_remote(client xtcp_if i_xtcp, int local_port, int remote
             break;
           case XTCP_NEW_CONNECTION:
             /* Change local binding */
+            debug_printf("NEW CONN\n");
             i_xtcp.bind_local_udp(conn, local_port);
             i_xtcp.bind_remote_udp(conn, ipaddr, remote_port);
             i_xtcp.send(conn, tx_buffer, 5);

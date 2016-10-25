@@ -37,6 +37,7 @@
 #include "lwip/opt.h"
 #include "lwip/udp.h"
 #include "lwip/ip_addr.h"
+#include "xc2compat.h"
 
 #if LWIP_DNS
 
@@ -123,7 +124,7 @@ struct local_hostlist_entry {
 #endif /* DNS_LOCAL_HOSTLIST_IS_DYNAMIC */
 #endif /* DNS_LOCAL_HOSTLIST */
 
-void lwip_xtcpd_handle_dns_response(ip_addr_t *ipaddr, int linknum);
+unsafe void lwip_xtcpd_handle_dns_response(ip_addr_t *unsafe ipaddr, int linknum);
 
 void dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t udpport);
 err_t dns_lookup(const char *name, ip_addr_t *addr);

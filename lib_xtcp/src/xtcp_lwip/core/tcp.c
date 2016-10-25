@@ -1813,14 +1813,27 @@ tcp_next_iss(void)
 //   return NULL;
 // }
 
+struct tcp_pcb *xtcp_lookup_tcp_pcb_state_from_port(int port_number) {
+  const int max_pcb_list = NUM_TCP_PCB_LISTS;
+  struct tcp_pcb *cpcb;
+
+  for (int i = 0; i < max_pcb_list; i++) {
+    for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
+      xtcp_connection_t conn = cpcb->xtcp_conn;
+      if (conn.local_port == port_number) return cpcb;
+    }
+  }
+  return NULL;
+}
+
 struct tcp_pcb *xtcp_lookup_tcp_pcb_state(int conn_id) {
   const int max_pcb_list = NUM_TCP_PCB_LISTS;
   struct tcp_pcb *cpcb;
 
   for (int i = 0; i < max_pcb_list; i++) {
     for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
-      xtcp_connection_t *conn = cpcb->callback_arg;
-      if (conn->id == conn_id) return cpcb;
+      xtcp_connection_t conn = cpcb->xtcp_conn;
+      if (conn.id == conn_id) return cpcb;
     }
   }
   return NULL;
