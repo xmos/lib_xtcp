@@ -1,6 +1,5 @@
-
-
-#define DEBUG_PRINTF(...) /*printf(__VA_ARGS__)*/
+#include "debug_print.h"
+#define DEBUG_PRINTF(...) /*debug_printf(__VA_ARGS__)*/
 
 /**
  * \defgroup uip The uIP TCP/IP stack
@@ -735,6 +734,9 @@ void uip_process(u8_t flag) {
         uip_slen = 0;
         #endif
 
+	if(flag == UIP_TCP_SEND) {
+		goto appsend;
+	}
 
 #if UIP_UDP
 	if(flag == UIP_UDP_SEND_CONN) {

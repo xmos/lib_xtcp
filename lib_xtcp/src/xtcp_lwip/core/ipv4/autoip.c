@@ -72,7 +72,7 @@
 #include "lwip/netif.h"
 #include "lwip/autoip.h"
 #include "netif/etharp.h"
-#include "lwip_xtcp.h"
+// #include "lwip_xtcp.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -269,7 +269,7 @@ autoip_bind(struct netif *netif)
 
   netif_set_addr(netif, &autoip->llipaddr, &sn_mask, &gw_addr);
   /* interface is used by routing now that an address is set */
-  lwip_xtcp_up();
+  // lwip_xtcp_up();
 
   return ERR_OK;
 }

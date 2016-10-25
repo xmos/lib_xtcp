@@ -9,4 +9,5 @@ void uip_autoip_start();
 void uip_autoip_stop();
 void uip_autoip_configured(uip_ipaddr_t ipaddr);
 void uip_autoip_periodic();
+
 #endif //_autoip_h_

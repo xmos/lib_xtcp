@@ -1,5 +1,4 @@
 // Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
-#include "xtcp_conf_derived.h"
 
 #define NO_SYS 1
 #define LWIP_NETCONN 0
@@ -42,6 +41,9 @@
 
 #define MEM_ALIGNMENT 4
 
+#define ARP_QUEUEING                    1
+#define ARP_QUEUE_LEN 					4
+#define MEMP_NUM_RAW_PCB				6
 
 #define TCP_MSS                         1460
 #define TCP_SND_BUF                     16384
@@ -52,6 +54,8 @@
 #define TCP_WND                         8192
 #define TCP_OVERSIZE                    1
 
+#define MEMP_NUM_UDP_PCB				6
+
 // Required in order to get LWIP to split the packets into chunks before sending
 // to the application. Otherwise it sends all the chained data at once
 #define LWIP_WND_SCALE 1
@@ -59,9 +63,10 @@
 // #define TCP_WND_UPDATE_THRESHOLD   (TCP_WND / 16)
 
 #define LWIP_DEBUG 1
-#define TCP_RST_DEBUG LWIP_DBG_ON
+// #define TCP_RST_DEBUG LWIP_DBG_ON
 // #define TCP_DEBUG LWIP_DBG_ON
-#define TCP_WND_DEBUG LWIP_DBG_ON
+// #define TCP_WND_DEBUG LWIP_DBG_ON
+// #define UDP_DEBUG LWIP_DBG_ON
 // #define TCP_QLEN_DEBUG LWIP_DBG_ON
 // #define TCP_INPUT_DEBUG LWIP_DBG_ON
 // #define TCP_OUTPUT_DEBUG LWIP_DBG_ON

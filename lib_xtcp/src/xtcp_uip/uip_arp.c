@@ -65,6 +65,7 @@
 
 #include <string.h>
 #include <print.h>
+#include <debug_print.h>
 
 #if UIP_USE_AUTOIP
 #include "autoip.h"
@@ -214,7 +215,6 @@ uip_arp_update(u16_t *ipaddr, struct uip_eth_addr *ethaddr)
     i = c;
     tabptr = &arp_table[i];
   }
-
   /* Now, i is the ARP table entry which we will fill with the new
      information. */
   memcpy(tabptr->ipaddr, ipaddr, 4);
@@ -235,7 +235,7 @@ uip_arp_update(u16_t *ipaddr, struct uip_eth_addr *ethaddr)
  * variable uip_len.
  */
 /*-----------------------------------------------------------------------------------*/
-#if 0
+#if 1
 void
 uip_arp_ipin(void)
 {
@@ -397,7 +397,7 @@ uip_arp_out(struct uip_udp_conn *conn)
     for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
       tabptr = &arp_table[i];
       if(uip_ipaddr_cmp(ipaddr, tabptr->ipaddr)) {
-	break;
+	      break;
       }
     }
 
@@ -417,6 +417,7 @@ uip_arp_out(struct uip_udp_conn *conn)
       BUF->protocol = HTONS(UIP_ETHTYPE_IP);
       BUF->hwlen = 6;
       BUF->protolen = 4;
+      debug_printf("uip_arp_out: Changing to ARP\n");
       BUF->ethhdr.type = HTONS(UIP_ETHTYPE_ARP);
 
       uip_appdata = &uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN];

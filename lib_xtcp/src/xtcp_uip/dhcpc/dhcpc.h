@@ -35,6 +35,10 @@
 #ifndef __DHCPC_H__
 #define __DHCPC_H__
 
+#ifdef __XC__
+extern "C" {
+#endif
+
 #include "uip_timer.h"
 #include "pt.h"
 
@@ -61,13 +65,21 @@ void dhcpc_request(void);
 
 void dhcpc_appcall(void);
 
+#ifdef __XC__
+unsafe void dhcpc_configured(const struct dhcpc_state * unsafe s);
+#else
 void dhcpc_configured(const struct dhcpc_state *s);
+#endif
 void dhcpc_start();
 void dhcpc_stop();
 //typedef struct dhcpc_state uip_udp_appstate_t;
 
 #ifndef UIP_UDP_APPCALL
 #define UIP_UDP_APPCALL dhcpc_appcall
+#endif
+
+#ifdef __XC__
+} /* "C" */
 #endif
 
 #endif /* __DHCPC_H__ */

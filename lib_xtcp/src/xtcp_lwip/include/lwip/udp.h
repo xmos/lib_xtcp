@@ -33,6 +33,7 @@
 #define LWIP_HDR_UDP_H
 
 #include "lwip/opt.h"
+#include "xtcp.h"
 
 #if LWIP_UDP /* don't build if not configured for use in lwipopts.h */
 
@@ -41,7 +42,6 @@
 #include "lwip/ip_addr.h"
 #include "lwip/ip.h"
 #include "lwip/ip6_addr.h"
-#include "xtcp_server.h"
 
 #if defined(__cplusplus) || defined(__XC__)
 extern "C" {
@@ -86,14 +86,19 @@ struct udp_pcb;
  * @param addr the remote IP address from which the packet was received
  * @param port the remote port from which the packet was received
  */
+#ifdef __XC__
+unsafe void udp_recv_event(void *unsafe arg, struct udp_pcb *unsafe pcb, struct pbuf *unsafe p,
+    const ip_addr_t *unsafe addr, u16_t udpport);
+#else
 void udp_recv_event(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     const ip_addr_t *addr, u16_t udpport);
+#endif
 
 struct udp_pcb {
 /* Common members of all PCB types */
   IP_PCB;
   /* Link with the XTCP state */
-  xtcpd_state_t xtcp_state;
+  xtcp_connection_t xtcp_conn;
 
 /* Protocol specific PCB members */
 
@@ -120,6 +125,11 @@ struct udp_pcb {
 };
 /* udp_pcbs export for external reference (e.g. SNMP agent) */
 extern struct udp_pcb *udp_pcbs;
+
+/* XMOS */
+void udp_arg(struct udp_pcb *pcb, void *arg);
+struct udp_pcb *xtcp_lookup_udp_pcb_state(int conn_id);
+struct udp_pcb *xtcp_lookup_udp_pcb_state_from_port(unsigned port_number);
 
 /* The following functions is the application layer interface to the
    UDP code. */

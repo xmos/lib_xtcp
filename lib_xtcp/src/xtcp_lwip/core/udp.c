@@ -1074,6 +1074,33 @@ udp_remove(struct udp_pcb *pcb)
   memp_free(MEMP_UDP_PCB, pcb);
 }
 
+/* ADDED BY XMOS */
+///////////////////////////////
+void
+udp_arg(struct udp_pcb *pcb, void *arg)
+{
+  pcb->recv_arg = arg;
+}
+
+struct udp_pcb *xtcp_lookup_udp_pcb_state(int conn_id) {
+  struct udp_pcb *upcb;
+  for (upcb = udp_pcbs; upcb != NULL; upcb = upcb->next) {
+    xtcp_connection_t *conn = upcb->recv_arg;
+    if (conn->id == conn_id) return upcb;
+  }
+  return NULL;
+}
+
+struct udp_pcb *xtcp_lookup_udp_pcb_state_from_port(unsigned port_number) {
+  struct udp_pcb *upcb;
+  for (upcb = udp_pcbs; upcb != NULL; upcb = upcb->next) {
+    xtcp_connection_t *conn = upcb->recv_arg;
+    if (conn->local_port == port_number) return upcb;
+  }
+  return NULL;
+}
+////////////////////////////////
+
 /**
  * Create a UDP PCB.
  *

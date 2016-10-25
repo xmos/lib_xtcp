@@ -505,12 +505,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
 #if TCP_OVERSIZE_DBGCHECK
         last_unsent->oversize_left += oversize;
 #endif /* TCP_OVERSIZE_DBGCHECK */
-        if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
-          xtcpd_send_split_data((unsigned)arg, concat_p->payload, pos, seglen);
-        }
-        else {
-          TCP_DATA_COPY2(concat_p->payload, (const u8_t*)arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
-        }
+        TCP_DATA_COPY2(concat_p->payload, (const u8_t*)arg + pos, seglen, &concat_chksum, &concat_chksum_swapped);
 #if TCP_CHECKSUM_ON_COPY
         concat_chksummed += seglen;
 #endif /* TCP_CHECKSUM_ON_COPY */
@@ -566,12 +561,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
       }
       LWIP_ASSERT("tcp_write: check that first pbuf can hold the complete seglen",
                   (p->len >= seglen));
-      if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
-        xtcpd_send_split_data((unsigned)arg, (unsigned char *)p->payload + optlen, pos, seglen);
-      }
-      else {
-        TCP_DATA_COPY2((char *)p->payload + optlen, (const u8_t*)arg + pos, seglen, &chksum, &chksum_swapped);
-      }
+      TCP_DATA_COPY2((char *)p->payload + optlen, (const u8_t*)arg + pos, seglen, &chksum, &chksum_swapped);
     } else {
       /* Copy is not set: First allocate a pbuf for holding the data.
        * Since the referenced data is available at least until it is
@@ -666,12 +656,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
     for (p = last_unsent->p; p; p = p->next) {
       p->tot_len += oversize_used;
       if (p->next == NULL) {
-        if (apiflags & TCP_WRITE_FLAG_XCORE_CHAN_COPY) {
-          xtcpd_send_split_data((unsigned)arg, (unsigned char *)p->payload + p->len, 0, oversize_used);
-        }
-        else {
-          TCP_DATA_COPY((char *)p->payload + p->len, arg, oversize_used, last_unsent);
-        }
+        TCP_DATA_COPY((char *)p->payload + p->len, arg, oversize_used, last_unsent);
         p->len += oversize_used;
       }
     }

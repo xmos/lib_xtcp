@@ -36,6 +36,7 @@
 
 #if LWIP_TCP /* don't build if not configured for use in lwipopts.h */
 
+#include "xc2compat.h"
 #include "lwip/mem.h"
 #include "lwip/pbuf.h"
 #include "lwip/ip.h"
@@ -43,7 +44,7 @@
 #include "lwip/err.h"
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
-#include "xtcp_server.h"
+#include "xtcp.h"
 
 #if defined(__cplusplus) || defined(__XC__)
 extern "C" {
@@ -186,7 +187,7 @@ enum tcp_state {
   u8_t prio; \
   /* ports are in host byte order */ \
   u16_t local_port; \
-  xtcpd_state_t xtcp_state
+  xtcp_connection_t xtcp_conn \
 
 struct tcp_seg; // Workaround for compiler bug 16948
 /* the TCP protocol control block */
@@ -340,13 +341,27 @@ enum lwip_event {
   LWIP_EVENT_ERR
 };
 
-void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb);
+// void lwip_xtcpd_handle_poll(xtcpd_state_t *s, struct tcp_pcb *pcb);
 
-err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
-         enum lwip_event,
-         struct pbuf *p,
-         u16_t size,
-         err_t err);
+#ifdef __XC__
+unsafe err_t 
+lwip_tcp_event(void *unsafe arg, 
+               struct tcp_pcb *unsafe pcb,
+               enum lwip_event,
+               struct pbuf *unsafe p,
+               u16_t size,
+               err_t err);
+#else
+err_t 
+lwip_tcp_event(void *arg, 
+               struct tcp_pcb *pcb,
+               enum lwip_event,
+               struct pbuf *p,
+               u16_t size,
+               err_t err);
+#endif
+
+
 
 #endif /* LWIP_EVENT_API */
 
