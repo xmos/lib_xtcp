@@ -539,6 +539,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
     case i_xtcp[int i].abort(xtcp_connection_t conn):
       xtcp_connection_t xtcp_conn;
+      rm_next_recv_event(conn, i);
       if(conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
         xtcp_conn = t_pcb->xtcp_conn;
@@ -683,6 +684,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   } /* Unsafe */
 }
 
+/* Function called by lwIP when any TCP event happens on a connection */
 unsafe err_t
 lwip_tcp_event(void *unsafe arg,
                struct tcp_pcb *unsafe pcb,
@@ -719,6 +721,7 @@ lwip_tcp_event(void *unsafe arg,
   return ERR_OK;
 }
 
+/* Function called by lwIP when there is a DNS result */
 unsafe void
 lwip_xtcpd_handle_dns_response(ip_addr_t * unsafe ipaddr, int client_num)
 {
@@ -728,13 +731,13 @@ lwip_xtcpd_handle_dns_response(ip_addr_t * unsafe ipaddr, int client_num)
   enqueue_event_and_notify(client_num, XTCP_DNS_RESULT, NULL, NULL, NULL, dummy);
 }
 
+/* Function called by lwIP when any UDP event happens on a connection */
 unsafe void 
 udp_recv_event(void * unsafe arg, 
                struct udp_pcb * unsafe pcb, 
                struct pbuf * unsafe p,
                const ip_addr_t * unsafe addr,
-               /* The underscore prefix is added by xtcp_lwip_includes */
-               u16_t _port)
+               u16_t _port) /* The underscore prefix is added by xtcp_lwip_includes */
 {
   switch (_port) {
     case DHCP_CLIENT_PORT:
