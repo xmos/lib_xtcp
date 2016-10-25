@@ -15,6 +15,17 @@ TCP/IP Library Change Log
 
     - lib_crypto: Added dependency 1.0.0
 
+4.0.3
+-----
+
+  * Update to support enabling link status notifications
+
+4.0.2
+-----
+
+  * Change uIP timer.h to uip_timer.h to avoid conflict with xcore timer.h
+  * Update to source code license and copyright
+
 4.0.1
 -----
 

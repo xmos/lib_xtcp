@@ -23,3 +23,6 @@ Doxyfile-e
 *.pyc
 *.xmt
 **/test_results.csv
+examples/AN01032_100Mbit_avb_i2s_demo/.settings/
+*.pptx
+examples/AN01032_100Mbit_avb_i2s_demo/doc/pdf/
