@@ -1,12 +1,12 @@
 Using XMOS TCP/IP Library for UDP-based Networking
 ==================================================
 
-.. version:: 2.0.1
+.. version:: 3.0.0
 
 Summary
 -------
 
-This application note demonstrates the use of  XMOS TCP/IP stack on
+This application note demonstrates the use of XMOS TCP/IP stack on
 an XMOS multicore micro controller to communicate on an ethernet-based network.
 
 The code associated with this application note provides an example of
@@ -28,12 +28,11 @@ networks.
 Note: This application note requires an application to be run on the
 host machine to test the communication with the XMOS device.
 
-
 Required tools and libraries
 ............................
 
 * xTIMEcomposer Tools - Version 14.0.0
-* XMOS TCP/IP library - Version 4.0.0
+* XMOS TCP/IP library - Version 6.0.0
 
 Required hardware
 .................

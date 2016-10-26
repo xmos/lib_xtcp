@@ -47,7 +47,8 @@ static unsigned buffer_full = 0;   /* Boolean whether the RX buffer is full */
 
 #if UIP_USE_DHCP
 unsafe void 
-dhcpc_configured(const struct dhcpc_state * unsafe s) {
+dhcpc_configured(const struct dhcpc_state * unsafe s)
+{
 #if UIP_USE_AUTOIP
   uip_autoip_stop();
 #endif
@@ -55,6 +56,18 @@ dhcpc_configured(const struct dhcpc_state * unsafe s) {
   uip_setdraddr(s->default_router);
   uip_setnetmask(s->netmask);
   xtcp_if_up();
+}
+#endif
+
+#if UIP_USE_AUTOIP
+void 
+uip_autoip_configured(uip_ipaddr_t ipaddr)
+{
+  uip_autoip_stop();
+  uip_sethostaddr(ipaddr);
+  unsafe {
+    xtcp_if_up();
+  }
 }
 #endif
 
@@ -536,15 +549,15 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
         uip_arp_timer();
       }
 
-      // if (UIP_USE_AUTOIP) {
-      //   if (++autoip_timer == 5) {
-      //     autoip_timer = 0;
-      //     uip_autoip_periodic();
-      //     if (uip_len > 0) {
-      //       xtcp_tx_buffer();
-      //     }
-      //   }
-      // }
+#if UIP_USE_AUTOIP
+      if (++autoip_timer == 5) {
+        autoip_timer = 0;
+        uip_autoip_periodic();
+        if (uip_len > 0) {
+          xtcp_tx_buffer();
+        }
+      }
+#endif
 
       xtcp_process_periodic_timer();
       break;
