@@ -1234,6 +1234,9 @@ struct uip_conn {
 #endif
   /** The application state. */
   uip_tcp_appstate_t appstate;
+
+  /* XMOS */
+  xtcp_connection_t xtcp_conn;
 };
 
 /**
@@ -1271,6 +1274,9 @@ struct uip_udp_conn {
 
   /** The application state. */
   uip_udp_appstate_t appstate;
+
+  /* XMOS */
+  xtcp_connection_t xtcp_conn;
 };
 
 /* This flag is used when a udp packet isn't sent due to an arp request.

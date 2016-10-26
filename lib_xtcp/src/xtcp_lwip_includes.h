@@ -1,6 +1,6 @@
 // Copyright (c) 2016, XMOS Ltd, All rights reserved
-#ifndef __xtcp_uip_includes_h__
-#define __xtcp_uip_includes_h__
+#ifndef __xtcp_lwip_includes_h__
+#define __xtcp_lwip_includes_h__
 
 /* Work around xC keywords used as variable names in lwIP */
 #define in _in
@@ -36,4 +36,4 @@ extern "C" {
 #undef port
 #undef timer
 
-#endif /* __xtcp_uip_includes_h__ */
+#endif /* __xtcp_lwip_includes_h__ */

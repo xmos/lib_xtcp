@@ -26,8 +26,22 @@
 #define DHCPC_CLIENT_PORT  68
 
 /** Maximum number of listening ports for XTCP */
-#define NUM_TCP_LISTENERS 20
-#define NUM_UDP_LISTENERS 20
+#ifndef NUM_TCP_LISTENERS
+#define NUM_TCP_LISTENERS 10
+#endif
+#ifndef NUM_UDP_LISTENERS
+#define NUM_UDP_LISTENERS 10
+#endif
+
+/** Maximum number of connected XTCP clients */
+#ifndef MAX_XTCP_CLIENTS
+#define MAX_XTCP_CLIENTS 5
+#endif
+
+/** Maximum number of events in a client queue */
+#ifndef CLIENT_QUEUE_SIZE
+#define CLIENT_QUEUE_SIZE 10
+#endif
 
 /** As UDP connections are stateless, we need to include extra
  *  information in the UDP PCB to determine when a new connection
@@ -164,88 +178,6 @@ typedef struct xtcp_connection_t {
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
-
-/** \brief Convert a unsigned integer representation of an ip address into
- *         the xtcp_ipaddr_t type.
- *
- * \param ipaddr The result ipaddr
- * \param i      An 32-bit integer containing the ip address (network order)
- */
-void xtcp_uint_to_ipaddr(xtcp_ipaddr_t ipaddr, unsigned int i);
-
-/** \brief Set a connection into ack-receive mode.
- *
- *  In ack-receive mode after a receive event the tcp window will be set to
- *  zero for the connection (i.e. no more data will be received from the other end).
- *  This will continue until the client calls the xtcp_ack_recv functions.
- *
- * \param c_xtcp      chanend connected to the xtcp server
- * \param conn        the connection
- */
-void xtcp_ack_recv_mode(chanend c_xtcp,
-                        REFERENCE_PARAM(xtcp_connection_t,conn)) ;
-
-
-/** \brief Ack a receive event
- *
- * In ack-receive mode this command will acknowledge the last receive and
- * therefore
- * open the receive window again so new receive events can occur.
- *
- * \param c_xtcp      chanend connected to the xtcp server
- * \param conn        the connection
- **/
-void xtcp_ack_recv(chanend c_xtcp,
-                   REFERENCE_PARAM(xtcp_connection_t,conn));
-
-/** \brief Get the current host MAC address of the server.
- *
- * \param c_xtcp      chanend connected to the xtcp server
- * \param mac_addr    the array to be filled with the mac address
- **/
-void xtcp_get_mac_address(chanend c_xtcp, unsigned char mac_addr[]);
-
-/** \brief Get the IP config information into a local structure
- *
- * Get the current host IP configuration of the server.
- *
- * \param c_xtcp      chanend connected to the xtcp server
- * \param ipconfig    the structure to be filled with the IP configuration
- *                    information
- **/
-void xtcp_get_ipconfig(chanend c_xtcp,
-                       REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
-
-
-/** \brief pause a connection.
- *
- *  No further reads and writes will occur on the network.
- *  \param c_xtcp	chanend connected to the xtcp server
- *  \param conn		tcp connection structure
- */
-void xtcp_pause(chanend c_xtcp,
-                REFERENCE_PARAM(xtcp_connection_t,conn));
-
-
-/** \brief unpause a connection
- *
- *  Activity is resumed on a connection.
- *
- *  \param c_xtcp	chanend connected to the xtcp server
- *  \param conn		tcp connection structure
- */
-void xtcp_unpause(chanend c_xtcp,
-                  REFERENCE_PARAM(xtcp_connection_t,conn));
-
-
-/** \brief Enable a connection to accept acknowledgements of partial packets that have been sent.
- *
- *  \param c_xtcp	chanend connected to the xtcp server
- *  \param conn		tcp connection structure
- */
-void xtcp_accept_partial_ack(chanend c_xtcp,
-                             REFERENCE_PARAM(xtcp_connection_t,conn));
-
 #ifdef __XC__
 typedef interface xtcp_if {
     /** \brief Recieve information/data from the XTCP server.
@@ -381,7 +313,37 @@ typedef interface xtcp_if {
   void request_host_by_name(const char hostname[], unsigned name_len);
 } xtcp_if;
 
-/** Function implementing the TCP/IP stack task.
+typedef struct pbuf * unsafe pbuf_p;
+
+/** WiFi/xtcp data interface - mii.h equivalent
+ *  TODO: document
+ */
+typedef interface xtcp_pbuf_if {
+
+  /** TODO: document */
+  [[clears_notification]]
+  pbuf_p receive_packet();
+
+  [[notification]]
+  slave void packet_ready();
+
+  /** TODO: document */
+  void send_packet(pbuf_p p);
+
+  // TODO: Add function to notify clients of received packets
+} xtcp_pbuf_if;
+
+typedef enum {
+  ARP_TIMEOUT = 0,
+  AUTOIP_TIMEOUT,
+  TCP_TIMEOUT,
+  IGMP_TIMEOUT,
+  DHCP_COARSE_TIMEOUT,
+  DHCP_FINE_TIMEOUT,
+  NUM_TIMEOUTS
+} xtcp_lwip_timeout_type;
+
+/** Function implementing the TCP/IP stack using the lwIP stack.
  *
  *  This functions implements a TCP/IP stack that clients can access via
  *  interfaces.
@@ -419,36 +381,6 @@ typedef interface xtcp_if {
  *                      to determine the IP address configuration of the
  *                      component.
  */
-typedef struct pbuf * unsafe pbuf_p;
-
-/** WiFi/xtcp data interface - mii.h equivalent
- *  TODO: document
- */
-typedef interface xtcp_pbuf_if {
-
-  /** TODO: document */
-  [[clears_notification]]
-  pbuf_p receive_packet();
-
-  [[notification]]
-  slave void packet_ready();
-
-  /** TODO: document */
-  void send_packet(pbuf_p p);
-
-  // TODO: Add function to notify clients of received packets
-} xtcp_pbuf_if;
-
-typedef enum {
-  ARP_TIMEOUT = 0,
-  AUTOIP_TIMEOUT,
-  TCP_TIMEOUT,
-  IGMP_TIMEOUT,
-  DHCP_COARSE_TIMEOUT,
-  DHCP_FINE_TIMEOUT,
-  NUM_TIMEOUTS
-} xtcp_lwip_timeout_type;
-
 void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp], 
                static const unsigned n_xtcp,
                client mii_if ?i_mii,
@@ -461,6 +393,44 @@ void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
                otp_ports_t &?otp_ports,
                xtcp_ipconfig_t &ipconfig);
 
+/** Function implementing the TCP/IP stack task using the uIP stack.
+ *
+ *  This functions implements a TCP/IP stack that clients can access via
+ *  interfaces.
+ *
+ *  \param i_xtcp_init  The interface array to connect to the clients.
+ *  \param n_xtcp_init  The number of clients to the task.
+ *  \param i_mii        If this component is connected to the mii() component
+ *                      in the Ethernet library then this interface should be
+ *                      used to connect to it. Otherwise it should be set to
+ *                      null
+ *  \param i_eth_cfg    If this component is connected to an MAC component
+ *                      in the Ethernet library then this interface should be
+ *                      used to connect to it. Otherwise it should be set to
+ *                      null.
+ *  \param i_eth_rx     If this component is connected to an MAC component
+ *                      in the Ethernet library then this interface should be
+ *                      used to connect to it. Otherwise it should be set to
+ *                      null.
+ *  \param i_eth_tx     If this component is connected to an MAC component
+ *                      in the Ethernet library then this interface should be
+ *                      used to connect to it. Otherwise it should be set to
+ *                      null.
+ *  \param i_smi        If this connection to an Ethernet SMI component is
+ *                      then the XTCP component will poll the Ethernet PHY
+ *                      for link up/link down events. Otherwise, it will
+ *                      expect link up/link down events from the connected
+ *                      Ethernet MAC.
+ *  \param phy_address  The SMI address of the Ethernet PHY
+ *  \param mac_address  If this array is non-null then it will be used to set
+ *                      the MAC address of the component.
+ *  \param otp_ports    If this port structure is non-null then the component
+ *                      will obtain the MAC address from OTP ROM. See the OTP
+ *                      reading library user guide for details.
+ *  \param ipconfig     This :c:type:`xtcp_ipconfig_t` structure is used
+ *                      to determine the IP address configuration of the
+ *                      component.
+ */
 void xtcp_uip(server xtcp_if i_xtcp_init[n_xtcp_init], 
               static const unsigned n_xtcp_init,
               client mii_if ?i_mii,

@@ -24,8 +24,6 @@ APP_NAME =
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to 
 # xcc for the final link (mapping) stage.
 
-XTCP_STACK = LWIP
-
 SLICEKIT_FLAGS = -DSLICEKIT_L16=1
 MICARRAY_FLAGS = -DMIC_ARRAY=1
 EXPLORER_FLAGS = -DEXPLORER_KIT=1

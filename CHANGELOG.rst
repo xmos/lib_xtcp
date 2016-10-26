@@ -1,6 +1,37 @@
 TCP/IP Library Change Log
 =========================
 
+6.0.0
+
+  * Unified the branches of uIP and lwIP as the backend of the XTCP stack. The default is uIP.
+    To change the stack, define XTCP_STACK in your makefile to be either UIP or LWIP. Then,
+    instead of calling xtcp(...), call either xtcp_uip(...) or xtcp_lwip(...) respectively.
+
+  * Moved from input polling to event driven stacks.
+
+  * Interfaces have replaced channels as communication medium between client and server.
+
+  * Removed a number of xtcp_event_types:
+
+    - XTCP_PUSH_DATA
+    
+    - XTCP_REQUEST_DATA
+    
+    - XTCP_POLL
+
+    - XTCP_ALREADY_HANDLED
+
+  * Added the fields of packet_length and client_num to the xtcp_connection_t structure.
+
+  * Removed (for now) the ability to pause a connection.
+
+  * Removed (for now) the ability to partially acknowledge a packet.
+
+  * Removed all abilities associated with IPv6.
+
+  * Removed the ability to send with an index. This functionality is easily replicated
+    with a call to send() with the pointer of the array index location, i.e. &(data[index]).
+
 5.1.0
 -----
 

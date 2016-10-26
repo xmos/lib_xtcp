@@ -7,6 +7,7 @@
 #include <malloc.h>
 /* Used to prevent conflict with uIP */
 #include "xtcp_uip_includes.h"
+#include "xtcp_shared.h"
 #include <debug_print.h>
 
 #define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_buf[0])
@@ -23,7 +24,26 @@ typedef struct listener_info_t {
 listener_info_t tcp_listeners[NUM_TCP_LISTENERS] = {{0}};
 listener_info_t udp_listeners[NUM_UDP_LISTENERS] = {{0}};
 
-unsafe void inline xtcp_if_up(void);
+/* uIP global variables */
+extern unsigned short uip_len;     /* Length of data in buffer */
+extern unsigned short uip_slen;    /* Length of data to be sent in buffer */
+extern void * unsafe uip_sappdata; /* Pointer to start position of data in packet buffer */
+unsigned int uip_buf32[(UIP_BUFSIZE + 5) >> 2];  /* uIP buffer in 32bit words */
+unsafe {
+  u8_t * unsafe uip_buf = (u8_t *) &uip_buf32[0];/* uIP buffer 8bit */
+}
+
+/* Extra buffer to hold data until the client is ready */
+unsigned int rx_buffer[(UIP_BUFSIZE + 5) >> 2];
+
+/* These pointers are used to store connections for 
+   sending in xcoredev.xc */
+extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
+extern client interface mii_if * unsafe xtcp_i_mii;
+extern mii_info_t xtcp_mii_info;
+
+static unsigned uip_static_ip = 0; /* Boolean whether we're using a static IP */
+static unsigned buffer_full = 0;   /* Boolean whether the RX buffer is full */
 
 #if UIP_USE_DHCP
 unsafe void 
@@ -118,38 +138,6 @@ void uip_linkdown(void )
 #endif
 }
 
-/* uIP global variables */
-extern unsigned short uip_len;     /* Length of data in buffer */
-extern unsigned short uip_slen;    /* Length of data to be sent in buffer */
-extern void * unsafe uip_sappdata; /* Pointer to start position of data in packet buffer */
-unsigned int uip_buf32[(UIP_BUFSIZE + 5) >> 2];  /* uIP buffer in 32bit words */
-unsafe {
-  u8_t * unsafe uip_buf = (u8_t *) &uip_buf32[0];/* uIP buffer 8bit */
-}
-
-/* Extra buffer to hold data until the client is ready */
-unsigned int rx_buffer[(UIP_BUFSIZE + 5) >> 2];
-
-/* These pointers are used to store connections for 
-   sending in xcoredev.xc */
-extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
-extern client interface mii_if * unsafe xtcp_i_mii;
-extern mii_info_t xtcp_mii_info;
-
-typedef struct client_queue_uip_t {
-  xtcp_event_type_t xtcp_event;
-  struct xtcp_connection_t * unsafe conn;
-  struct client_queue_uip_t * unsafe next;
-} client_queue_uip_t;
-
-static client_queue_uip_t * unsafe * unsafe client_queue;
-typedef client_queue_uip_t * unsafe ptr_unsafe_client_queue_uip_t;
-static server xtcp_if * unsafe xtcp_i_xtcp; /* Global variable of the xtcp interface. 
-                                             * Used by the queueing mechanism */
-static unsigned uip_static_ip = 0; /* Boolean whether we're using a static IP */
-static unsigned n_xtcp;            /* Number of clients */
-static unsigned buffer_full = 0;   /* Boolean whether the RX buffer is full */
-
 static unsafe void 
 xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
   memcpy(&uip_ethaddr, mac_address, 6);
@@ -175,83 +163,6 @@ xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
 #if UIP_USE_DHCP
     dhcpc_init(uip_ethaddr.addr, 6);
 #endif
-}
-
-static unsigned 
-get_guid(void)
-{
-  static unsigned guid = 0;
-  guid++;
-  
-  if(guid > 200) {
-    guid = 0;
-  }
-
-  return guid;
-}
-
-static unsafe void
-enqueue_event_and_notify(unsigned client_num,
-                         xtcp_event_type_t xtcp_event,
-                         xtcp_connection_t * unsafe conn)
-{
-  /* Create new event */
-  client_queue_uip_t * unsafe event = (client_queue_uip_t * unsafe) malloc(sizeof(client_queue_uip_t));
-  event->xtcp_event = xtcp_event;
-  event->conn = conn;
-  event->next = NULL;
-
-  /* Queue empty */
-  if(!client_queue[client_num]) {
-    client_queue[client_num] = event;
-  } else {
-    /* Find tail */
-    client_queue_uip_t * unsafe tail = client_queue[client_num];
-    while(tail->next) {
-      tail = tail->next;
-    }
-    tail->next = event;
-  }
-
-  /* Notify */
-  xtcp_i_xtcp[client_num].packet_ready();
-}
-
-static unsafe client_queue_uip_t 
-dequeue_event(unsigned client_num)
-{
-  /* Must be something to dequeue */
-  xassert(client_queue[client_num]);
-  /* Get next */
-  client_queue_uip_t * unsafe next = client_queue[client_num]->next;
-  /* Get data */
-  client_queue_uip_t head = *client_queue[client_num];
-  /* Free head */
-  free(client_queue[client_num]);
-  /* Reassign head */
-  client_queue[client_num] = next;
-
-  return head;
-}
-
-unsafe void
-xtcp_if_up(void)
-{
-  xtcp_connection_t dummy;
-  memset(&dummy, 0, sizeof(xtcp_connection_t));
-  for(unsigned i=0; i<n_xtcp; i++) {
-    enqueue_event_and_notify(i, XTCP_IFUP, &dummy);
-  }
-}
-
-unsafe void
-xtcp_if_down(void)
-{
-  xtcp_connection_t dummy;
-  memset(&dummy, 0, sizeof(xtcp_connection_t));
-  for(unsigned i=0; i<n_xtcp; i++) {
-    enqueue_event_and_notify(i, XTCP_IFDOWN, &dummy);
-  }
 }
 
 static void 
@@ -320,76 +231,19 @@ xtcp_process_periodic_timer(void)
   }
 }
 
-static unsafe xtcp_connection_t
-create_xtcp_state(int client_num,
-                  xtcp_protocol_t protocol,
-                  unsigned char * unsafe remote_addr,
-                  int local_port,
-                  int remote_port,
-                  void * unsafe stack_conn)
+static unsafe void
+set_uip_state(xtcp_connection_t conn)
 {
-  xassert(client_num >= 0 && client_num < n_xtcp);
-  
-  xtcp_connection_t conn = {0};
-  
-  conn.client_num = client_num;
-  conn.id = get_guid();
-  conn.protocol = protocol;
-  for (int i=0; i<4; i++)
-    conn.remote_addr[i] = remote_addr[i];
-  conn.remote_port = remote_port;
-  conn.local_port = local_port;
-  conn.stack_conn = (int) stack_conn;
-
-  return conn;
-}
-
-static unsafe void 
-rm_recv_event_and_clear_buffer_flag(unsigned client_num)
-{
-  client_queue_uip_t * unsafe tail = client_queue[client_num];
-  client_queue_uip_t * unsafe temp;
-
-  /* Head is recv */
-  if(tail->xtcp_event == XTCP_RECV_DATA) {
-    buffer_full = 0;
-    dequeue_event(client_num);
-  }
-
-  /* It could be elsewhere in the queue */
-  while(tail && tail->next) {
-    if(tail->next->xtcp_event == XTCP_RECV_DATA) {
-      /* Chuck data */
-      buffer_full = 0;
-      /* Get event after next event */
-      temp = tail->next->next;
-      /* Free offending link */
-      free(tail->next);
-      /* Rejoin ends */
-      tail = temp;
-    }
-    tail = tail->next;
-  }
-}
-
-static unsafe xtcp_connection_t * unsafe
-get_and_set_appstate(xtcp_connection_t conn)
-{
-  xtcp_connection_t * unsafe xtcp_conn;
   if(conn.protocol == XTCP_PROTOCOL_UDP) {
     uip_udp_conn = (struct uip_udp_conn * unsafe) conn.stack_conn;
-    // uip_conn = NULL;
-    return &(uip_udp_conn->appstate);
   } else {
     uip_conn = (struct uip_conn * unsafe) conn.stack_conn;
-    // uip_udp_conn = NULL;
-    return &(uip_conn->appstate);
   }
 }
 
 void 
-xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init], 
-         static const unsigned n_xtcp_init,
+xtcp_uip(server xtcp_if i_xtcp[n_xtcp], 
+         static const unsigned n_xtcp,
          client mii_if ?i_mii,
          client ethernet_cfg_if ?i_eth_cfg,
          client ethernet_rx_if ?i_eth_rx,
@@ -403,11 +257,6 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
   /* Entire function declared unsafe */
   unsafe {
   
-  ptr_unsafe_client_queue_uip_t client_queue_init[n_xtcp_init];
-  client_queue = client_queue_init;
-  xtcp_i_xtcp = i_xtcp;
-  n_xtcp = n_xtcp_init;
-
   mii_info_t mii_info;
   timer tmr;
   unsigned timeout;
@@ -450,6 +299,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
     i_eth_cfg.add_ethertype_filter(index, 0x0800);
   }
 
+  xtcp_init_queue(n_xtcp, i_xtcp);
   xtcp_uip_init(&ipconfig, mac_address);
 
   tmr :> timeout;
@@ -508,69 +358,71 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
 
     /* Client calls get_packet after the server has notified */
     case i_xtcp[int i].get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length):
-      client_queue_uip_t head = dequeue_event(i);
-      head.conn->event = head.xtcp_event;
-      memcpy(&conn, head.conn, sizeof(xtcp_connection_t));
-      length = 0;
+      client_queue_t head = dequeue_event(i);
+      head.conn.event = head.xtcp_event;
+      memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
+      unsigned bytecount = 0;
 
       if(head.xtcp_event == XTCP_RECV_DATA) {
-        memcpy(data, rx_buffer, head.conn->packet_length);
+        memcpy(data, rx_buffer, head.conn.packet_length);
         buffer_full = 0;
-        length = head.conn->packet_length;
+        bytecount = head.conn.packet_length;
       }
 
-      /* More things on the queue */
-      if(client_queue[i]) {
-        i_xtcp[i].packet_ready();
-      }
+      length = bytecount;
+
+      renotify(i);
       break;
     
     case i_xtcp[int i].close(xtcp_connection_t conn):
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
+      set_uip_state(conn);
 
       if (uip_udpconnection()) {
         uip_udp_conn->lport = 0;
-        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, xtcp_conn);
+        enqueue_event_and_notify(conn.client_num, new_event(XTCP_CLOSED, conn));
       } else {
         uip_close();
       }
       break;
     
-    case i_xtcp[int i].abort(xtcp_connection_t conn):
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
-      rm_recv_event_and_clear_buffer_flag(conn.client_num);
+    case i_xtcp[int i].abort(xtcp_connection_t conn):      
+      rm_next_recv_event(conn, conn.client_num);
+      buffer_full = 0;
 
       if (uip_udpconnection()) {
         uip_udp_conn->lport = 0;
-        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, xtcp_conn);
+        enqueue_event_and_notify(conn.client_num, new_event(XTCP_CLOSED, conn));
       } else {
         uip_abort();
         uip_process(UIP_TCP_SEND);
-        enqueue_event_and_notify(conn.client_num, XTCP_ABORTED, xtcp_conn);
+        enqueue_event_and_notify(conn.client_num, new_event(XTCP_ABORTED, conn));
       }
       break;
 
     case i_xtcp[int i].bind_local_udp(xtcp_connection_t conn, unsigned port_number):
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
 
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
-      xtcp_conn->local_port = port_number;
-      ((struct uip_udp_conn *) xtcp_conn->uip_conn)->lport = HTONS(port_number);
+      set_uip_state(conn);
+      conn.local_port = port_number;
+      ((struct uip_udp_conn *) conn.stack_conn)->lport = HTONS(port_number);
+      ((struct uip_udp_conn *) conn.stack_conn)->xtcp_conn = conn;
       break;
 
     case i_xtcp[int i].bind_remote_udp(xtcp_connection_t conn, xtcp_ipaddr_t ipaddr, unsigned port_number):
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
+      set_uip_state(conn);
 
       if(conn.protocol == XTCP_PROTOCOL_TCP) break;
 
       /* Change ports for xtcp_conn and uip_idp_conn */
-      uip_udp_conn->rport = HTONS(port_number);
-      xtcp_conn->remote_port = port_number;
+      conn.remote_port = port_number;
+      ((struct uip_udp_conn *) conn.stack_conn)->rport = HTONS(port_number);
 
       /* The same for the IP address */
-      XTCP_IPADDR_CPY(xtcp_conn->remote_addr, ipaddr);
+      XTCP_IPADDR_CPY(conn.remote_addr, ipaddr);
       uip_udp_conn->ripaddr[0] = (ipaddr[1] << 8) | ipaddr[0];
       uip_udp_conn->ripaddr[1] = (ipaddr[3] << 8) | ipaddr[2];
+
+      ((struct uip_udp_conn *) conn.stack_conn)->xtcp_conn = conn;
       break;
     
     case i_xtcp[int i].connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol):
@@ -588,7 +440,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
                                         conn->lport,
                                         port_number,
                                         conn);
-          conn->appstate = xtcp_conn;
+          conn->xtcp_conn = xtcp_conn;
         }
       } else {
         struct uip_udp_conn * unsafe conn = uip_udp_new(&uipaddr, HTONS(port_number));
@@ -600,16 +452,16 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
                                         conn->lport,
                                         port_number,
                                         conn);
-          conn->appstate = xtcp_conn;
-          enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(conn->appstate));
+          conn->xtcp_conn = xtcp_conn;
+          enqueue_event_and_notify(i, new_event(XTCP_NEW_CONNECTION, xtcp_conn));
         }
       }
       break;
 
     case i_xtcp[int i].send(xtcp_connection_t conn, char data[], unsigned len):
-      if(!len) break; /* Nothing to send */
+      if(len <= 0) break; /* Nothing to send */
 
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
+      set_uip_state(conn);
 
       /* Make sure we're writing to the correct place */
       if(conn.protocol == XTCP_PROTOCOL_UDP) {
@@ -617,7 +469,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
       } else {
         uip_sappdata = uip_appdata = &uip_buf[UIP_LLH_LEN + UIP_IPTCPH_LEN];
       }
-
+      
       memcpy(uip_sappdata, data, len);
       uip_send(uip_sappdata, len);
 
@@ -627,7 +479,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
       } else {
         uip_process(UIP_UDP_SEND_CONN);
         uip_arp_out(uip_udp_conn);
-        enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, xtcp_conn);
+        enqueue_event_and_notify(conn.client_num, new_event(XTCP_SENT_DATA, conn));
       }
       xtcp_tx_buffer();
       break;
@@ -649,11 +501,11 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
       break;
 
     case i_xtcp[int i].set_appstate(xtcp_connection_t conn, xtcp_appstate_t appstate):
-      xtcp_connection_t * unsafe xtcp_conn = get_and_set_appstate(conn);
-      xtcp_conn->appstate = appstate;
+      set_uip_state(conn);
+      ((struct uip_udp_conn *) conn.stack_conn)->xtcp_conn.appstate = appstate;
       break;
 
-    case i_xtcp[int i].request_host_by_name(const char hostname[]):
+    case i_xtcp[int i].request_host_by_name(const char hostname[], unsigned name_len):
       /* NOT SUPPORTED BY uIP */
       break;
 
@@ -704,7 +556,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp_init],
 unsafe void 
 xtcpd_appcall(void)
 {
-  xtcp_connection_t * unsafe conn;
+  xtcp_connection_t xtcp_conn;
 
   /* DHCP */
   if (uip_udpconnection() &&
@@ -718,15 +570,15 @@ xtcpd_appcall(void)
 
   /* Get connection state */
   if (uip_udpconnection()) {
-    static int counter = 0;
-    conn = (xtcp_connection_t * unsafe) &(uip_udp_conn->appstate);
-    if (conn && uip_newdata()) {
-      conn->remote_port = HTONS(UDPBUF->srcport);
-      uip_ipaddr_copy(conn->remote_addr, UDPBUF->srcipaddr);
+    xtcp_conn = uip_udp_conn->xtcp_conn;
+    if (uip_newdata()) {
+      xtcp_conn.remote_port = HTONS(UDPBUF->srcport);
+      uip_ipaddr_copy(xtcp_conn.remote_addr, UDPBUF->srcipaddr);
+      uip_udp_conn->xtcp_conn = xtcp_conn;
     }
   } else {
     xassert(uip_conn);
-    conn = (xtcp_connection_t * unsafe) &(uip_conn->appstate);
+    xtcp_conn = uip_conn->xtcp_conn;
   }
 
   /* New connection */
@@ -736,58 +588,60 @@ xtcpd_appcall(void)
                                             NUM_UDP_LISTENERS, 
                                             uip_udp_conn->lport);
       
-      *conn = create_xtcp_state(client_num,
-                                XTCP_PROTOCOL_UDP,
-                                (unsigned char * unsafe) UDPBUF->srcipaddr,
-                                uip_udp_conn->lport,
-                                HTONS(UDPBUF->srcport),
-                                uip_udp_conn);
+      xtcp_conn = uip_udp_conn->xtcp_conn =
+        create_xtcp_state(client_num,
+                          XTCP_PROTOCOL_UDP,
+                          (unsigned char * unsafe) UDPBUF->srcipaddr,
+                          uip_udp_conn->lport,
+                          HTONS(UDPBUF->srcport),
+                          uip_udp_conn);
     } else { 
       int client_num = get_listener_linknum(tcp_listeners,
                                             NUM_TCP_LISTENERS, 
                                             uip_conn->lport);
       
-      *conn = create_xtcp_state(client_num,
-                                XTCP_PROTOCOL_TCP,
-                                (unsigned char * unsafe) uip_conn->ripaddr,
-                                uip_conn->lport,
-                                uip_conn->rport,
-                                uip_conn);
+      xtcp_conn = uip_conn->xtcp_conn =
+        create_xtcp_state(client_num,
+                          XTCP_PROTOCOL_TCP,
+                          (unsigned char * unsafe) uip_conn->ripaddr,
+                          uip_conn->lport,
+                          uip_conn->rport,
+                          uip_conn);
     }
-    enqueue_event_and_notify(conn->client_num, XTCP_NEW_CONNECTION, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_NEW_CONNECTION, xtcp_conn));
   }
 
-  /* Store data in rx_buffer and stop packets incoming on either MII or MAC Ethernet */
+  /* Store data in rx_buffer and raise guard on MII/MAC interfaces */
   if (uip_newdata() && uip_len > 0) {
     buffer_full = 1;
-    conn->packet_length = uip_len;
+    xtcp_conn.packet_length = uip_len;
     memcpy(rx_buffer, uip_appdata, uip_len);
-    enqueue_event_and_notify(conn->client_num, XTCP_RECV_DATA, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_RECV_DATA, xtcp_conn));
   }
 
   else if (uip_timedout()) {
-    enqueue_event_and_notify(conn->client_num, XTCP_TIMED_OUT, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_TIMED_OUT, xtcp_conn));
     return;
   }
 
   else if (uip_aborted()) {
-    enqueue_event_and_notify(conn->client_num, XTCP_ABORTED, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_ABORTED, xtcp_conn));
     return;
   }
 
   if (uip_acked()) {
-    enqueue_event_and_notify(conn->client_num, XTCP_SENT_DATA, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_SENT_DATA, xtcp_conn));
   }
 
   if (uip_rexmit()) {
-    enqueue_event_and_notify(conn->client_num, XTCP_RESEND_DATA, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_RESEND_DATA, xtcp_conn));
   }
 
   if(uip_poll()) {
-    /* Not sure if anything should happen here */
+    /* Currently does nothing */
   }
 
   if (uip_closed()) {
-    enqueue_event_and_notify(conn->client_num, XTCP_CLOSED, conn);
+    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_CLOSED, xtcp_conn));
   }
 }
