@@ -3,7 +3,8 @@
 #include <platform.h>
 #include <string.h>
 #include <print.h>
-#include <xtcp.h>
+#include "xtcp.h"
+#include "xtcp_uip_includes.h"
 
 // Here are the port definitions required by ethernet. This port assignment
 // is for the L16 sliceKIT with the ethernet slice plugged into the
@@ -44,7 +45,16 @@ xtcp_ipconfig_t ipconfig = {
 #define BROADCAST_MSG "XMOS Broadcast\n"
 #define INIT_VAL -1
 
-enum flag_status {TRUE=1, FALSE=0};
+static inline void printip(xtcp_ipaddr_t ipaddr)
+{
+  printint(uip_ipaddr1(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr2(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr3(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr4(ipaddr));
+}
 
 /** Simple UDP reflection thread.
  *
@@ -67,8 +77,8 @@ void udp_reflect(client xtcp_if i_xtcp)
 
   timer tmr;
   unsigned int time;
-  unsigned return_len = 0; // A temporary variable to hold the length of the packet
-                           // recieved from get_packet()
+  unsigned data_len = 0; // A temporary variable to hold the length of the packet
+                         // recieved from get_packet()
 
   // The buffers for incoming data, outgoing responses and outgoing broadcast
   // messages
@@ -94,10 +104,17 @@ void udp_reflect(client xtcp_if i_xtcp)
     select {
       // Respond to an event from the tcp server
       case i_xtcp.packet_ready():
-        i_xtcp.get_packet(conn, (char *)rx_buffer, RX_BUFFER_SIZE, return_len);
+        i_xtcp.get_packet(conn, (char *)rx_buffer, RX_BUFFER_SIZE, data_len);
         switch (conn.event)
           {
           case XTCP_IFUP:
+            // Show the IP address of the interface
+            xtcp_ipconfig_t ipconfig;
+            i_xtcp.get_ipconfig(ipconfig);
+            printstr("dhcp: ");
+            printip(ipconfig.ipaddr);
+            printstr("\n");
+
             // When the interface goes up, set up the broadcast connection.
             // This connection will persist while the interface is up
             // and is only used for outgoing broadcast messages
@@ -150,14 +167,15 @@ void udp_reflect(client xtcp_if i_xtcp)
             //  - send a response to that connection
             //
             printstr("Got data: ");
-            printint(response_len);
-            printstrln(" bytes");
+            printint(data_len);
+            printstr(" bytes\n");
 
+            response_len = data_len;
             for (int i=0;i<response_len;i++)
               tx_buffer[i] = rx_buffer[i];
 
             i_xtcp.send(conn, tx_buffer, response_len);
-            printstrln("Responded");
+            printstr("Responding\n");
             break;
 
         case XTCP_RESEND_DATA:
@@ -176,12 +194,12 @@ void udp_reflect(client xtcp_if i_xtcp)
           if (conn.id == broadcast_connection.id) {
             // When a broadcast message send is complete the connection is kept
             // open for the next one
-            printstrln("Sent Broadcast");
+            printstr("Sent Broadcast\n");
           }
           else {
             // When a reponse is sent, the connection is closed opening up
             // for another new connection on the listening port
-            printstrln("Sent Response");
+            printstr("Sent Response\n");
             i_xtcp.close(conn);
             responding_connection.id = INIT_VAL;
           }
@@ -202,11 +220,11 @@ void udp_reflect(client xtcp_if i_xtcp)
       // A broadcast message can be sent if the connection is established
       // and one is not already being sent on that connection
       if (broadcast_connection.id != INIT_VAL)  {
-        printstrln("Sending broadcast message");
+        printstr("Sending broadcast message\n");
         broadcast_len = strlen(broadcast_buffer);
         i_xtcp.send(conn, broadcast_buffer, broadcast_len);
       }
-      tmr :> time;
+      time += BROADCAST_INTERVAL;
       break;
     }
   }

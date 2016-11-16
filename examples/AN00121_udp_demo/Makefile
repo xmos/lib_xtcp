@@ -9,7 +9,7 @@ TARGET = SLICEKIT-L2
 APP_NAME = 
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_xtcp
+USED_MODULES = lib_xtcp(>=6.0.0)
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
