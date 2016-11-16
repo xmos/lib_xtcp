@@ -15,9 +15,7 @@ Features
    * DHCP, IP4LL, ICMP, IGMP support
    * Low level, event based interface for efficient memory usage
    * Based on the open-source uIP stack
-   * Currently, the library does not officially support IPv6. However,
-     experimental code for IPv6 support is contained in the
-     library. Contact XMOS for more details if you require IPv6.
+   * Currently the library only supports IPv4.
 
 Typical Resource Usage
 ......................
@@ -31,10 +29,10 @@ Typical Resource Usage
                { 0, 0, 0, 0 }
                };
                char mac_addr[6] = {0};
-    - locals: interface mii_if i_mii; chan c_xtcp[1];
-    - fn: xtcp(c_xtcp, 1, i_mii,
-               null, null, null,
-               null, 0, mac_addr, null, ipconfig);
+    - locals: interface mii_if i_mii; xtcp_if i_xtcp[1];
+    - fn: xtcp_uip(i_xtcp, 1, i_mii,
+                   null, null, null,
+                   null, 0, mac_addr, null, ipconfig);
     - pins: 0
     - ports: 0
 

@@ -43,6 +43,9 @@
 #define CLIENT_QUEUE_SIZE 10
 #endif
 
+/** Value used by lwIP's RX buffer */
+#define MAX_PACKET_BYTES 1518
+
 /** As UDP connections are stateless, we need to include extra
  *  information in the UDP PCB to determine when a new connection
  *  has arrived. LWIP ONLY.
@@ -163,7 +166,6 @@ typedef struct xtcp_connection_t {
   int client_num;             /**< The number of the client connected */
   int id;                     /**< A unique identifier for the connection */
   xtcp_protocol_t protocol;   /**< The protocol of the connection (TCP/UDP) */
-  xtcp_connection_type_t connection_type; /**< The type of connection (client/sever) */
   xtcp_event_type_t event;    /**< The last reported event on this connection. */
   xtcp_appstate_t appstate;   /**< The application state associated with the
                                    connection. This is set using the
@@ -304,13 +306,18 @@ typedef interface xtcp_if {
    */
   void bind_remote_udp(xtcp_connection_t conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
   
-  /** \brief 
-   *
+  /** \brief Request a hosts IP address from a URL.
    *
    * \param hostname    The human readable host name, e.g. "www.xmos.com"     
    * \note              LWIP ONLY.
    */
   void request_host_by_name(const char hostname[], unsigned name_len);
+
+  /** \brief Fill the provided ipconfig address with the current state of the server.
+   *
+   * \param ipconfig    IPconfig to be filled.   
+   */
+  void get_ipconfig(xtcp_ipconfig_t &ipconfig);
 } xtcp_if;
 
 typedef struct pbuf * unsafe pbuf_p;

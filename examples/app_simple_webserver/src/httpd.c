@@ -142,28 +142,23 @@ void httpd_init_state(chanend tcp_svr, xtcp_connection_t *conn)
   int i;
 
   // Try and find an empty connection slot
-  for (i=0;i<NUM_HTTPD_CONNECTIONS;i++)
-    {
-      if (!connection_states[i].active)
-        break;
-    }
+  for (i=0;i<NUM_HTTPD_CONNECTIONS;i++) {
+    if (!connection_states[i].active)
+      break;
+  }
 
   // If no free connection slots were found, abort the connection
-  if ( i == NUM_HTTPD_CONNECTIONS )
-    {
-      xtcp_abort(tcp_svr, conn);
-    }
-  // Otherwise, assign the connection to a slot        //
-  else
-    {
-      connection_states[i].active = 1;
-      connection_states[i].conn_id = conn->id;
-      connection_states[i].dptr = NULL;
-      xtcp_set_connection_appstate(
-           tcp_svr,
-           conn,
-           (xtcp_appstate_t) &connection_states[i]);
-    }
+  if (i == NUM_HTTPD_CONNECTIONS) {
+    i_xtcp.abort(conn);
+  }
+  
+  // Otherwise, assign the connection to a slot
+  else {
+    connection_states[i].active = 1;
+    connection_states[i].conn_id = conn->id;
+    connection_states[i].dptr = NULL;
+    i_xtcp.set_appstate(conn, (xtcp_appstate_t) &connection_states[i]);
+  }
 }
 
 
@@ -172,82 +167,50 @@ void httpd_free_state(xtcp_connection_t *conn)
 {
   int i;
 
-  for ( i = 0; i < NUM_HTTPD_CONNECTIONS; i++ )
-    {
-      if (connection_states[i].conn_id == conn->id)
-        {
-          connection_states[i].active = 0;
-        }
+  for (i=0; i<NUM_HTTPD_CONNECTIONS; i++) {
+    if (connection_states[i].conn_id == conn->id) {
+      connection_states[i].active = 0;
     }
+  }
 }
-////
-
 
 // HTTP event handler
-void httpd_handle_event(chanend tcp_svr, xtcp_connection_t *conn)
+void httpd_handle_event(client xtcp_if i_xtcp, xtcp_connection_t *conn)
 {
   // We have received an event from the TCP stack, so respond
   // appropriately
 
   // Ignore events that are not directly relevant to http
-  switch (conn->event)
-    {
+  switch (conn->event) {
     case XTCP_IFUP: {
       xtcp_ipconfig_t ipconfig;
-      xtcp_get_ipconfig(tcp_svr, &ipconfig);
+      i_xtcp.xtcp_get_ipconfig(&ipconfig);
 
-#if IPV6
-      unsigned short a;
-      unsigned int i;
-      int f;
-      xtcp_ipaddr_t *addr = &ipconfig.ipaddr;
-      printstr("IPV6 Address = [");
-      for(i = 0, f = 0; i < sizeof(xtcp_ipaddr_t); i += 2) {
-        a = (addr->u8[i] << 8) + addr->u8[i + 1];
-        if(a == 0 && f >= 0) {
-          if(f++ == 0) {
-            printstr("::");
-           }
-        } else {
-            if(f > 0) {
-              f = -1;
-            } else if(i > 0) {
-                printstr(":");
-            }
-          printhex(a);
-        }
-      }
-      printstrln("]");
-#else
       printstr("IP Address: ");
       printint(ipconfig.ipaddr[0]);printstr(".");
       printint(ipconfig.ipaddr[1]);printstr(".");
       printint(ipconfig.ipaddr[2]);printstr(".");
       printint(ipconfig.ipaddr[3]);printstr("\n");
-#endif
       }
-      return;
-    case XTCP_IFDOWN:
-    case XTCP_ALREADY_HANDLED:
       return;
     default:
       break;
-    }
+  }
 
   // Check if the connection is a http connection
   if (conn->local_port == 80) {
     switch (conn->event)
       {
       case XTCP_NEW_CONNECTION:
-        httpd_init_state(tcp_svr, conn);
+        httpd_init_state(i_xtcp, conn);
         break;
       case XTCP_RECV_DATA:
-        httpd_recv(tcp_svr, conn);
+        httpd_recv(i_xtcp, conn);
         break;
       case XTCP_SENT_DATA:
       case XTCP_REQUEST_DATA:
       case XTCP_RESEND_DATA:
-          httpd_send(tcp_svr, conn);
+          httpd_send(i_xtcp, conn);
           break;
       case XTCP_TIMED_OUT:
       case XTCP_ABORTED:

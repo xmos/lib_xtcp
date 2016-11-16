@@ -4,17 +4,19 @@
 Usage
 -----
 
-The TCP/IP stack runs in a task implemented in the :c:func:`xtcp`
-function. This task connects to either the MII component in the
-Ethernet library or one of the MAC components in the Ethernet library.
+The TCP/IP stack runs in a task implemented in either the :c:func:`xtcp_uip` or 
+:c:func:`xtcp_uip` functions. Each function uses a different stack as its
+backbone, either uIP and lwIP respectively. This task connects to either the 
+MII component in the Ethernet library or one of the MAC components in the 
+Ethernet library.
 See the Ethernet library user guide for details on these components.
 
 .. figure:: images/xtcp_task_diag.*
 
    XTCP task diagram
 
-Clients can interact with the TCP/IP stack via xC channels connected
-to the component using the client functions described in
+Clients can interact with the TCP/IP stack via interfaces connected
+to the component using the interface functions described in
 :ref:`xtcp_client_api`.
 
 If your application has no need of direct layer 2 traffic to the
@@ -35,8 +37,8 @@ automatically. If it cannot obtain an address from DHCP, it will determine
 a link local address (in the range 169.254/16) automatically using the
 Zeroconf IPV4LL protocol.
 
-To use dynamic address, the :c:func:`xtcp` function can be passed a
-structure with an IP address that is all zeros.
+To use dynamic address, the :c:func:`xtcp_uip` and :c:func:`xtcp_lwip` 
+functions can be passed a structure with an IP address that is all zeros.
 
 Events and Connections
 ......................
@@ -46,22 +48,10 @@ interface. This is to allow applications to manage buffering and
 connection management in the most efficient way possible for the
 application. 
 
-  .. figure:: images/events-crop.*
-     :width: 50%
-
-     Example event sequence
-
-
 Each client will receive *events* from the server. These events
 usually have an associated *connection*. In addition to receiving
-these events the client can send *commands* to the server to initiate
+these events the client can call interface functions to initiate
 new connections and so on.
-
-The above Figure shows an example event/command sequence of a
-client making a connection, sending some data, receiving some data and
-then closing the connection. Note that sending and receiving may be
-split into several events/commands since the server itself performs no
-buffering. 
 
 If the client is handling multiple connections then the server may
 interleave events for each connection so the client has to hold a

@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
 #include "xtcp.h"
 #include <string.h>
 #include <smi.h>
@@ -8,7 +7,6 @@
 /* Used to prevent conflict with uIP */
 #include "xtcp_uip_includes.h"
 #include "xtcp_shared.h"
-#include <debug_print.h>
 
 #define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_buf[0])
 #define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_buf[UIP_LLH_LEN])
@@ -520,6 +518,12 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
 
     case i_xtcp[int i].request_host_by_name(const char hostname[], unsigned name_len):
       /* NOT SUPPORTED BY uIP */
+      break;
+
+    case i_xtcp[int i].get_ipconfig(xtcp_ipconfig_t &ipconfig):
+      memcpy(&ipconfig.ipaddr, uip_hostaddr, sizeof(xtcp_ipaddr_t));
+      memcpy(&ipconfig.netmask, uip_netmask, sizeof(xtcp_ipaddr_t));
+      memcpy(&ipconfig.gateway, uip_draddr, sizeof(xtcp_ipaddr_t));
       break;
 
     case tmr when timerafter(timeout) :> timeout:

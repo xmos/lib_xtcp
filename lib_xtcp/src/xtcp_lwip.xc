@@ -9,8 +9,6 @@
 #include "xtcp_lwip_includes.h"
 #include "xtcp_shared.h"
 
-#define MAX_PACKET_BYTES 1518
-
 // These pointers are used to store connections for sending in
 // xcoredev.xc
 extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
@@ -87,10 +85,9 @@ static inline unsafe void
 remove_pcb_udp_connection(struct udp_pcb * unsafe pcb,
                           unsigned slot)
 {
-  for (int i=0; i<4; i++) {
-    pcb->connection_addrs[slot][i] = 0;
-  }
   pcb->connection_ports[slot] = 0;
+  for (int i=0; i<4; i++)
+    pcb->connection_addrs[slot][i] = 0;
 }
 
 static inline unsafe unsigned
@@ -130,9 +127,8 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
         pcb->connection_addrs[empty_slot][i] = ((unsigned char * unsafe) addr)[i];
       }
       return 1;
-      // enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, NULL, pcb, NULL, pcb->xtcp_conn);
     } else {
-      fail("Reached maximum amount of remote UDP connections per PCB");
+      debug_printf("Reached maximum amount of remote UDP connections per PCB");
     }
   }
   return 0;
@@ -217,7 +213,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL);
   netif_set_default(netif);
 
-  /* Function needs to be called after netif_add (which zeroes everything). */
   xtcp_lwip_low_level_init(my_netif, mac_address);
 
   if (ipconfig.ipaddr[0] == 0) {
@@ -264,27 +259,34 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
     /* Client calls get_packet after the server has notified */
     case i_xtcp[int i].get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length):
+      /* Pop event and update with latest values */
       client_queue_t head = dequeue_event(i);
-      head.conn.event = head.xtcp_event;
-      memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
       unsigned bytecount = 0;
 
+      /* Recv event is the only time we fill the data array */
       if(head.xtcp_event == XTCP_RECV_DATA) {
-        bytecount = head.pbuf->tot_len;
-        struct pbuf *unsafe pb;
-        unsigned offset = 0;
-        
-        for (pb = head.pbuf, offset = 0; pb != NULL; offset += pb->len, pb = pb->next) {
-          memcpy(data + offset, pb->payload, pb->len);
+        /* But only fill it if the client has space */
+        if(conn.protocol == XTCP_PROTOCOL_TCP) {
+          struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
+          head.conn.mss = tcp_mss(t_pcb);
         }
-        
-        if(head.conn.protocol == XTCP_PROTOCOL_TCP) {
-          tcp_recved(head.t_pcb, head.pbuf->tot_len);
-        } else {
-          // UDP
+
+        if(head.pbuf->tot_len < n) {
+          bytecount = head.pbuf->tot_len;
+          struct pbuf *unsafe pb;
+          unsigned offset = 0;
+          
+          for (pb = head.pbuf, offset = 0; pb != NULL; offset += pb->len, pb = pb->next)
+            memcpy(data + offset, pb->payload, pb->len);
+          
+          if(head.conn.protocol == XTCP_PROTOCOL_TCP)
+            tcp_recved(head.t_pcb, head.pbuf->tot_len);
         }
         pbuf_free(head.pbuf);
       }
+
+      head.conn.event = head.xtcp_event;
+      memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
 
       length = bytecount;
 
@@ -294,6 +296,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
     case i_xtcp[int i].listen(int port_number, xtcp_protocol_t protocol):
       xtcp_connection_t blank_conn = {0};
       blank_conn.client_num = i;
+      
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe pcb = tcp_new();
         tcp_bind(pcb, NULL, port_number);

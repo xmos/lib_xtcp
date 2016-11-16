@@ -193,13 +193,12 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
         switch(conn.event) {
           case XTCP_IFUP:
             debug_printf("UP!\n");
-            i_xtcp.request_host_by_name("www.google.com", 14);
             break;
           case XTCP_IFDOWN:
             // debug_printf("DOWN!\n");
             break;
           case XTCP_RECV_DATA:
-            // // debug_printf("DATA!\n");
+            // debug_printf("DATA!\n");
             if(rx_buffer[0] == 'a') {
               exit(0);
             }
@@ -376,7 +375,7 @@ int main(void) {
   par {
     on tile[1]: mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
                     p_eth_txclk, p_eth_txen, p_eth_txd, p_eth_timing,
-                    eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE)
+                    eth_rxclk, eth_txclk, XTCP_MII_BUFSIZE);
 
 #else // ETH
   ethernet_cfg_if i_cfg[1];
@@ -390,7 +389,7 @@ int main(void) {
 #endif
 
 #if SLICEKIT_L16
-    on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
+    // on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 #else // MIC_ARRAY
     on tile[1]: [[distribute]] smi_singleport(i_smi, p_smi, 1, 0);
 #endif
@@ -401,12 +400,12 @@ int main(void) {
 #endif
 
 #if RAW
-      xtcp_lwip(i_xtcp, REFLECT_PROCESSES, i_mii,
+      xtcp_uip(i_xtcp, REFLECT_PROCESSES, i_mii,
            null, null, null,
            i_smi, ETHERNET_SMI_PHY_ADDRESS,
            null, otp_ports, ipconfig);
 #else // ETH
-      xtcp_lwip(i_xtcp, REFLECT_PROCESSES, null,
+      xtcp_uip(i_xtcp, REFLECT_PROCESSES, null,
            i_cfg[0], i_rx[0], i_tx[0],
            i_smi, ETHERNET_SMI_PHY_ADDRESS,
            null, otp_ports, ipconfig);
@@ -432,7 +431,7 @@ int main(void) {
 /* eXplorerKIT */
 
 int main(void) {
-  chan c_xtcp[REFLECT_PROCESSES];
+  xtcp_if i_xtcp[REFLECT_PROCESSES];
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
   ethernet_rx_if i_rx[NUM_ETH_CLIENTS];
   ethernet_tx_if i_tx[NUM_ETH_CLIENTS];
@@ -454,14 +453,14 @@ int main(void) {
 
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
-    on tile[0]: xtcp_lwip(c_xtcp, REFLECT_PROCESSES, null,
+    on tile[0]: xtcp_uip(i_xtcp, REFLECT_PROCESSES, null,
                       i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                       null, ETHERNET_SMI_PHY_ADDRESS,
                       null, otp_ports, ipconfig);
 
     // The simple udp reflector thread
     par (int i=0; i<REFLECT_PROCESSES; i++) {
-      on tile[0]: udp_reflect(c_xtcp[i], INCOMING_PORT+(i*10));
+      on tile[0]: udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
     }
 
   }

@@ -60,7 +60,8 @@ def process_test(process_port):
     # match against rebounded packet
     while tests_to_perform:
         time.sleep(args.delay_between_packets)
-        length_of_message = random.randint(1, packet_size_limit)
+        # length_of_message = random.randint(1, packet_size_limit)
+        length_of_message = 100
         # Don't allow an 'a' char to be sent, as this kills the remote device
         message = ''.join( [random.choice(string.lowercase[1:]) for c in xrange(length_of_message)] )
         # message = 'bbccdd'
@@ -180,29 +181,6 @@ def multicast_test():
     while True:
       print sock.recv(10240)
 
-    # MCAST_GRP = '224.1.1.1'
-    # MCAST_PORT = 5007
-
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    # sock.bind((MCAST_GRP, MCAST_PORT))
-    # mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-    # sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
-    # while True:
-    #   print sock.recv(10240)
-
-    # import socket
-
-    # MCAST_GRP = '224.1.1.1'
-    # MCAST_PORT = 5007
-
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    # sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton('192.168.2.1'))
-    # sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
-    # while 1:
-    #     sock.sendto("bcdef", (MCAST_GRP, MCAST_PORT))
-
 def udp_bind_test():
     print "UDP BIND"
     tests_to_perform = args.packets
@@ -258,11 +236,11 @@ def check_and_set_args():
 
 if __name__ == '__main__':
     # Defaults
-    packets = 100000
+    packets = 10000
     packet_size_limit = 50
     delay_between_packets = 0
-    remote_processes = 2
-    remote_ports = 2
+    remote_processes = 1
+    remote_ports = 1
     local_port_udp = 15999
     protocol = "UDP"
 

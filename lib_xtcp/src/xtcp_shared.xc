@@ -95,6 +95,8 @@ create_xtcp_state(int xtcp_num,
     xtcp_conn.remote_addr[i] = remote_addr[i];
   xtcp_conn.remote_port = remote_port;
   xtcp_conn.local_port = local_port;
+  if(protocol == XTCP_PROTOCOL_UDP)
+    xtcp_conn.mss = MAX_PACKET_BYTES;
 
   xtcp_conn.stack_conn = (int) uip_lwip_conn;
   return xtcp_conn;
