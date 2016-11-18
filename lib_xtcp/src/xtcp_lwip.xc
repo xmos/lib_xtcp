@@ -483,6 +483,12 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
+    case i_xtcp[int i].get_ipconfig(xtcp_ipconfig_t &ipconfig):
+      memcpy(&ipconfig.ipaddr, &my_netif.ip_addr, sizeof(xtcp_ipaddr_t));
+      memcpy(&ipconfig.netmask, &my_netif.netmask, sizeof(xtcp_ipaddr_t));
+      memcpy(&ipconfig.gateway, &my_netif.gw, sizeof(xtcp_ipaddr_t));
+      break;
+
     case(size_t i = 0; i < NUM_TIMEOUTS; i++)
       timers[i] when timerafter(timeout[i]) :> unsigned current:
 

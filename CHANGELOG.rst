@@ -2,45 +2,50 @@ TCP/IP Library Change Log
 =========================
 
 6.0.0
+-----
 
-  * Unified the branches of uIP and lwIP as the backend of the XTCP stack. The default is uIP.
-    To change the stack, define XTCP_STACK in your makefile to be either UIP or LWIP. Then,
-    instead of calling xtcp(...), call either xtcp_uip(...) or xtcp_lwip(...) respectively.
+  * CHANGE: Unified the branches of uIP and lwIP as the backend of the XTCP stack.
+   The default is uIP. To change the stack, define XTCP_STACK in your makefile to
+   be either UIP or LWIP. Then, instead of calling xtcp(...), call either
+   xtcp_uip(...) or xtcp_lwip(...) respectively.
 
-  * Moved from input polling to event driven stacks.
+  * CHANGE: The interface between the client and server is now event-driven
+   rather than polling.
 
-  * Interfaces have replaced channels as communication medium between client and server.
+  * CHANGE: Channels have been replaced by interfaces as communication medium
+   between client and server.
 
-  * Removed a number of xtcp_event_types:
+  * REMOVED: The following xtcp_event_types:
 
     - XTCP_PUSH_DATA
-    
+
     - XTCP_REQUEST_DATA
-    
+
     - XTCP_POLL
 
     - XTCP_ALREADY_HANDLED
 
-  * Added the fields of packet_length and client_num to the xtcp_connection_t structure.
+  * CHANGE: The fields of packet_length and client_num have been added to the
+   xtcp_connection_t structure.
 
-  * Removed (for now) the ability to pause a connection.
+  * REMOVED: The ability to pause a connection
 
-  * Removed (for now) the ability to partially acknowledge a packet.
+  * REMOVED: The ability to partially acknowledge a packet
 
-  * Removed all abilities associated with IPv6.
+  * REMOVED: Support for IPv6
 
-  * Removed the ability to send with an index. This functionality is easily replicated
+  * REMOVED: the ability to send with an index. This functionality is easily replicated
     with a call to send() with the pointer of the array index location, i.e. &(data[index]).
 
 5.1.0
 -----
 
-  * Add support for using lib_wifi to provide the physical transport
+  * ADDED: Support for using lib_wifi to provide the physical transport
 
 5.0.0
 -----
 
-  * Add port of LwIP TCP/IP stack
+  * ADDED: Port of LwIP TCP/IP stack
 
   * Changes to dependencies:
 
@@ -49,27 +54,27 @@ TCP/IP Library Change Log
 4.0.3
 -----
 
-  * Update to support enabling link status notifications
+  * ADDED: Support to enable link status notifications
 
 4.0.2
 -----
 
-  * Change uIP timer.h to uip_timer.h to avoid conflict with xcore timer.h
-  * Update to source code license and copyright
+  * CHANGE: uIP timer.h renamed to uip_timer.h to avoid conflict with xcore timer.h
+  * CHANGE: Update to source code license and copyright
 
 4.0.1
 -----
 
-  * Fixed issue with link up/down events being ignored when SMI is not polled
-    within XTCP
-  * MAC address parameter to xtcp() is now qualified as const to allow parallel
+  * CHANGE: MAC address parameter to xtcp() is now qualified as const to allow parallel
     usage
+  * RESOLVED: Fixed issue with link up/down events being ignored when SMI is not polled
+    within XTCP
 
 4.0.0
 -----
 
-  * Moved over to new file structure
-  * Updated to use new lib_ethernet
+  * CHANGE: Moved over to new file structure
+  * CHANGE: Updated to use new lib_ethernet
 
   * Changes to dependencies:
 

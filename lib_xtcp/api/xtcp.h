@@ -20,7 +20,7 @@
 #endif
 
 /** Used by the LWIP and uIP callback functions to
- *  correctly pass packets to the DHCP functions 
+ *  correctly pass packets to the DHCP functions
  */
 #define DHCPC_SERVER_PORT  67
 #define DHCPC_CLIENT_PORT  68
@@ -102,7 +102,7 @@ typedef enum xtcp_event_type_t {
                               connection is created. **/
 
   XTCP_RECV_DATA,       /**<  This event occurs when the connection has received
-                              some data. The return_len in get_packet() will 
+                              some data. The return_len in get_packet() will
                               indicate the length of the data. The data will be
                               present in the buffer passed to get_packet(). **/
 
@@ -176,7 +176,7 @@ typedef struct xtcp_connection_t {
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
   unsigned packet_length;
-  int stack_conn;               /**< Pointer to the associated uIP/LWIP connection. 
+  int stack_conn;               /**< Pointer to the associated uIP/LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
@@ -187,7 +187,7 @@ typedef interface xtcp_if {
    *  After this call, when a connection is established an
    *  XTCP_NEW_CONNECTION event is signalled.
    *
-   * \param &conn       The connection to be passed in that will 
+   * \param &conn       The connection to be passed in that will
    *                    contain all the connection information.
    * \param data        An array where XTCP server can write data to.
    * \param length      An integer where the server can indicate
@@ -202,7 +202,7 @@ typedef interface xtcp_if {
    *  is needed.
    */
   [[notification]] slave void packet_ready();
-  
+
   /** \brief Listen to a particular incoming port.
    *
    *  After this call, when a connection is established an
@@ -212,7 +212,7 @@ typedef interface xtcp_if {
    * \param protocol    The protocol to listen to (TCP or UDP)
    */
   void listen(int port_number, xtcp_protocol_t protocol);
-  
+
   /** \brief Stop listening to a particular incoming port.
    *
    * \param port_number local port number to stop listening on
@@ -305,17 +305,17 @@ typedef interface xtcp_if {
    * \param port_number The intended remote port of the connection
    */
   void bind_remote_udp(xtcp_connection_t conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
-  
+
   /** \brief Request a hosts IP address from a URL.
    *
-   * \param hostname    The human readable host name, e.g. "www.xmos.com"     
+   * \param hostname    The human readable host name, e.g. "www.xmos.com"
    * \note              LWIP ONLY.
    */
   void request_host_by_name(const char hostname[], unsigned name_len);
 
   /** \brief Fill the provided ipconfig address with the current state of the server.
    *
-   * \param ipconfig    IPconfig to be filled.   
+   * \param ipconfig    IPconfig to be filled.
    */
   void get_ipconfig(xtcp_ipconfig_t &ipconfig);
 } xtcp_if;
@@ -388,7 +388,7 @@ typedef enum {
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp], 
+void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
                static const unsigned n_xtcp,
                client mii_if ?i_mii,
                client ethernet_cfg_if ?i_eth_cfg,
@@ -438,7 +438,7 @@ void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_uip(server xtcp_if i_xtcp_init[n_xtcp_init], 
+void xtcp_uip(server xtcp_if i_xtcp_init[n_xtcp_init],
               static const unsigned n_xtcp_init,
               client mii_if ?i_mii,
               client ethernet_cfg_if ?i_eth_cfg,
