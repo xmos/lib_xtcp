@@ -352,29 +352,28 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
     case i_xtcp[int i].listen(int port_number, xtcp_protocol_t protocol):
       if (protocol == XTCP_PROTOCOL_TCP) {
         uip_listen(HTONS(port_number));
-        register_listener(tcp_listeners, i, HTONS(port_number), NUM_TCP_LISTENERS);
+        register_listener(tcp_listeners, i, port_number, NUM_TCP_LISTENERS);
       } else {
         uip_udp_listen(HTONS(port_number));
-        register_listener(udp_listeners, i, HTONS(port_number), NUM_UDP_LISTENERS);
+        register_listener(udp_listeners, i, port_number, NUM_UDP_LISTENERS);
       }
       break;
 
     case i_xtcp[int i].unlisten(unsigned port_number):
         uip_unlisten(HTONS(port_number));
-        unregister_listener(tcp_listeners, i, HTONS(port_number), NUM_TCP_LISTENERS);
+        unregister_listener(tcp_listeners, i, port_number, NUM_TCP_LISTENERS);
 
         uip_udp_unlisten(HTONS(port_number));
-        unregister_listener(udp_listeners, i, HTONS(port_number), NUM_UDP_LISTENERS);
+        unregister_listener(udp_listeners, i, port_number, NUM_UDP_LISTENERS);
       break;
 
     /* Client calls get_packet after the server has notified */
     case i_xtcp[int i].get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length):
+      unsigned bytecount = 0;
       client_queue_t head = dequeue_event(i);
       head.conn.event = head.xtcp_event;
-      printintln(head.conn.local_port);
       memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
-      unsigned bytecount = 0;
-
+      
       if(head.xtcp_event == XTCP_RECV_DATA) {
         memcpy(data, rx_buffer, head.conn.packet_length);
         buffer_full = 0;
@@ -445,7 +444,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct uip_conn * unsafe conn = uip_connect(&uipaddr, HTONS(port_number));
         if (conn != NULL) {
-          register_listener(tcp_listeners, i, conn->lport, NUM_TCP_LISTENERS);
+          register_listener(tcp_listeners, i, HTONS(conn->lport), NUM_TCP_LISTENERS);
           xtcp_conn = create_xtcp_state(i,
                                         XTCP_PROTOCOL_TCP,
                                         (unsigned char * unsafe) uipaddr,
@@ -457,7 +456,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       } else {
         struct uip_udp_conn * unsafe conn = uip_udp_new(&uipaddr, HTONS(port_number));
         if (conn != NULL) {
-          register_listener(udp_listeners, i, conn->lport, NUM_UDP_LISTENERS);
+          register_listener(udp_listeners, i, HTONS(conn->lport), NUM_UDP_LISTENERS);
           xtcp_conn = create_xtcp_state(i,
                                         XTCP_PROTOCOL_UDP,
                                         (unsigned char * unsafe) uipaddr,
@@ -514,7 +513,12 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
 
     case i_xtcp[int i].set_appstate(xtcp_connection_t conn, xtcp_appstate_t appstate):
       set_uip_state(conn);
-      ((struct uip_udp_conn *) conn.stack_conn)->xtcp_conn.appstate = appstate;
+
+      if(conn.protocol == XTCP_PROTOCOL_TCP) {
+        ((struct uip_conn *) conn.stack_conn)->xtcp_conn.appstate = appstate;
+      } else {
+        ((struct uip_udp_conn *) conn.stack_conn)->xtcp_conn.appstate = appstate;
+      }
       break;
 
     case i_xtcp[int i].request_host_by_name(const char hostname[], unsigned name_len):
@@ -596,37 +600,40 @@ xtcpd_appcall(void)
     }
   } else {
     xassert(uip_conn);
+    uip_conn->xtcp_conn.mss = uip_mss();
     xtcp_conn = uip_conn->xtcp_conn;
   }
 
   /* New connection */
   if (uip_connected()) {
+    int client_num;
+    
     if (uip_udpconnection()) {
-      int client_num = get_listener_linknum(udp_listeners,
-                                            NUM_UDP_LISTENERS,
-                                            uip_udp_conn->lport);
+      client_num = get_listener_linknum(udp_listeners,
+                                        NUM_UDP_LISTENERS,
+                                        HTONS(uip_udp_conn->lport));
 
       xtcp_conn = uip_udp_conn->xtcp_conn =
         create_xtcp_state(client_num,
                           XTCP_PROTOCOL_UDP,
                           (unsigned char * unsafe) UDPBUF->srcipaddr,
-                          uip_udp_conn->lport,
+                          HTONS(uip_udp_conn->lport),
                           HTONS(UDPBUF->srcport),
                           uip_udp_conn);
     } else {
-      int client_num = get_listener_linknum(tcp_listeners,
-                                            NUM_TCP_LISTENERS,
-                                            uip_conn->lport);
+      client_num = get_listener_linknum(tcp_listeners,
+                                        NUM_TCP_LISTENERS,
+                                        HTONS(uip_conn->lport));
 
       xtcp_conn = uip_conn->xtcp_conn =
         create_xtcp_state(client_num,
                           XTCP_PROTOCOL_TCP,
                           (unsigned char * unsafe) uip_conn->ripaddr,
-                          uip_conn->lport,
-                          uip_conn->rport,
+                          HTONS(uip_conn->lport),
+                          HTONS(uip_conn->rport),
                           uip_conn);
     }
-    enqueue_event_and_notify(xtcp_conn.client_num, new_event(XTCP_NEW_CONNECTION, xtcp_conn));
+    enqueue_event_and_notify(client_num, new_event(XTCP_NEW_CONNECTION, xtcp_conn));
   }
 
   /* Store data in rx_buffer and raise guard on MII/MAC interfaces */

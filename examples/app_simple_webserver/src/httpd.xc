@@ -70,7 +70,7 @@ void parse_http_request(httpd_state_t *hs, char *data, int len)
 void httpd_send(client xtcp_if i_xtcp, xtcp_connection_t &conn)
 {
   unsafe {
-    struct httpd_state_t *hs = (struct httpd_state_t *) &conn.appstate;
+    struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
 
     // Check if we have no data to send
     if (hs->dlen == 0 || hs->dptr == NULL) {
@@ -100,7 +100,7 @@ void httpd_recv(client xtcp_if i_xtcp, xtcp_connection_t &conn,
                 char data[n], const unsigned n)
 {
   unsafe {
-    struct httpd_state_t *hs = (struct httpd_state_t *) &conn.appstate;
+    struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
 
     // If we already have data to send, return
     if (hs == NULL || hs->dptr != NULL) {
@@ -183,7 +183,7 @@ void xhttpd(client xtcp_if i_xtcp)
               break;
             case XTCP_RESEND_DATA:
               unsafe {
-                struct httpd_state_t *hs = (struct httpd_state_t *) &conn.appstate;
+                struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
                 i_xtcp.send(conn, (char*)hs->prev_dptr, (hs->dptr - hs->prev_dptr));
               }
               break;

@@ -176,7 +176,7 @@ typedef struct xtcp_connection_t {
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
   unsigned packet_length;
-  int stack_conn;               /**< Pointer to the associated uIP/LWIP connection.
+  int stack_conn;             /**< Pointer to the associated uIP/LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
