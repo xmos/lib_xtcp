@@ -738,6 +738,10 @@ void uip_process(u8_t flag) {
 		goto appsend;
 	}
 
+	if(flag == UIP_CLOSE_XMOS) {
+		goto closeconnection;
+	}
+
 #if UIP_UDP
 	if(flag == UIP_UDP_SEND_CONN) {
 		goto udp_send;
@@ -1763,6 +1767,8 @@ void uip_process(u8_t flag) {
 			}
 
 			if (uip_flags & UIP_CLOSE) {
+				closeconnection:
+
 				uip_slen = 0;
 				uip_connr->len = 1;
 				uip_connr->tcpstateflags = UIP_FIN_WAIT_1;

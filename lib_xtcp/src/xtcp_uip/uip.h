@@ -1442,7 +1442,8 @@ void uip_process(u8_t flag);
 #define UIP_UDP_SEND_CONN 4     /* Tells uIP that a UDP datagram
 				   should be constructed in the
 				   uip_buf buffer. */
-#define UIP_TCP_SEND 120 /* HACK HACK HACK XMOS */
+#define UIP_TCP_SEND 120 /* XMOS */
+#define UIP_CLOSE_XMOS 121 /* XMOS */
 
 #if UIP_UDP
 #define UIP_UDP_TIMER         5

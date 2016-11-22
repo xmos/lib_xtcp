@@ -392,7 +392,7 @@ xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
         uip_udp_conn->lport = 0;
         enqueue_event_and_notify(conn.client_num, new_event(XTCP_CLOSED, conn));
       } else {
-        uip_close();
+        uip_process(UIP_CLOSE_XMOS);
       }
       break;
 
