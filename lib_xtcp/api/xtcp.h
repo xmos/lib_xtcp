@@ -30,15 +30,15 @@
 /** Used by the LWIP and uIP callback functions to
  *  correctly pass packets to the DHCP functions
  */
-#define DHCPC_SERVER_PORT  67
-#define DHCPC_CLIENT_PORT  68
+#define DHCPC_SERVER_PORT 67
+#define DHCPC_CLIENT_PORT 68
 
 /** Maximum number of listening ports for XTCP */
 #ifndef NUM_TCP_LISTENERS
-#define NUM_TCP_LISTENERS 10
+#define NUM_TCP_LISTENERS 20
 #endif
 #ifndef NUM_UDP_LISTENERS
-#define NUM_UDP_LISTENERS 10
+#define NUM_UDP_LISTENERS 20
 #endif
 
 /** Maximum number of connected XTCP clients */
@@ -175,8 +175,8 @@ typedef struct xtcp_connection_t {
   unsigned int local_port;    /**< The local port of the connection. */
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
-  unsigned packet_length;
-  int stack_conn;               /**< Pointer to the associated uIP/LWIP connection.
+  unsigned packet_length;     /**< Length of packet recieved */
+  int stack_conn;             /**< Pointer to the associated uIP/LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 

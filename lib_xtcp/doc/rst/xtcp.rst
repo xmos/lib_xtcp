@@ -256,8 +256,6 @@ Data Structures/Types
 
 .. doxygenenum:: xtcp_event_type_t
 
-.. doxygenenum:: xtcp_connection_type_t
-
 .. doxygenstruct:: xtcp_connection_t
 
 |newpage|

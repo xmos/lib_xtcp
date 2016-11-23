@@ -1,6 +1,8 @@
 **/.build*/*
 bin/
 _build/
+__gen/
+_README/
 *.o
 *.xe
 *.vcd

@@ -16,6 +16,7 @@ TCP/IP library change log
     XTCP_POLL, XTCP_ALREADY_HANDLED
   * CHANGE: The fields of packet_length and client_num have been added to the
     xtcp_connection_t structure.
+  * REMOVED: xtcp_connection_t no longer has a xtcp_connection_type_t field.
   * REMOVED: The ability to pause a connection
   * REMOVED: The ability to partially acknowledge a packet
   * REMOVED: Support for IPv6
