@@ -3,19 +3,15 @@ VERSION = 6.0.0
 DEPENDENT_MODULES = lib_ethernet(>=3.2.0) lib_otpinfo(>=2.0.0) lib_crypto(>=1.0.0)
 
 # Build flags
-MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2
-#MODULE_XCC_C_FLAGS = $(XCC_C_FLAGS) -Wno-ignored-attributes -Wno-typedef-redefinition -DUNSAFE_LIBC -Os -g
-#MODULE_XCC_XC_FLAGS = $(XCC_XC_FLAGS) -DUNSAFE_LIBC -Os -g
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2 -g -Os
 
 # Source directories
 # Note: only includes IPv4 of lwIP
 LWIP_SOURCE_DIRS = src src/xtcp_lwip/api src/xtcp_lwip/core/ src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
-UIP_SOURCE_DIRS  = src src/xtcp_uip/*
-MBEDTLS_SOURCE_DIRS = src/xtcp_mbedtls/library
+UIP_SOURCE_DIRS  = src src/xtcp_uip src/xtcp_uip/autoip src/xtcp_uip/dhcpc src/xtcp_uip/igmp
 
 # Include directories
 LWIP_INCLUDE_DIRS = src src/xtcp_lwip/include src/xtcp_lwip/xcore/include
-MBEDTLS_INCLUDE_DIRS = src src/xtcp_mbedtls/include
 
 # Exclude files
 UIP_EXCLUDE_FILES  += uip-fw.c uip-neighbor.c xtcp_lwip.xc xtcp_lwip_includes.h
@@ -27,7 +23,6 @@ XCC_FLAGS_xcoredev.xc = $(XCC_XC_FLAGS) -fsubword-select
 # Provide the conditional defines needed for optional includes
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 
-# Default to UIP
 ifndef XTCP_STACK
 
 # Have a different default depending on the target so that the documentation can
