@@ -75,6 +75,7 @@ void httpd_send(client xtcp_if i_xtcp, xtcp_connection_t &conn)
     // Check if we have no data to send
     if (hs->dlen == 0 || hs->dptr == NULL) {
       // Close the connection
+      printstr("Close\n");
       i_xtcp.close(conn);
 
     } else {
@@ -85,6 +86,8 @@ void httpd_send(client xtcp_if i_xtcp, xtcp_connection_t &conn)
         len = conn.mss;
       }
 
+      printstr("Send ");
+      printintln(len);
       i_xtcp.send(conn, (char*)hs->dptr, len);
 
       hs->prev_dptr = hs->dptr;
@@ -130,7 +133,10 @@ void httpd_init_state(client xtcp_if i_xtcp, xtcp_connection_t &conn)
   // If no free connection slots were found, abort the connection
   if (i == NUM_HTTPD_CONNECTIONS) {
     i_xtcp.abort(conn);
+    printstr("Abort\n");
   } else {
+    printstr("Connect ");
+    printintln(i);
     // Otherwise, assign the connection to a slot
     connection_states[i].active = 1;
     connection_states[i].conn_id = conn.id;
@@ -167,7 +173,7 @@ void xhttpd(client xtcp_if i_xtcp)
 
     select {
       case i_xtcp.packet_ready(): {
-        i_xtcp.get_packet(conn, (char *)rx_buffer, RX_BUFFER_SIZE, data_len);
+        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
 
         if (conn.local_port == 80) {
           // HTTP connections

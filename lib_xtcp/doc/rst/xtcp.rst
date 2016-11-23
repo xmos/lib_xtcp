@@ -4,11 +4,13 @@
 Usage
 -----
 
-The TCP/IP stack runs in a task implemented in either the :c:func:`xtcp_uip` or 
-:c:func:`xtcp_uip` functions. Each function uses a different stack as its
-backbone, either uIP and lwIP respectively. This task connects to either the 
-MII component in the Ethernet library or one of the MAC components in the 
-Ethernet library.
+The TCP/IP stack runs in a task implemented in either the :c:func:`xtcp_uip` or
+:c:func:`xtcp_lwip` functions depending on which stack implementation you wish
+to use. The interfaces to the stack are the same, regardless of which
+implementation is being used.
+
+This task connects to either the MII component in the Ethernet library or one
+of the MAC components in the Ethernet library.
 See the Ethernet library user guide for details on these components.
 
 .. figure:: images/xtcp_task_diag.*
@@ -26,10 +28,16 @@ the ``xtcp`` component directly to the MII layer component.
 IP Configuration
 ................
 
-The server will determine its IP configuration based on the arguments
-passed into the :c:func:`xtcp` function.
+The server will determine its IP configuration based on the ``xtcp_ipconfig_t``
+configuration passed into the :c:func:`xtcp_uip` / :c:func:`xtcp_lwip` task.
 If an address is supplied then that address will be used (a static IP address
-configuration).
+configuration)::
+
+  xtcp_ipconfig_t ipconfig = {
+    { 192, 168,   0, 2 }, // ip address
+    { 255, 255, 255, 0 }, // netmask
+    { 192, 168,   0, 1 }  // gateway
+  };
 
 If no address is supplied then the server will first
 try to find a DHCP server on the network to obtain an address
@@ -37,21 +45,48 @@ automatically. If it cannot obtain an address from DHCP, it will determine
 a link local address (in the range 169.254/16) automatically using the
 Zeroconf IPV4LL protocol.
 
-To use dynamic address, the :c:func:`xtcp_uip` and :c:func:`xtcp_lwip` 
-functions can be passed a structure with an IP address that is all zeros.
+To use dynamic address, the :c:func:`xtcp_uip` and :c:func:`xtcp_lwip`
+functions can be passed a structure with an IP address that is all zeros::
+
+  xtcp_ipconfig_t ipconfig = {
+    { 0, 0, 0, 0 }, // ip address
+    { 0, 0, 0, 0 }, // netmask
+    { 0, 0, 0, 0 }  // gateway
+  };
 
 Events and Connections
 ......................
 
 The TCP/IP stack client interface is a low-level event based
 interface. This is to allow applications to manage buffering and
-connection management in the most efficient way possible for the
-application. 
+connections in the most efficient way possible for the application.
 
-Each client will receive *events* from the server. These events
-usually have an associated *connection*. In addition to receiving
-these events the client can call interface functions to initiate
-new connections and so on.
+Each client will receive packet ready *events* from the server to indicate that
+the server has new data for that client. The client then collects the packet
+using the :c:func:`get_packet` call.
+
+The packets sent from the server can be either data or control packets. The type
+of packet is indicated in the connection state :c:member:`event` member. The
+possible packet types are defined in :ref:`lib_xtcp_event_types`.
+
+A client will typically handle its connection to the XTCP server in the following
+manner::
+
+  xtcp_connection_t conn;
+  char buffer[ETHERNET_MAX_PACKET_SIZE];
+  unsigned data_len;
+  select {
+    case i.xtcp.packet_ready():
+      i_xtcp.get_packet(conn, buffer, ETHERNET_MAX_PACKET_SIZE, data_len);
+      // Handle event
+      switch (conn.event) {
+        ...
+      }
+      break;
+    }
+
+The client can also call interface functions to initiate new connections, manage
+the connection and send or receive data.
 
 If the client is handling multiple connections then the server may
 interleave events for each connection so the client has to hold a
@@ -61,40 +96,50 @@ The connection and event model is the same from both TCP connections
 and UDP connections. Full details of both the possible events and
 possible commands can be found in :ref:`lib_xtcp_api`.
 
+New Connections
+...............
+
+New connections are made in two different ways. Either the
+:c:func:`connect` function is used to initiate a connection with
+a remote host as a client or the :c:func:`listen` function is
+used to listen on a port for other hosts to connect to the application.
+In either case once a connection is established then the
+:c:member:`XTCP_NEW_CONNECTION` event is received by the client.
+
+In the Berkley sockets API, a listening UDP connection merely reports
+data received on the socket, indepedent of the source IP address.  In
+XTCP, a :c:member:`XTCP_NEW_CONNECTION` event is sent each time data
+arrives from a new source.  The API function :c:func:`close`
+should be called after the connection is no longer needed.
+
 TCP and UDP
 ...........
 
 The XTCP API treats UDP and TCP connections in the same way. The only
 difference is when the protocol is specified on initializing
-connections with :c:func:`xtcp_connect` or :c:func:`xtcp_listen`.
+connections with the interface :c:func:`connect` or :c:func:`listen`
+functions.
 
-New Connections
-...............
+For example, an HTTP client would listen for TCP connections on port 80::
 
-New connections are made in two different ways. Either the
-:c:func:`xtcp_connect` function is used to initiate a connection with
-a remote host as a client or the :c:func:`xtcp_listen` function is
-used to listen on a port for other hosts to connect to the application
-. In either
-case once a connection is established then the
-:c:member:`XTCP_NEW_CONNECTION` event is triggered.
+  i_xtcp.listen(80, XTCP_PROTOCOL_TCP);
 
-In the Berkley sockets API, a listening UDP connection merely reports
-data received on the socket, indepedent of the source IP address.  In
-XTCP, a :c:member:`XTCP_NEW_CONNECTION` event is sent each time data
-arrives from a new source.  The API function :c:func:`xtcp_close`
-should be called after the connection is no longer needed.
+A client could create a new UDP connection to port 15333 on a machine at
+192.168.0.2 using::
+
+  xtcp_ipaddr_t addr = { 192, 168, 0, 2 };
+  i_xtcp.connect(15333, addr, XTCP_PROTOCOL_UDP);
 
 Receiving Data
 ..............
 
-When data is received by a connection, the :c:member:`XTCP_RECV_DATA`
-event is triggered and communicated to the client. At this point the
-client **must** call the :c:func:`xtcp_recv` function to receive the
-data. 
+When data is received for a client the server will indicate that there is a
+packet ready and the :c:func:`get_packet` call will indicate that the event
+type is :c:member:`XTCP_RECV_DATA` and the packet data will have been returned
+to the :c:func:`get_packet` call.
 
-Data is sent from host to client as the UDP or TCP packets come
-in. There is no buffering in the server so it will wait for the client
+Data is sent from the XTCP server to client as the UDP or TCP packets arrive
+from the ethernet MAC. There is no buffering in the server so it will wait for the client
 to handle the event before processing new incoming packets.
 
 Sending Data
@@ -102,52 +147,44 @@ Sending Data
 
 When sending data, the client is responsible for dividing the data
 into chunks for the server and re-transmitting the previous chunk if a
-transmission error occurs. 
+transmission error occurs.
 
 .. note:: Note that re-transmission may be needed on
           both TCP and UDP connections. On UDP connections, the
           transmission may fail if the server has not yet established
           a connection between the destination IP address and layer 2
           MAC address.
-          
-The client can initiate a send transaction with the
-:c:func:`xtcp_init_send` function. At this point no sending has been
-done but the server is notified of a wish to send. The client must
-then wait for a :c:member:`XTCP_REQUEST_DATA` event at which point it
-must respond with a call to :c:func:`xtcp_send`. 
 
-.. note:: The maximum buffer size that can be sent in one call to 
-          `xtcp_send` is contained in the `mss`
-          field of the connection structure relating to the event.
+The client sends a packet by calling the :c:func:`send` interface function.
+
+.. note:: The maximum buffer size that can be sent in one call to
+          `xtcp_send` is contained in the `mss` field of the connection
+          structure relating to the event.
 
 After this data is sent to the server, two things can happen: Either
 the server will respond with an :c:member:`XTCP_SENT_DATA` event, in
-which case the next chunk of data can be sent or with an
+which case the next chunk of data can be sent. Or with an
 :c:member:`XTCP_RESEND_DATA` event in which case the client must
-re-transmit the previous chunk of data. 
+re-transmit the previous chunk of data.
 
-The command/event exchange continues until the client calls the
-:c:func:`xtcp_complete_send` function to finish the send
-transaction. After this the server will not trigger any more
-:c:member:`XTCP_SENT_DATA` events.
+  .. figure:: images/events.*
+     :width: 50%
+
+     Example send sequence
+
 
 Link Status Events
 ..................
 
 As well as events related to connections. The server may also send
-link status events to the client. The events :c:member:`XTCP_IFUP` and 
+link status events to the client. The events :c:member:`XTCP_IFUP` and
 :c:member:`XTCP_IFDOWN` indicate to a client when the link goes up or down.
 
 Configuration
 .............
 
-The server is configured via arguments passed to the
-:c:func:`xtcp_server` function and the defines described in Section
-:ref:`sec_config_defines`.
-
-Client connections are configured via the client API described in
-Section :ref:`sec_config_defines`.
-
+The server is configured via arguments passed to server task (:c:func:`xtcp_uip`/
+:c:func:`xtcp_lwip`) and the defines described in Section :ref:`sec_config_defines`.
 
 Configuration API
 -----------------
@@ -166,7 +203,7 @@ by the library on build).
 
 ``XTCP_CLIENT_BUF_SIZE``
        The buffer size used for incoming packets. This has a maximum
-       value of 1472 which can handle any incoming packet. If it is 
+       value of 1472 which can handle any incoming packet. If it is
        set to a smaller value, larger incoming packets will be truncated. Default
        is 1472.
 
@@ -177,78 +214,6 @@ by the library on build).
 ``UIP_CONF_MAX_LISTENPORTS``
        The maximum number of UDP or TCP ports the server can listen to
        simultaneously. Default is 20.
-
-``XTCP_EXCLUDE_LISTEN``
-       Exclude support for the listen command from the server,
-       reducing memory footprint.
-
-``XTCP_EXCLUDE_UNLISTEN``
-       Exclude support for the unlisten command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_CONNECT``
-       Exclude support for the connect command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_BIND_REMOTE``
-       Exclude support for the bind_remote command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_BIND_LOCAL``
-       Exclude support for the bind_local command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_INIT_SEND``
-       Exclude support for the init_send command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_SET_APPSTATE``
-       Exclude support for the set_appstate command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_ABORT``
-       Exclude support for the abort command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_CLOSE``
-       Exclude support for the close command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_SET_POLL_INTERVAL``
-       Exclude support for the set_poll_interval command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_JOIN_GROUP``
-       Exclude support for the join_group command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_LEAVE_GROUP``
-       Exclude support for the leave_group command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_GET_MAC_ADDRESS``
-       Exclude support for the get_mac_address command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_GET_IPCONFIG``
-       Exclude support for the get_ipconfig command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_ACK_RECV``
-       Exclude support for the ack_recv command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_ACK_RECV_MODE``
-       Exclude support for the ack_recv_mode command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_PAUSE``
-       Exclude support for the pause command from the server,
-       reducing memory footprint
-
-``XTCP_EXCLUDE_UNPAUSE``
-       Exclude support for the unpause command from the server,
-       reducing memory footprint
 
 ``UIP_USE_AUTOIP``
        By defining this as 0, the IPv4LL application is removed from the code. Do this to save
@@ -287,6 +252,8 @@ Data Structures/Types
 
 |newpage|
 
+.. _lib_xtcp_event_types:
+
 .. doxygenenum:: xtcp_event_type_t
 
 .. doxygenenum:: xtcp_connection_type_t
@@ -298,7 +265,9 @@ Data Structures/Types
 Server API
 ..........
 
-.. doxygenfunction:: xtcp
+.. doxygenfunction:: xtcp_uip
+
+.. doxygenfunction:: xtcp_lwip
 
 |newpage|
 
@@ -307,54 +276,7 @@ Server API
 Client API
 ..........
 
-Event Receipt
-+++++++++++++
-
-.. doxygenfunction:: xtcp_event
-
-Setting Up Connections
-++++++++++++++++++++++
-
-.. doxygenfunction:: xtcp_listen
-.. doxygenfunction:: xtcp_unlisten
-.. doxygenfunction:: xtcp_connect
-.. doxygenfunction:: xtcp_bind_local
-.. doxygenfunction:: xtcp_bind_remote
-.. doxygenfunction:: xtcp_set_connection_appstate
-
-Receiving Data
-++++++++++++++
-
-.. doxygenfunction:: xtcp_recv
-.. doxygenfunction:: xtcp_recvi
-.. doxygenfunction:: xtcp_recv_count
-
-Sending Data
-++++++++++++
-
-.. doxygenfunction:: xtcp_init_send
-.. doxygenfunction:: xtcp_send
-.. doxygenfunction:: xtcp_sendi
-.. doxygenfunction:: xtcp_complete_send
-
-Other Connection Management
-+++++++++++++++++++++++++++
-
-.. doxygenfunction:: xtcp_set_poll_interval
-
-.. doxygenfunction:: xtcp_close
-.. doxygenfunction:: xtcp_abort
-
-.. doxygenfunction:: xtcp_pause
-.. doxygenfunction:: xtcp_unpause
-
-Other General Client Functions
-++++++++++++++++++++++++++++++
-
-.. doxygenfunction:: xtcp_join_multicast_group
-.. doxygenfunction:: xtcp_leave_multicast_group
-.. doxygenfunction:: xtcp_get_mac_address
-.. doxygenfunction:: xtcp_get_ipconfig
+.. doxygeninterface:: xtcp_if
 
 |newpage|
 
@@ -363,6 +285,6 @@ Other General Client Functions
 Known Issues
 ------------
 
-There are no known issues with this library.
+The library does not support IPv6.
 
 .. include:: ../../../CHANGELOG.rst

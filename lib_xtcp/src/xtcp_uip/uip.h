@@ -1443,7 +1443,6 @@ void uip_process(u8_t flag);
 				   should be constructed in the
 				   uip_buf buffer. */
 #define UIP_TCP_SEND 120 /* XMOS */
-#define UIP_CLOSE_XMOS 121 /* XMOS */
 
 #if UIP_UDP
 #define UIP_UDP_TIMER         5

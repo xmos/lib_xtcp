@@ -1,41 +1,29 @@
-TCP/IP Library Change Log
+TCP/IP library change log
 =========================
 
 6.0.0
 -----
 
-  * CHANGE: Unified the branches of uIP and lwIP as the backend of the XTCP stack.
-   The default is uIP. To change the stack, define XTCP_STACK in your makefile to
-   be either UIP or LWIP. Then, instead of calling xtcp(...), call either
-   xtcp_uip(...) or xtcp_lwip(...) respectively.
-
+  * CHANGE: Unified the branches of uIP and lwIP as the backend of the XTCP
+    stack. The default is uIP. To change the stack, define XTCP_STACK in your
+    makefile to be either UIP or LWIP. Then, instead of calling xtcp(...), call
+    either xtcp_uip(...) or xtcp_lwip(...) respectively.
   * CHANGE: The interface between the client and server is now event-driven
-   rather than polling.
-
+    rather than polling.
   * CHANGE: Channels have been replaced by interfaces as communication medium
-   between client and server.
-
-  * REMOVED: The following xtcp_event_types:
-
-    - XTCP_PUSH_DATA
-
-    - XTCP_REQUEST_DATA
-
-    - XTCP_POLL
-
-    - XTCP_ALREADY_HANDLED
-
+    between client and server.
+  * REMOVED: The following xtcp_event_types: XTCP_PUSH_DATA, XTCP_REQUEST_DATA,
+    XTCP_POLL, XTCP_ALREADY_HANDLED
   * CHANGE: The fields of packet_length and client_num have been added to the
-   xtcp_connection_t structure.
-
+    xtcp_connection_t structure.
   * REMOVED: The ability to pause a connection
-
   * REMOVED: The ability to partially acknowledge a packet
-
   * REMOVED: Support for IPv6
-
-  * REMOVED: the ability to send with an index. This functionality is easily replicated
-    with a call to send() with the pointer of the array index location, i.e. &(data[index]).
+  * REMOVED: the ability to send with an index. This functionality is easily
+    replicated with a call to send() with the pointer of the array index
+    location, i.e. &(data[index]).
+  * REMOVED: Support for XTCP_EXCLUDE_* macros which reduced functionality in
+    order to save code size
 
 5.1.0
 -----
@@ -59,16 +47,17 @@ TCP/IP Library Change Log
 4.0.2
 -----
 
-  * CHANGE: uIP timer.h renamed to uip_timer.h to avoid conflict with xcore timer.h
+  * CHANGE: uIP timer.h renamed to uip_timer.h to avoid conflict with xcore
+    timer.h
   * CHANGE: Update to source code license and copyright
 
 4.0.1
 -----
 
-  * CHANGE: MAC address parameter to xtcp() is now qualified as const to allow parallel
-    usage
-  * RESOLVED: Fixed issue with link up/down events being ignored when SMI is not polled
-    within XTCP
+  * CHANGE: MAC address parameter to xtcp() is now qualified as const to allow
+    parallel usage
+  * RESOLVED: Fixed issue with link up/down events being ignored when SMI is not
+    polled within XTCP
 
 4.0.0
 -----
