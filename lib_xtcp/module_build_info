@@ -24,10 +24,20 @@ LWIP_EXCLUDE_FILES += xtcp_uip.xc xtcp_uip_includes.h
 # Leftover from previous incarnation.
 XCC_FLAGS_xcoredev.xc = $(XCC_XC_FLAGS) -fsubword-select
 
+# Provide the conditional defines needed for optional includes
+OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 
 # Default to UIP
 ifndef XTCP_STACK
+
+# Have a different default depending on the target so that the documentation can
+# do resource estimation for each stack by setting a target
+ifeq ($(TARGET),XCORE-200-EXPLORER)
+XTCP_STACK = LWIP
+else
 XTCP_STACK = UIP
+endif
+
 endif
 
 ifeq ($(XTCP_STACK), UIP)

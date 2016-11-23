@@ -8,6 +8,14 @@
 #include <otp_board_info.h>
 #include <xccompat.h>
 
+#ifdef __xtcp_conf_h_exists__
+#include "xtcp_conf.h"
+#endif
+
+#ifdef __xtcp_client_conf_h_exists__
+#include "xtcp_client_conf.h"
+#endif
+
 #ifndef XTCP_CLIENT_BUF_SIZE
 #define XTCP_CLIENT_BUF_SIZE (1472)
 #endif
@@ -176,30 +184,35 @@ typedef struct xtcp_connection_t {
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
   unsigned packet_length;
-  int stack_conn;             /**< Pointer to the associated uIP/LWIP connection.
+  int stack_conn;               /**< Pointer to the associated uIP/LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
 #ifdef __XC__
 typedef interface xtcp_if {
-    /** \brief Recieve information/data from the XTCP server.
+  /** \brief Recieve information/data from the XTCP server.
    *
-   *  After this call, when a connection is established an
-   *  XTCP_NEW_CONNECTION event is signalled.
+   *  After the client is notified by packet_ready() it must call this function
+   *  to receive the packet from the server.
    *
-   * \param &conn       The connection to be passed in that will
+   *  If the data buffer is not large enough then an exception will be raised.
+   *
+   * \param conn        The connection structure to be passed in that will
    *                    contain all the connection information.
-   * \param data        An array where XTCP server can write data to.
+   * \param data        An array where XTCP server can write data to. This data
+   *                    array must be large enough to receive the packets being
+   *                    sent to the client. In most cases it should be assumed
+   *                    that packets of ETHERNET_MAX_PACKET_SIZE can be received.
+   * \param n           Size of the data array.
    * \param length      An integer where the server can indicate
    *                    the length of the sent packet.
    */
-  [[clears_notification]] void get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length);
+  [[clears_notification]] void get_packet(xtcp_connection_t &conn, char data[n], unsigned n, unsigned &length);
 
   /** \brief Notifies the client that there is data/information
    *         ready for them.
    *
-   *  After this notification is raised a call to get_packet()
-   *  is needed.
+   *  After this notification is raised a call to get_packet() is needed.
    */
   [[notification]] slave void packet_ready();
 
@@ -209,7 +222,8 @@ typedef interface xtcp_if {
    *  XTCP_NEW_CONNECTION event is signalled.
    *
    * \param port_number The local port number to listen to
-   * \param protocol    The protocol to listen to (TCP or UDP)
+   * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
+   *                    or XTCP_PROTOCOL_UDP)
    */
   void listen(int port_number, xtcp_protocol_t protocol);
 
@@ -225,18 +239,20 @@ typedef interface xtcp_if {
    *  you wish to completely stop all data. Will continue to listen
    *  on the open port the connection came from.
    *
-   * \param conn        the connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    */
-  void close(xtcp_connection_t conn);
+  void close(const xtcp_connection_t &conn);
 
   /** \brief Abort a connection.
    *
    *  For UDP this is the same as closing the connection. For TCP
    *  the server will send a RST signal and stop all incoming data.
    *
-   * \param conn        the connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    */
-  void abort(xtcp_connection_t conn);
+  void abort(const xtcp_connection_t &conn);
 
   /** \brief Try to connect to a remote port.
    *
@@ -246,24 +262,25 @@ typedef interface xtcp_if {
    *
    * \param port_number The remote port to try to connect to
    * \param ipaddr      The ip addr of the remote host
-   * \param protocol    The protocol to connect with (TCP or UDP)
+   * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
+   *                    or XTCP_PROTOCOL_UDP)
    */
   void connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol);
 
   /** \brief Send data to the connection.
    *
-   * \param conn        The connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    * \param data        An array of data to send
    * \param len         The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    */
-  void send(xtcp_connection_t conn, char data[], unsigned len);
+  void send(const xtcp_connection_t &conn, char data[], unsigned len);
 
   /** \brief Subscribe to a particular IP multicast group address.
    *
    * \param addr        The address of the multicast group to join. It is
    *                    assumed that this is a multicast IP address.
-   * \note              Not available for IPv6
    */
   void join_multicast_group(xtcp_ipaddr_t addr);
 
@@ -271,7 +288,6 @@ typedef interface xtcp_if {
    *
    * \param addr        The address of the multicast group to leave. It is
    *                    assumed that this is a multicast IP address.
-   * \note              Not available for IPv6
    */
   void leave_multicast_group(xtcp_ipaddr_t addr);
 
@@ -280,19 +296,21 @@ typedef interface xtcp_if {
    * After this call, subsequent events on this connection
    * will have the appstate field of the connection set.
    *
-   * \param conn        The connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    * \param appstate    An unsigned integer representing the state. In C
    *                    this is usually a pointer to some connection dependent
    *                    information.
    */
-  void set_appstate(xtcp_connection_t conn, xtcp_appstate_t appstate);
+  void set_appstate(const xtcp_connection_t &conn, xtcp_appstate_t appstate);
 
   /** \brief Bind the local end of a connection to a particular port (UDP).
    *
-   * \param conn        The connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    * \param port_number The local port to set the connection to.
    */
-  void bind_local_udp(xtcp_connection_t conn, unsigned port_number);
+  void bind_local_udp(const xtcp_connection_t &conn, unsigned port_number);
 
   /** \brief Bind the remote end of a connection to a particular port and
    *         ip address (UDP).
@@ -300,15 +318,17 @@ typedef interface xtcp_if {
    * After this call, packets sent to this connection will go to
    * the specified address and port
    *
-   * \param conn        The connection
-   * \param addr        The intended remote address of the connection
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
+   * \param ipaddr      The intended remote address of the connection
    * \param port_number The intended remote port of the connection
    */
-  void bind_remote_udp(xtcp_connection_t conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
+  void bind_remote_udp(xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
 
   /** \brief Request a hosts IP address from a URL.
    *
    * \param hostname    The human readable host name, e.g. "www.xmos.com"
+   * \param name_len    The length of the hostname in characters
    * \note              LWIP ONLY.
    */
   void request_host_by_name(const char hostname[], unsigned name_len);
@@ -355,8 +375,8 @@ typedef enum {
  *  This functions implements a TCP/IP stack that clients can access via
  *  interfaces.
  *
- *  \param i_xtcp_init  The interface array to connect to the clients.
- *  \param n_xtcp_init  The number of clients to the task.
+ *  \param i_xtcp       The interface array to connect to the clients.
+ *  \param n_xtcp       The number of clients to the task.
  *  \param i_mii        If this component is connected to the mii() component
  *                      in the Ethernet library then this interface should be
  *                      used to connect to it. Otherwise it should be set to
@@ -388,7 +408,7 @@ typedef enum {
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
+void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
                static const unsigned n_xtcp,
                client mii_if ?i_mii,
                client ethernet_cfg_if ?i_eth_cfg,
@@ -405,8 +425,8 @@ void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
  *  This functions implements a TCP/IP stack that clients can access via
  *  interfaces.
  *
- *  \param i_xtcp_init  The interface array to connect to the clients.
- *  \param n_xtcp_init  The number of clients to the task.
+ *  \param i_xtcp       The interface array to connect to the clients.
+ *  \param n_xtcp       The number of clients to the task.
  *  \param i_mii        If this component is connected to the mii() component
  *                      in the Ethernet library then this interface should be
  *                      used to connect to it. Otherwise it should be set to
@@ -438,8 +458,8 @@ void xtcp_lwip(server xtcp_if i_xtcp_init[n_xtcp],
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_uip(server xtcp_if i_xtcp_init[n_xtcp_init],
-              static const unsigned n_xtcp_init,
+void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
+              static const unsigned n_xtcp,
               client mii_if ?i_mii,
               client ethernet_cfg_if ?i_eth_cfg,
               client ethernet_rx_if ?i_eth_rx,
@@ -454,9 +474,9 @@ void xtcp_uip(server xtcp_if i_xtcp_init[n_xtcp_init],
 /** Copy an IP address data structure.
  */
 #define XTCP_IPADDR_CPY(dest, src) do { dest[0] = src[0]; \
-                                         dest[1] = src[1]; \
-                                         dest[2] = src[2]; \
-                                         dest[3] = src[3]; \
+                                        dest[1] = src[1]; \
+                                        dest[2] = src[2]; \
+                                        dest[3] = src[3]; \
                                       } while (0)
 
 /** Compare two IP address structures.

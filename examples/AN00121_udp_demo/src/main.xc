@@ -104,7 +104,7 @@ void udp_reflect(client xtcp_if i_xtcp)
     select {
       // Respond to an event from the tcp server
       case i_xtcp.packet_ready():
-        i_xtcp.get_packet(conn, (char *)rx_buffer, RX_BUFFER_SIZE, data_len);
+        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
         switch (conn.event)
           {
           case XTCP_IFUP:

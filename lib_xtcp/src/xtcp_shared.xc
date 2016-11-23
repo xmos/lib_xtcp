@@ -20,7 +20,7 @@ static unsigned n_xtcp;
 #if (XTCP_STACK == LWIP)
 unsafe client_queue_t
 new_event(xtcp_event_type_t xtcp_event,
-          xtcp_connection_t conn,
+          const xtcp_connection_t &conn,
           struct tcp_pcb * unsafe t_pcb,
           struct udp_pcb * unsafe u_pcb,
           struct pbuf *unsafe pbuf)
@@ -37,7 +37,7 @@ new_event(xtcp_event_type_t xtcp_event,
 #else /* UIP */
 unsafe client_queue_t
 new_event(xtcp_event_type_t xtcp_event,
-          xtcp_connection_t conn)
+          const xtcp_connection_t &conn)
 {
   client_queue_t event;
   event.xtcp_event = xtcp_event;
@@ -127,7 +127,7 @@ enqueue_event_and_notify(unsigned client_num, client_queue_t event)
 }
 
 unsafe client_queue_t 
-rm_next_recv_event(xtcp_connection_t xtcp_conn, unsigned client_num)
+rm_next_recv_event(const xtcp_connection_t &conn, unsigned client_num)
 {
   client_queue_t offending_item = {0};
   for(int i=0; i<client_num_events[client_num]; i++) {
@@ -135,7 +135,7 @@ rm_next_recv_event(xtcp_connection_t xtcp_conn, unsigned client_num)
     client_queue_t current_queue_item = client_queue[client_num][place_in_queue];
     
     if(current_queue_item.xtcp_event == XTCP_RECV_DATA &&
-       current_queue_item.conn.id == xtcp_conn.id) {
+       current_queue_item.conn.id == conn.id) {
       offending_item = current_queue_item;
       
       for(int j=i; j<client_num_events[client_num] - 1; j++) {
