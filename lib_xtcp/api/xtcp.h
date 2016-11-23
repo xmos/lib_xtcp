@@ -146,14 +146,6 @@ typedef enum xtcp_event_type_t {
                               result for a request. **/
 } xtcp_event_type_t;
 
-/** Type representing a connection type.
- *
- */
-typedef enum xtcp_connection_type_t {
-  XTCP_CLIENT_CONNECTION,  /**< A client connection */
-  XTCP_SERVER_CONNECTION   /**< A server connection */
-} xtcp_connection_type_t;
-
 /** This type represents a TCP or UDP connection.
  *
  *  This is the main type containing connection information for the client
@@ -175,7 +167,7 @@ typedef struct xtcp_connection_t {
   unsigned int local_port;    /**< The local port of the connection. */
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
-  unsigned packet_length;
+  unsigned packet_length;     /**< Length of the packet recieved */
   int stack_conn;             /**< Pointer to the associated uIP/LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
@@ -263,7 +255,6 @@ typedef interface xtcp_if {
    *
    * \param addr        The address of the multicast group to join. It is
    *                    assumed that this is a multicast IP address.
-   * \note              Not available for IPv6
    */
   void join_multicast_group(xtcp_ipaddr_t addr);
 
@@ -271,7 +262,6 @@ typedef interface xtcp_if {
    *
    * \param addr        The address of the multicast group to leave. It is
    *                    assumed that this is a multicast IP address.
-   * \note              Not available for IPv6
    */
   void leave_multicast_group(xtcp_ipaddr_t addr);
 

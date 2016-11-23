@@ -8,6 +8,7 @@ import sys
 import os
 import xmostest
 import struct
+import urllib2
 from multiprocessing import Pool
 
 def print_errors(failure_list):
@@ -137,8 +138,8 @@ def reflect_test():
     # read from, with each pool spaced 10 apart
     port_pool = [ j + (10*i) for i in range(0, args.remote_processes) for j in range(args.start_port, args.start_port + args.remote_ports)]
     # port_pool = [15533, 15533, 15533, 15533]
-    # .get(9999999) is added to avoid this bug: https://bugs.python.org/issue8296
     pool.map_async(process_test, port_pool, 1, callback=print_errors).get(9999999)
+    # .get(9999999) is added to avoid this bug: https://bugs.python.org/issue8296
 
     pool.close()
     pool.join()
@@ -234,6 +235,21 @@ def check_and_set_args():
 
     args.seed_base = int(stdout[0].strip(), 16) # Git hash is hexadecimal string
 
+def webserver_test():
+    try:
+        response = urllib2.urlopen('http://' + args.ip + ':' + str(args.start_port), timeout=10)
+        html = response.read()
+        
+        print ''.join(html.split('\n'))
+
+    except urllib2.URLError, e:
+        if isinstance(e.reason, socket.timeout):
+            print 'ERROR: Could not connect to device: {}'.format(e)
+        else:
+            raise # reraise the original error
+    except socket.timeout, e:
+        print 'ERROR: Could not connect to device: {}'.format(e)
+
 if __name__ == '__main__':
     # Defaults
     packets = 10000
@@ -243,6 +259,7 @@ if __name__ == '__main__':
     remote_ports = 1
     local_port_udp = 15999
     protocol = "UDP"
+    test = 'reflect'
 
     parser = argparse.ArgumentParser(description='TCP/UDP tester')
     # Non-default arguments
@@ -265,12 +282,16 @@ if __name__ == '__main__':
       help="Size of packets to send (defaults='%s')" % packet_size_limit)
     parser.add_argument('--delay-between-packets', default=delay_between_packets, type=float,
       help="Delay between packets (defaults='%s')" % delay_between_packets)
+    parser.add_argument('--test', default=test, type=str,
+      help="Which test to run (default='%s')" % test)
     args = parser.parse_args()
 
     check_and_set_args()
-    reflect_test()
+    # reflect_test()
     # connect_test()
     # udp_bind_test()
     # multicast_test()
-    print "Time taken: " + str(time.time() - args.start_time)
-    kill_remote_device()
+    if args.test == 'webserver':
+        webserver_test()
+        
+    # kill_remote_device()
