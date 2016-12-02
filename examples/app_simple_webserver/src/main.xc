@@ -147,7 +147,7 @@ int main(void) {
                                    rgmii_ports,
                                    ETHERNET_DISABLE_SHAPER);
 
-    on tile[1].core[0]: rgmii_ethernet_mac_config(i_cfg, 1, c_rgmii_cfg);
+    on tile[1].core[0]: rgmii_ethernet_mac_config(i_cfg, NUM_CFG_CLIENTS, c_rgmii_cfg);
     on tile[1].core[0]: ar8035_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER]);
 
     // TCP component
