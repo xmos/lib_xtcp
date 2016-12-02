@@ -286,6 +286,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
 
       head.conn.event = head.xtcp_event;
+      head.conn.packet_length = bytecount;
       memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
 
       length = bytecount;
@@ -512,7 +513,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           if (!status && linkstate) {
             if (!isnull(i_eth_cfg))
               i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-
             xtcp_if_down();
             netif_set_link_down(netif);
           } else if (status && !linkstate) {

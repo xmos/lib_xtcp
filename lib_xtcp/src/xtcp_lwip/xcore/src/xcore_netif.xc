@@ -25,8 +25,8 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
       xtcp_i_pbuf_data->send_packet(p);
     }
     return ERR_OK;
-
-  } else if (xtcp_i_mii == NULL) {
+  } else if (xtcp_i_mii == NULL && 
+             xtcp_i_eth_tx == NULL) {
     // No data interface available
     fail("no packet interfaces available");
   }
