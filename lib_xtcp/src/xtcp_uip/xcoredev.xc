@@ -52,11 +52,11 @@ xcoredev_send(void)
     int len = uip_len;
     if (len != 0) {
       if (xtcp_i_eth_tx != NULL) {
-        if (len < 64) {
-          for (int i=len; i<64; i++) {
+        if (len < 60) {
+          for (int i=len; i<60; i++) {
             (uip_buf32, unsigned char[])[i] = 0;
           }
-          len=64;
+          len=60;
         }
         xtcp_i_eth_tx->send_packet((char *) uip_buf32, len, ETHERNET_ALL_INTERFACES);
       } else {
