@@ -26,6 +26,7 @@ TCP/IP library change log
   * REMOVED: Support for XTCP_EXCLUDE_* macros which reduced functionality in
     order to save code size
   * FIXED: Problem where ethernet packets smaller than 64 bytes would be incorrectly padded with uIP.
+  * REMOVED: Dependancy on lib_crypto.
 
 5.1.0
 -----
