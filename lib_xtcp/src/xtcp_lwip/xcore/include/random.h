@@ -1,3 +1,4 @@
+// Copyright (c) 2017, XMOS Ltd, All rights reserved
 #ifndef _RANDOM_H_
 #define _RANDOM_H_
 
