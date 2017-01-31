@@ -27,10 +27,11 @@ the XMOS ethernet component. It enables several clients to connect to
 it and send and receive on multiple TCP or UDP connections. The stack
 has been designed for a low memory embedded programming environment
 and despite its low memory footprint provides a complete stack
-including ARP, IPv4, IPv6, UDP, TCP, DHCP, IPv4LL, ICMP and IGMP
-protocols. The stack is based on the open-source uIP stack with
-modifications to work efficiently on the XMOS architecture and
-communicate between tasks using xC channels.
+including ARP, IPv4, UDP, TCP, DHCP, IPv4LL, ICMP and IGMP
+protocols. The library provides two stacks (one based on the open-source uIP
+and one based on LWIP) with modifications to work efficiently on the XMOS
+architecture and communicate between tasks using xC channels. This application
+note is based on the uIP stack provided in the library.
 
 
 Block diagram
@@ -104,7 +105,7 @@ IP configuration
 
 The IP is configured via a structure passed to the ``xtcp`` task
 to suit the network where the XMOS device is
-used. 
+used.
 
 It is initialized to all zeros when DHCP/AutoIP is used.
 
@@ -148,7 +149,7 @@ The tasks perform the following operations.
 These tasks communicate via the use of xC channels and interface
 connections which allow data to  be passed between
 application code running on separate logical cores.
- 
+
 Below is the source code for the main function of this application,
 which is taken from the source file ``main.xc``
 
@@ -159,19 +160,19 @@ Looking at this in more detail you can see the following:
 
   - Four separate tasks are run in parallel within ``par``
 
-  - There is a function call to execute the ethernet XTCP server: ``xtcp()``
+  - There is a function call to execute the ethernet XTCP server: ``xtcp_uip()``
 
   - There is a function to deal with XTCP events based on network
-    protocol UDP 
+    protocol UDP
     for communication with a computer in the network: ``udp_reflector()``
 
   - The channels and interfaces to connect the tasks together are
     set up at the beginning of ``main()``
 
-  - The ``xtcp()`` task is connected to the the ``smi`` and ``mii``
+  - The ``xtcp_uip()`` task is connected to the the ``smi`` and ``mii``
     tasks. This is so it can drive the Ethernet PHY.
 
-  - The IP configuration is passed to the function ``xtcp()``. It also
+  - The IP configuration is passed to the function ``xtcp_uip()``. It also
     takes the OTP ports so it can configure the MAC address based on
     reading the OTP memory of the device.
 
@@ -186,7 +187,7 @@ The application code for receiving UDP packets of data from a network machine an
 
 In this segment of the code you can see the following.
 
-  - The network connections, broadcast address and the buffers for holding the transmitted and received data are declared 
+  - The network connections, broadcast address and the buffers for holding the transmitted and received data are declared
 
   - The XTCP server is instructed to listen and create new connections on the incoming port.
 
@@ -196,56 +197,59 @@ In this segment of the code you can see the following.
 
   while (1) {
     select {
-    // Respond to an event from the tcp server
-    case xtcp_event(c_xtcp, conn):
-      switch (conn.event)
-        {
-        case XTCP_IFUP:
-          // When the interface goes up, set up the broadcast connection.
-          // This connection will persist while the interface is up
-          // and is only used for outgoing broadcast messages
-          xtcp_connect(c_xtcp,
-                       BROADCAST_PORT,
-                       broadcast_addr,
-                       XTCP_PROTOCOL_UDP);
+      // Respond to an event from the tcp server
+      case i_xtcp.packet_ready():
+        i_xtcp.get_packet(conn, (char *)rx_buffer, RX_BUFFER_SIZE, data_len);
+        switch (conn.event)
+          {
+            case XTCP_IFUP:
+              // Show the IP address of the interface
+              xtcp_ipconfig_t ipconfig;
+              i_xtcp.get_ipconfig(ipconfig);
+              printstr("dhcp: ");
+              printip(ipconfig.ipaddr);
+              printstr("\n");
+
+              // When the interface goes up, set up the broadcast connection.
+              // This connection will persist while the interface is up
+              // and is only used for outgoing broadcast messages
+              i_xtcp.connect(BROADCAST_PORT,
+                             broadcast_addr,
+                             XTCP_PROTOCOL_UDP);
+             break;
+              .................
+              (the complete code is given in the Appendix)
+              .................
+              .................
+          }
           break;
-		.................
-		.................
-		(the complete code is given in the Appendix)
-		.................
-		.................
-         case XTCP_ALREADY_HANDLED:
-          break;
-      }
-      break;
+
     // This is the periodic case, it occurs every BROADCAST_INTERVAL
     // timer ticks
     case tmr when timerafter(time + BROADCAST_INTERVAL) :> void:
       // A broadcast message can be sent if the connection is established
       // and one is not already being sent on that connection
       if (broadcast_connection.id != INIT_VAL && !broadcast_send_flag)  {
-        printstrln("Sending broadcast message");
+        printstr("Sending broadcast message\n");
         broadcast_len = strlen(broadcast_buffer);
         xtcp_init_send(c_xtcp, broadcast_connection);
         broadcast_send_flag = TRUE;
       }
-      tmr :> time;
+      time += BROADCAST_INTERVAL;
       break;
     }
    }
   }
 
-
-
 You can see the following in the rest of the code.
 
-  - The ``while`` loop waits for an XTCP event and performs the appropriate function. 
+  - The ``while`` loop waits for an XTCP event and performs the appropriate function.
 
-  - The events pertaining to setting up and closing connections, reception of data and the request to send data. 
+  - The events pertaining to setting up and closing connections, reception of data and the request to send data.
 
   - Periodical broadcast of a fixed data is done through timer events.
 
- 
+
 |newpage|
 |appendix|
 
@@ -253,8 +257,8 @@ Demo Hardware Setup
 -------------------
 
 	#. Connect the xTAG-2 to XP-SKC-L2 sliceKIT through the xTAG-2 adaptor XA-SK-XTAG2.
-	#. Connect the xTAG-2 USB connector to the USB connector on your development PC using a USB cable. 
-	#. Connect the ethernet slice XA-SK-E100 to the ``CIRCLE`` slot of the sliceKIT. 
+	#. Connect the xTAG-2 USB connector to the USB connector on your development PC using a USB cable.
+	#. Connect the ethernet slice XA-SK-E100 to the ``CIRCLE`` slot of the sliceKIT.
 	#. Connect the slice to the PC or to the network switch using an ethernet cable.
 	#. Connect the 12V power supply to the sliceKIT.
 	#. Switch on the power supply.
@@ -270,19 +274,16 @@ The demo code can be modified to run on any development board with an xCORE devi
 Launching the demo device
 -------------------------
 
-Once the application source code is imported into the tools xyou can then build the project
+Once the application source code is imported into the tools you can then build the project
 which will generate the binary file required to run the demo application.
 
 Once the application has been built you need to download the application binary
-code onto the xCORE General-Purpose sliceKIT. Here you use the tools to load the application 
+code onto the xCORE General-Purpose sliceKIT. Here you use the tools to load the application
 over JTAG onto the xCORE multicore microcontroller.
 
 Then click **Run**.
 When the processor has finished booting you will see the following text in the xTIMEcomposer console window::
 
-	Address: 0.0.0.0
-	Gateway: 0.0.0.0
-	Netmask: 0.0.0.0
 	dhcp: 172.17.0.115
 	New broadcast connection established:1
 	Sending broadcast message
@@ -335,7 +336,7 @@ The data reception can also be tested by running the python script ``test_udp.py
 
 References
 ----------
-  
+
 .. nopoints::
 
   * XMOS Tools User Guide
@@ -345,8 +346,8 @@ References
   * XMOS xCORE Programming Guide
 
     http://www.xmos.com/published/xmos-programming-guide
-  
-  * XMOS TCP/IP stack design guide: 
+
+  * XMOS TCP/IP stack design guide:
 
     https://www.xmos.com/published/xmos-tcpip-stack-design-guide
 
@@ -362,6 +363,4 @@ Source code for main.xc
    :largelisting:
 
 |newpage|
-
-
 

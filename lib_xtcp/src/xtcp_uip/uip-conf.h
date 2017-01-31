@@ -56,9 +56,12 @@
 #ifndef __UIP_CONF_H__
 #define __UIP_CONF_H__
 
-#include <inttypes.h>
+#ifdef __XC__
+extern "C" {
+#endif
 
-#include "xtcp_conf_derived.h"
+#include <inttypes.h>
+#include "xtcp.h"
 
 #ifndef XTCP_CLIENT_BUF_SIZE
 #define XTCP_CLIENT_BUF_SIZE (1472)
@@ -107,7 +110,7 @@ typedef unsigned short uip_stats_t;
  * \hideinitializer
  */
 #ifndef UIP_CONF_MAX_CONNECTIONS
-#define UIP_CONF_MAX_CONNECTIONS 10
+#define UIP_CONF_MAX_CONNECTIONS 20 ///////////////////////////////
 #endif
 
 /**
@@ -186,17 +189,20 @@ typedef unsigned short uip_stats_t;
 #define UIP_IGMP 0
 #endif
 
-#include "xtcp_server.h"
-
+#ifdef __XC__
+unsafe void xtcpd_appcall(void);
+#else
 void xtcpd_appcall(void);
+#endif
 
-typedef struct xtcpd_state_t uip_tcp_appstate_t;
-typedef struct xtcpd_state_t uip_udp_appstate_t;
+typedef xtcp_connection_t uip_tcp_appstate_t;
+typedef xtcp_connection_t uip_udp_appstate_t;
 
 
 /* UIP_APPCALL: the name of the application function. This function
    must return void and take no arguments (i.e., C type "void
    appfunc(void)"). */
+
 #ifndef UIP_APPCALL
 #define UIP_APPCALL     xtcpd_appcall
 #endif
@@ -219,6 +225,10 @@ typedef struct xtcpd_state_t uip_udp_appstate_t;
 #include "dhcpc.h"
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/
+
+#ifdef __XC__
+} /* extern "C" */
+#endif
 
 #endif /* __UIP_CONF_H__ */
 

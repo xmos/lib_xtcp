@@ -3,7 +3,8 @@
 #include <platform.h>
 #include <string.h>
 #include <print.h>
-#include <xtcp.h>
+#include "xtcp.h"
+#include "xtcp_uip_includes.h"
 
 // Here are the port definitions required by ethernet. This port assignment
 // is for the L16 sliceKIT with the ethernet slice plugged into the
@@ -44,7 +45,16 @@ xtcp_ipconfig_t ipconfig = {
 #define BROADCAST_MSG "XMOS Broadcast\n"
 #define INIT_VAL -1
 
-enum flag_status {TRUE=1, FALSE=0};
+static inline void printip(xtcp_ipaddr_t ipaddr)
+{
+  printint(uip_ipaddr1(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr2(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr3(ipaddr));
+  printstr(".");
+  printint(uip_ipaddr4(ipaddr));
+}
 
 /** Simple UDP reflection thread.
  *
@@ -55,7 +65,7 @@ enum flag_status {TRUE=1, FALSE=0};
  *   - Periodically sends out a fixed packet to a broadcast IP address.
  *
  */
-void udp_reflect(chanend c_xtcp)
+void udp_reflect(client xtcp_if i_xtcp)
 {
   xtcp_connection_t conn;  // A temporary variable to hold
                            // connections associated with an event
@@ -64,12 +74,11 @@ void udp_reflect(chanend c_xtcp)
   xtcp_connection_t broadcast_connection; // The connection out to the broadcast
                                           // address
   xtcp_ipaddr_t broadcast_addr = BROADCAST_ADDR;
-  int send_flag = FALSE;  // This flag is set when the thread is in the
-                      // middle of sending a response packet
-  int broadcast_send_flag = FALSE; // This flag is set when the thread is in the
-                               // middle of sending a broadcast packet
+
   timer tmr;
   unsigned int time;
+  unsigned data_len = 0; // A temporary variable to hold the length of the packet
+                         // recieved from get_packet()
 
   // The buffers for incoming data, outgoing responses and outgoing broadcast
   // messages
@@ -88,144 +97,134 @@ void udp_reflect(chanend c_xtcp)
   broadcast_connection.id = INIT_VAL;
 
   // Instruct server to listen and create new connections on the incoming port
-  xtcp_listen(c_xtcp, INCOMING_PORT, XTCP_PROTOCOL_UDP);
+  i_xtcp.listen(INCOMING_PORT, XTCP_PROTOCOL_UDP);
 
   tmr :> time;
   while (1) {
     select {
+      // Respond to an event from the tcp server
+      case i_xtcp.packet_ready():
+        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
+        switch (conn.event)
+          {
+          case XTCP_IFUP:
+            // Show the IP address of the interface
+            xtcp_ipconfig_t ipconfig;
+            i_xtcp.get_ipconfig(ipconfig);
+            printstr("dhcp: ");
+            printip(ipconfig.ipaddr);
+            printstr("\n");
 
-    // Respond to an event from the tcp server
-    case xtcp_event(c_xtcp, conn):
-      switch (conn.event)
-        {
-        case XTCP_IFUP:
-          // When the interface goes up, set up the broadcast connection.
-          // This connection will persist while the interface is up
-          // and is only used for outgoing broadcast messages
-          xtcp_connect(c_xtcp,
-                       BROADCAST_PORT,
-                       broadcast_addr,
-                       XTCP_PROTOCOL_UDP);
+            // When the interface goes up, set up the broadcast connection.
+            // This connection will persist while the interface is up
+            // and is only used for outgoing broadcast messages
+            i_xtcp.connect(BROADCAST_PORT,
+                           broadcast_addr,
+                           XTCP_PROTOCOL_UDP);
+            break;
+
+          case XTCP_IFDOWN:
+            // Tidy up and close any connections we have open
+            if (responding_connection.id != INIT_VAL) {
+              i_xtcp.close(responding_connection);
+              responding_connection.id = INIT_VAL;
+            }
+            if (broadcast_connection.id != INIT_VAL) {
+              i_xtcp.close(broadcast_connection);
+              broadcast_connection.id = INIT_VAL;
+            }
+            break;
+
+          case XTCP_NEW_CONNECTION:
+            // The tcp server is giving us a new connection.
+            // It is either a remote host connecting on the listening port
+            // or the broadcast connection the threads asked for with
+            // the xtcp_connect() call
+            if (XTCP_IPADDR_CMP(conn.remote_addr, broadcast_addr)) {
+              // This is the broadcast connection
+              printstr("New broadcast connection established:");
+              printintln(conn.id);
+              broadcast_connection = conn;
+           }
+            else {
+              // This is a new connection to the listening port
+              printstr("New connection to listening port:");
+              printintln(conn.local_port);
+              if (responding_connection.id == INIT_VAL) {
+                responding_connection = conn;
+              }
+              else {
+                printstr("Cannot handle new connection");
+                i_xtcp.close(conn);
+              }
+            }
+            break;
+
+          case XTCP_RECV_DATA:
+            // When we get a packet in:
+            //
+            //  - fill the tx buffer
+            //  - send a response to that connection
+            //
+            printstr("Got data: ");
+            printint(data_len);
+            printstr(" bytes\n");
+
+            response_len = data_len;
+            for (int i=0;i<response_len;i++)
+              tx_buffer[i] = rx_buffer[i];
+
+            i_xtcp.send(conn, tx_buffer, response_len);
+            printstr("Responding\n");
+            break;
+
+        case XTCP_RESEND_DATA:
+          // The tcp server wants data, this may be for the broadcast connection
+          // or the reponding connection
+
+          if (conn.id == broadcast_connection.id) {
+            i_xtcp.send(conn, broadcast_buffer, broadcast_len);
+          }
+          else {
+            i_xtcp.send(conn, tx_buffer, response_len);
+          }
           break;
 
-        case XTCP_IFDOWN:
-          // Tidy up and close any connections we have open
-          if (responding_connection.id != INIT_VAL) {
-            xtcp_close(c_xtcp, responding_connection);
+        case XTCP_SENT_DATA:
+          if (conn.id == broadcast_connection.id) {
+            // When a broadcast message send is complete the connection is kept
+            // open for the next one
+            printstr("Sent Broadcast\n");
+          }
+          else {
+            // When a reponse is sent, the connection is closed opening up
+            // for another new connection on the listening port
+            printstr("Sent Response\n");
+            i_xtcp.close(conn);
             responding_connection.id = INIT_VAL;
           }
-          if (broadcast_connection.id != INIT_VAL) {
-            xtcp_close(c_xtcp, broadcast_connection);
-            broadcast_connection.id = INIT_VAL;
-          }
           break;
 
-        case XTCP_NEW_CONNECTION:
-
-          // The tcp server is giving us a new connection.
-          // It is either a remote host connecting on the listening port
-          // or the broadcast connection the threads asked for with
-          // the xtcp_connect() call
-          if (XTCP_IPADDR_CMP(conn.remote_addr, broadcast_addr)) {
-            // This is the broadcast connection
-            printstr("New broadcast connection established:");
-            printintln(conn.id);
-            broadcast_connection = conn;
-         }
-          else {
-            // This is a new connection to the listening port
-            printstr("New connection to listening port:");
-            printintln(conn.local_port);
-            if (responding_connection.id == INIT_VAL) {
-              responding_connection = conn;
-            }
-            else {
-              printstr("Cannot handle new connection");
-              xtcp_close(c_xtcp, conn);
-            }
-          }
+        case XTCP_TIMED_OUT:
+        case XTCP_ABORTED:
+        case XTCP_CLOSED:
+          printstr("Closed connection:");
+          printintln(conn.id);
           break;
-
-        case XTCP_RECV_DATA:
-          // When we get a packet in:
-          //
-          //  - fill the tx buffer
-          //  - initiate a send on that connection
-          //
-          response_len = xtcp_recv_count(c_xtcp, rx_buffer, RX_BUFFER_SIZE);
-          printstr("Got data: ");
-          printint(response_len);
-          printstrln(" bytes");
-
-          for (int i=0;i<response_len;i++)
-            tx_buffer[i] = rx_buffer[i];
-
-          if (!send_flag) {
-            xtcp_init_send(c_xtcp, conn);
-            send_flag = TRUE;
-            printstrln("Responding");
-          }
-          else {
-            // Cannot respond here since the send buffer is being used
-          }
-          break;
-
-      case XTCP_REQUEST_DATA:
-      case XTCP_RESEND_DATA:
-        // The tcp server wants data, this may be for the broadcast connection
-        // or the reponding connection
-
-        if (conn.id == broadcast_connection.id) {
-          xtcp_send(c_xtcp, broadcast_buffer, broadcast_len);
         }
-        else {
-          xtcp_send(c_xtcp, tx_buffer, response_len);
-        }
-        break;
-
-      case XTCP_SENT_DATA:
-        xtcp_complete_send(c_xtcp);
-        if (conn.id == broadcast_connection.id) {
-          // When a broadcast message send is complete the connection is kept
-          // open for the next one
-          printstrln("Sent Broadcast");
-          broadcast_send_flag = FALSE;
-        }
-        else {
-          // When a reponse is sent, the connection is closed opening up
-          // for another new connection on the listening port
-          printstrln("Sent Response");
-          xtcp_close(c_xtcp, conn);
-          responding_connection.id = INIT_VAL;
-          send_flag = FALSE;
-        }
-        break;
-
-      case XTCP_TIMED_OUT:
-      case XTCP_ABORTED:
-      case XTCP_CLOSED:
-        printstr("Closed connection:");
-        printintln(conn.id);
-        break;
-
-      case XTCP_ALREADY_HANDLED:
-          break;
-      }
       break;
 
     // This is the periodic case, it occurs every BROADCAST_INTERVAL
     // timer ticks
     case tmr when timerafter(time + BROADCAST_INTERVAL) :> void:
-
       // A broadcast message can be sent if the connection is established
       // and one is not already being sent on that connection
-      if (broadcast_connection.id != INIT_VAL && !broadcast_send_flag)  {
-        printstrln("Sending broadcast message");
+      if (broadcast_connection.id != INIT_VAL)  {
+        printstr("Sending broadcast message\n");
         broadcast_len = strlen(broadcast_buffer);
-        xtcp_init_send(c_xtcp, broadcast_connection);
-        broadcast_send_flag = TRUE;
+        i_xtcp.send(conn, broadcast_buffer, broadcast_len);
       }
-      tmr :> time;
+      time += BROADCAST_INTERVAL;
       break;
     }
   }
@@ -235,7 +234,7 @@ void udp_reflect(chanend c_xtcp)
 #define ETHERNET_SMI_PHY_ADDRESS (0)
 
 int main(void) {
-  chan c_xtcp[1];
+  xtcp_if i_xtcp[1];
   mii_if i_mii;
   smi_if i_smi;
   par {
@@ -248,13 +247,13 @@ int main(void) {
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
     // TCP component
-    on tile[1]: xtcp(c_xtcp, 1, i_mii,
-                     null, null, null,
-                     i_smi, ETHERNET_SMI_PHY_ADDRESS,
-                     null, otp_ports, ipconfig);
+    on tile[1]: xtcp_uip(i_xtcp, 1, i_mii,
+                         null, null, null,
+                         i_smi, ETHERNET_SMI_PHY_ADDRESS,
+                         null, otp_ports, ipconfig);
 
     // The simple udp reflector thread
-    on tile[0]: udp_reflect(c_xtcp[0]);
+    on tile[0]: udp_reflect(i_xtcp[0]);
 
   }
   return 0;

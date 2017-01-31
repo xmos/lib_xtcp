@@ -9,14 +9,20 @@ TARGET = SLICEKIT-L16
 APP_NAME = 
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_xtcp
+USED_MODULES = lib_xtcp(>=6.0.0)
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-XCC_FLAGS = -g -O2 -save-temps -DXTCP_VERBOSE_DEBUG
+GEN_XCC_FLAGS = -g -O2 -save-temps -fxscope
+
+XCC_FLAGS =
+
+XCC_C_FLAGS = $(GEN_XCC_FLAGS)
+XCC_XC_FLAGS = $(GEN_XCC_FLAGS)
+XCC_MAP_FLAGS = -report
 
 # The VERBOSE variable, if set to 1, enables verbose output from the make
 # system.

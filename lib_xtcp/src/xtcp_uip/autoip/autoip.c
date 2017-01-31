@@ -93,7 +93,7 @@ static void rand(struct autoip_state_t* s)
 }
 
 __attribute__ ((noinline))
-void autoip_init(int seed)
+void uip_autoip_init(int seed)
 {
   autoip_state->state = DISABLED;
   autoip_state->probes_sent = 0;
@@ -147,7 +147,7 @@ static void send_announce()
   uip_timer_set(&autoip_state->timer, ANNOUNCE_INTERVAL * CLOCK_SECOND);
 }
 
-void autoip_periodic()
+void uip_autoip_periodic()
 {
   switch (autoip_state->state)
     {
@@ -206,7 +206,7 @@ void autoip_periodic()
       send_announce();
       if (autoip_state->announces_sent == ANNOUNCE_NUM) {
         autoip_state->state = CONFIGURED;
-        autoip_configured(autoip_state->ipaddr);
+        uip_autoip_configured(autoip_state->ipaddr);
       }
       break;
     case CONFIGURED:
@@ -215,7 +215,7 @@ void autoip_periodic()
   return;
 }
 
-void autoip_arp_in()
+void uip_autoip_arp_in()
 {
   switch (autoip_state->state)
     {
@@ -232,16 +232,16 @@ void autoip_arp_in()
   return;
 }
 
-void autoip_start()
+void uip_autoip_start()
 {
   if (autoip_state->state == DISABLED) {
-	autoip_init(autoip_state->seed);
+    uip_autoip_init(autoip_state->seed);
     rand(autoip_state);
     autoip_state->state = NO_ADDRESS;
   }
 }
 
-void autoip_stop()
+void uip_autoip_stop()
 {
   autoip_state->state = DISABLED;
 }

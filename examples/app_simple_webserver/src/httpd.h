@@ -5,8 +5,7 @@
 
 #include "xtcp.h"
 
-void httpd_init(chanend tcp_svr);
-void httpd_handle_event(chanend tcp_svr, REFERENCE_PARAM(xtcp_connection_t, conn));
+void xhttpd(client xtcp_if i_xtcp);
 
 #endif // _httpd_h_
 

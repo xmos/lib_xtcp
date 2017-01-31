@@ -1,30 +1,72 @@
-TCP/IP Library Change Log
+TCP/IP library change log
 =========================
+
+6.0.0
+-----
+
+  * CHANGE: Unified the branches of uIP and lwIP as the backend of the XTCP
+    stack. The default is uIP. To change the stack, define XTCP_STACK in your
+    makefile to be either UIP or LWIP. Then, instead of calling xtcp(...), call
+    either xtcp_uip(...) or xtcp_lwip(...) respectively.
+  * CHANGE: The interface between the client and server is now event-driven
+    rather than polling.
+  * CHANGE: Channels have been replaced by interfaces as communication medium
+    between client and server.
+  * REMOVED: The following xtcp_event_types: XTCP_PUSH_DATA, XTCP_REQUEST_DATA,
+    XTCP_POLL, XTCP_ALREADY_HANDLED
+  * CHANGE: The fields of packet_length and client_num have been added to the
+    xtcp_connection_t structure.
+  * REMOVED: xtcp_connection_t no longer has a xtcp_connection_type_t field.
+  * REMOVED: The ability to pause a connection
+  * REMOVED: The ability to partially acknowledge a packet
+  * REMOVED: Support for IPv6
+  * REMOVED: the ability to send with an index. This functionality is easily
+    replicated with a call to send() with the pointer of the array index
+    location, i.e. &(data[index]).
+  * REMOVED: Support for XTCP_EXCLUDE_* macros which reduced functionality in
+    order to save code size
+  * FIXED: Problem where ethernet packets smaller than 64 bytes would be incorrectly padded with uIP.
+  * REMOVED: Dependancy on lib_crypto.
+
+5.1.0
+-----
+
+  * ADDED: Support for using lib_wifi to provide the physical transport
+
+5.0.0
+-----
+
+  * ADDED: Port of LwIP TCP/IP stack
+
+  * Changes to dependencies:
+
+    - lib_crypto: Added dependency 1.0.0
 
 4.0.3
 -----
 
-  * Update to support enabling link status notifications
+  * ADDED: Support to enable link status notifications
 
 4.0.2
 -----
 
-  * Change uIP timer.h to uip_timer.h to avoid conflict with xcore timer.h
-  * Update to source code license and copyright
+  * CHANGE: uIP timer.h renamed to uip_timer.h to avoid conflict with xcore
+    timer.h
+  * CHANGE: Update to source code license and copyright
 
 4.0.1
 -----
 
-  * Fixed issue with link up/down events being ignored when SMI is not polled
-    within XTCP
-  * MAC address parameter to xtcp() is now qualified as const to allow parallel
-    usage
+  * CHANGE: MAC address parameter to xtcp() is now qualified as const to allow
+    parallel usage
+  * RESOLVED: Fixed issue with link up/down events being ignored when SMI is not
+    polled within XTCP
 
 4.0.0
 -----
 
-  * Moved over to new file structure
-  * Updated to use new lib_ethernet
+  * CHANGE: Moved over to new file structure
+  * CHANGE: Updated to use new lib_ethernet
 
   * Changes to dependencies:
 

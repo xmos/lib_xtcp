@@ -55,10 +55,14 @@
 #ifndef __UIP_H__
 #define __UIP_H__
 
+#ifdef __XC__
+extern "C" {
+#endif
+
 #include "uipopt.h"
 
 /**
- * Repressentation of an IP address.
+ * Representation of an IP address.
  *
  */
 typedef u16_t uip_ip4addr_t[2];
@@ -1230,6 +1234,9 @@ struct uip_conn {
 #endif
   /** The application state. */
   uip_tcp_appstate_t appstate;
+
+  /* XMOS */
+  xtcp_connection_t xtcp_conn;
 };
 
 /**
@@ -1267,6 +1274,9 @@ struct uip_udp_conn {
 
   /** The application state. */
   uip_udp_appstate_t appstate;
+
+  /* XMOS */
+  xtcp_connection_t xtcp_conn;
 };
 
 /* This flag is used when a udp packet isn't sent due to an arp request.
@@ -1432,6 +1442,8 @@ void uip_process(u8_t flag);
 #define UIP_UDP_SEND_CONN 4     /* Tells uIP that a UDP datagram
 				   should be constructed in the
 				   uip_buf buffer. */
+#define UIP_TCP_SEND 120 /* XMOS */
+
 #if UIP_UDP
 #define UIP_UDP_TIMER         5
 #define UIP_UDP_ARP_EVENT     6
@@ -1665,8 +1677,10 @@ u16_t uip_tcpchksum(void);
  */
 u16_t uip_udpchksum(void);
 
+#ifdef __XC__
+} /* "C" */
+#endif
 
 #endif /* __UIP_H__ */
-
 
 /** @} */

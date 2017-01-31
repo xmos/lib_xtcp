@@ -347,7 +347,7 @@ PT_THREAD(handle_dhcp(void))
 #if UIP_USE_AUTOIP
         if (s.ticks == CLOCK_SECOND * 4)
         {
-            autoip_start();
+            uip_autoip_start();
         }
 #endif
 
