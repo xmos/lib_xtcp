@@ -87,7 +87,7 @@ typedef struct xtcp_ipconfig_t {
  *
  **/
 typedef enum xtcp_protocol_t {
-  XTCP_PROTOCOL_TCP, /**< Transmission Control Protocol */
+  XTCP_PROTOCOL_TCP = 1, /**< Transmission Control Protocol */
   XTCP_PROTOCOL_UDP  /**< User Datagram Protocol */
 } xtcp_protocol_t;
 
@@ -315,7 +315,7 @@ typedef interface xtcp_if {
    * \param ipaddr      The intended remote address of the connection
    * \param port_number The intended remote port of the connection
    */
-  void bind_remote_udp(xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
+  void bind_remote_udp(const xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
 
   /** \brief Request a hosts IP address from a URL.
    *

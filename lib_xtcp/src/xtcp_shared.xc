@@ -13,41 +13,13 @@
 static client_queue_t client_queue[MAX_XTCP_CLIENTS][CLIENT_QUEUE_SIZE] = {{{0}}};
 static unsigned client_heads[MAX_XTCP_CLIENTS] = {0};
 static unsigned client_num_events[MAX_XTCP_CLIENTS] = {0};
+
 static server xtcp_if * unsafe i_xtcp; /* Used for notifying */
 static unsigned ifstate = 0;           /* Connection state */
-static unsigned n_xtcp;
+static unsigned n_xtcp;                /* Number of clients */
 
-#if (XTCP_STACK == LWIP)
-unsafe client_queue_t
-new_event(xtcp_event_type_t xtcp_event,
-          const xtcp_connection_t &conn,
-          struct tcp_pcb * unsafe t_pcb,
-          struct udp_pcb * unsafe u_pcb,
-          struct pbuf *unsafe pbuf)
-{
-  client_queue_t event;
-  event.xtcp_event = xtcp_event;
-  event.conn = conn;
-  event.t_pcb = t_pcb;
-  event.u_pcb = u_pcb;
-  event.pbuf = pbuf;
-  return event;
-}
-
-#else /* UIP */
-unsafe client_queue_t
-new_event(xtcp_event_type_t xtcp_event,
-          const xtcp_connection_t &conn)
-{
-  client_queue_t event;
-  event.xtcp_event = xtcp_event;
-  event.conn = conn;
-  return event;
-}
-#endif
-
-unsafe void
-xtcp_init_queue(static const unsigned n_xtcp_init, server xtcp_if i_xtcp_init[n_xtcp_init])
+unsafe void xtcp_init_queue(static const unsigned n_xtcp_init, 
+                            server xtcp_if i_xtcp_init[n_xtcp_init])
 {
   xassert(n_xtcp <= MAX_XTCP_CLIENTS);
   i_xtcp = i_xtcp_init;
@@ -57,16 +29,14 @@ xtcp_init_queue(static const unsigned n_xtcp_init, server xtcp_if i_xtcp_init[n_
   n_xtcp = n_xtcp_init;
 }
 
-unsafe void 
-renotify(unsigned client_num)
+unsafe void renotify(unsigned client_num)
 {
   if(client_num_events[client_num] > 0) {
     i_xtcp[client_num].packet_ready();
   }
 }
 
-static unsigned 
-get_guid(void)
+static unsigned get_guid(void)
 {
   static unsigned guid = 0;
   guid++;
@@ -78,13 +48,12 @@ get_guid(void)
   return guid;
 }
 
-unsafe xtcp_connection_t
-create_xtcp_state(int xtcp_num,
-                  xtcp_protocol_t protocol,
-                  unsigned char * unsafe remote_addr,
-                  int local_port,
-                  int remote_port,
-                  void * unsafe uip_lwip_conn)
+unsafe xtcp_connection_t create_xtcp_state(int xtcp_num,
+                                           xtcp_protocol_t protocol,
+                                           unsigned char * unsafe remote_addr,
+                                           int local_port,
+                                           int remote_port,
+                                           void * unsafe uip_lwip_conn)
 {
   xtcp_connection_t xtcp_conn = {0};
 
@@ -102,8 +71,7 @@ create_xtcp_state(int xtcp_num,
   return xtcp_conn;
 }
 
-unsafe client_queue_t 
-dequeue_event(unsigned client_num)
+unsafe client_queue_t dequeue_event(unsigned client_num)
 {
   client_num_events[client_num]--;
   xassert(client_num_events[client_num] >= 0);
@@ -113,11 +81,20 @@ dequeue_event(unsigned client_num)
   return client_queue[client_num][position];
 }
 
-unsafe void
-enqueue_event_and_notify(unsigned client_num, client_queue_t event)
+unsafe void enqueue_event_and_notify(unsigned client_num, 
+                                     xtcp_event_type_t xtcp_event,
+                                     xtcp_connection_t * unsafe xtcp_conn
+#if (XTCP_STACK == LWIP)
+                                     ,struct pbuf *unsafe pbuf
+#endif
+                                     )
 {
   unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
-  client_queue[client_num][position] = event;
+  client_queue[client_num][position].xtcp_event = xtcp_event;
+  client_queue[client_num][position].xtcp_conn = xtcp_conn;
+#if (XTCP_STACK == LWIP)
+  client_queue[client_num][position].pbuf = pbuf;
+#endif
 
   client_num_events[client_num]++;
   xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
@@ -126,61 +103,69 @@ enqueue_event_and_notify(unsigned client_num, client_queue_t event)
   i_xtcp[client_num].packet_ready();
 }
 
-unsafe client_queue_t 
-rm_next_recv_event(const xtcp_connection_t &conn, unsigned client_num)
+unsafe void rm_recv_events(unsigned conn_id, unsigned client_num)
 {
-  client_queue_t offending_item = {0};
-  for(int i=0; i<client_num_events[client_num]; i++) {
+  for(unsigned i=0; i<client_num_events[client_num]; ++i) {
     unsigned place_in_queue = (client_heads[client_num] + i) % CLIENT_QUEUE_SIZE;
     client_queue_t current_queue_item = client_queue[client_num][place_in_queue];
     
+    /* Found item */
     if(current_queue_item.xtcp_event == XTCP_RECV_DATA &&
-       current_queue_item.conn.id == conn.id) {
-      offending_item = current_queue_item;
+       current_queue_item.xtcp_conn->id == conn_id) {
+
+      client_num_events[client_num]--;
+
+#if (XTCP_STACK == LWIP)
+      if (current_queue_item.pbuf) {
+        pbuf_free(current_queue_item.pbuf);
+      }
+#endif
       
-      for(int j=i; j<client_num_events[client_num] - 1; j++) {
+      /* Move rest of events up queue */
+      for(unsigned j=i; j<client_num_events[client_num]; ++j) {
         unsigned place = (client_heads[client_num] + j) % CLIENT_QUEUE_SIZE;
         unsigned next_place = ++place % CLIENT_QUEUE_SIZE;
         client_queue[client_num][place] = client_queue[client_num][next_place];
       }
 
-      client_num_events[client_num]--;
+      /* uIP can only have one packet in the buffer,
+       * whereas LWIP can have many */
+#if (XTCP_STACK == UIP)
       break;
+#endif
     }
   }
-  return offending_item;
 }
 
-unsigned 
-get_if_state(void) 
+unsigned get_if_state(void) 
 { 
   return ifstate;
 }
 
-unsafe void
-xtcp_if_up(void)
+xtcp_connection_t if_up_dummy = {{0}};
+xtcp_connection_t if_down_dummy = {{0}};
+
+unsafe void xtcp_if_up(void)
 {
   ifstate = 1;
-  xtcp_connection_t dummy = {0};
-  for(unsigned i=0; i<n_xtcp; i++) {
+  // memset(&if_up_dummy, 0, sizeof(if_up_dummy));
+  for(unsigned i=0; i<n_xtcp; ++i) {
 #if (XTCP_STACK == LWIP)
-    enqueue_event_and_notify(i, new_event(XTCP_IFUP, dummy, NULL, NULL, NULL));
+    enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy, NULL);
 #else /* uIP */
-    enqueue_event_and_notify(i, new_event(XTCP_IFUP, dummy));
+    enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy);
 #endif
   }
 }
 
-unsafe void
-xtcp_if_down(void)
+unsafe void xtcp_if_down(void)
 {
   ifstate = 0;
-  xtcp_connection_t dummy = {0};
-  for(unsigned i=0; i<n_xtcp; i++) {
+  for(unsigned i=0; i<n_xtcp; ++i) {
 #if (XTCP_STACK == LWIP)
-    enqueue_event_and_notify(i, new_event(XTCP_IFDOWN, dummy, NULL, NULL, NULL));
+    enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy, NULL);
 #else /* uIP */
-    enqueue_event_and_notify(i, new_event(XTCP_IFDOWN, dummy));
+    enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy);
 #endif
   }
 }
