@@ -257,44 +257,48 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    /* Client calls get_packet after the server has notified */
-    case i_xtcp[int i].get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length):
-      /* Pop event and update with latest values */
+    /* Client calls get_packet() after the server has notified with packet_ready().
+     * This function pops the event and updates with latest values */
+    case i_xtcp[unsigned i].get_packet(xtcp_connection_t &conn, char data[n], unsigned n, unsigned &length):
       client_queue_t head = dequeue_event(i);
       unsigned bytecount = 0;
 
-      /* Recv event is the only time we fill the data array */
+      /* Recieve event is the only time we fill the data array,
+       * but only if the client has space (n) */
       if (head.xtcp_event == XTCP_RECV_DATA) {
-        /* But only fill it if the client has space */
-        if (conn.protocol == XTCP_PROTOCOL_TCP) {
-          struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
-          head.conn.mss = tcp_mss(t_pcb);
-        }
-
-        if (head.pbuf->tot_len < n) {
+        if (head.pbuf->tot_len <= n) {
           bytecount = head.pbuf->tot_len;
           struct pbuf *unsafe pb;
           unsigned offset = 0;
 
-          for (pb = head.pbuf, offset = 0; pb != NULL; offset += pb->len, pb = pb->next)
+          for (pb = head.pbuf, offset = 0; pb != NULL; offset += pb->len, pb = pb->next) {
             memcpy(data + offset, pb->payload, pb->len);
+          }
 
-          if (head.conn.protocol == XTCP_PROTOCOL_TCP)
-            tcp_recved(head.t_pcb, head.pbuf->tot_len);
+          if (head.xtcp_conn->protocol == XTCP_PROTOCOL_TCP) {
+            struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb * unsafe) head.xtcp_conn->stack_conn;
+            tcp_recved(t_pcb, head.pbuf->tot_len);
+          }
         }
+
         pbuf_free(head.pbuf);
       }
 
-      head.conn.event = head.xtcp_event;
-      head.conn.packet_length = bytecount;
-      memcpy(&conn, &head.conn, sizeof(xtcp_connection_t));
+      if (head.xtcp_conn->protocol == XTCP_PROTOCOL_TCP) {
+        struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) head.xtcp_conn->stack_conn;
+        head.xtcp_conn->mss = tcp_mss(t_pcb);
+      }
+
+      head.xtcp_conn->event = head.xtcp_event;
+      head.xtcp_conn->packet_length = bytecount;
+      memcpy(&conn, head.xtcp_conn, sizeof(xtcp_connection_t));
 
       length = bytecount;
 
       renotify(i);
       break;
 
-    case i_xtcp[int i].listen(int port_number, xtcp_protocol_t protocol):
+    case i_xtcp[unsigned i].listen(int port_number, xtcp_protocol_t protocol):
       xtcp_connection_t blank_conn = {0};
       blank_conn.client_num = i;
 
@@ -306,7 +310,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       } else {
         struct udp_pcb *unsafe pcb = udp_new();
         udp_bind(pcb, NULL, port_number);
-        unsigned char blank_ip[4] = {0,0,0,0};
+        unsigned char blank_ip[4] = {0};
         memset(pcb->connection_ports, 0, sizeof(unsigned) * CONNECTIONS_PER_UDP_PORT);
         memset(pcb->connection_addrs, 0, sizeof(unsigned char) * CONNECTIONS_PER_UDP_PORT * 4);
         pcb->xtcp_conn = create_xtcp_state(i, XTCP_PROTOCOL_UDP,
@@ -316,7 +320,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       break;
 
     /* Same as listen, but doesn't create the UDP PCB */
-    case i_xtcp[int i].bind_local_udp(const xtcp_connection_t &conn, unsigned port_number):
+    case i_xtcp[unsigned i].bind_local_udp(const xtcp_connection_t &conn, unsigned port_number):
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
 
       struct udp_pcb *unsafe u_pcb = (struct udp_pcb * unsafe) conn.stack_conn;
@@ -324,7 +328,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       udp_bind(u_pcb, NULL, port_number);
       break;
 
-    case i_xtcp[int i].bind_remote_udp(xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number):
+    case i_xtcp[unsigned i].bind_remote_udp(const xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number):
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
       struct udp_pcb *unsafe u_pcb = (struct udp_pcb * unsafe) conn.stack_conn;
 
@@ -338,9 +342,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       add_udp_connection(u_pcb, ip, port_n);
       break;
 
-    case i_xtcp[int i].unlisten(unsigned port_number):
+    case i_xtcp[unsigned i].unlisten(unsigned port_number):
       /* Need to make sure we've found all associated PCBs with port */
-      int all_pcbs_found = 0;
+      unsigned all_pcbs_found = 0;
       while(!all_pcbs_found) {
         struct tcp_pcb * unsafe t_pcb = xtcp_lookup_tcp_pcb_state_from_port(port_number);
         if (t_pcb) {
@@ -356,66 +360,67 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    case i_xtcp[int i].close(const xtcp_connection_t &conn):
-      xtcp_connection_t xtcp_conn;
+    case i_xtcp[unsigned i].close(const xtcp_connection_t &conn):
+      xtcp_connection_t *unsafe xtcp_conn;
+      
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb * unsafe) conn.stack_conn;
-        xtcp_conn = t_pcb->xtcp_conn;
+        xtcp_conn = &(t_pcb->xtcp_conn);
         tcp_close(t_pcb);
       } else {
-        // Take a local copy to pass to the functions
+        /* Take a local copy to pass to the functions */
         const xtcp_connection_t local_conn = conn;
 
         struct udp_pcb *unsafe u_pcb = xtcp_lookup_udp_pcb_state(local_conn.id);
-        xtcp_conn = u_pcb->xtcp_conn;
+        xtcp_conn = &(u_pcb->xtcp_conn);
         int slot = pcb_contains_connection(u_pcb, local_conn.remote_addr, local_conn.remote_port);
-        if(slot != -1)
+        if(slot != -1) {
           remove_pcb_udp_connection(u_pcb, slot);
+        }
       }
-      enqueue_event_and_notify(i, new_event(XTCP_CLOSED, xtcp_conn, NULL, NULL, NULL));
-
+      enqueue_event_and_notify(i, XTCP_CLOSED, xtcp_conn, NULL);
       break;
 
-    case i_xtcp[int i].join_multicast_group(xtcp_ipaddr_t addr):
+    case i_xtcp[unsigned i].join_multicast_group(xtcp_ipaddr_t addr):
       ip4_addr_t group_addr;
       memcpy(&group_addr, &addr, sizeof(ip4_addr_t));
       igmp_joingroup(IPADDR_ANY, &group_addr);
       break;
 
-    case i_xtcp[int i].leave_multicast_group(xtcp_ipaddr_t addr):
+    case i_xtcp[unsigned i].leave_multicast_group(xtcp_ipaddr_t addr):
       ip4_addr_t group_addr;
       memcpy(&group_addr, &addr, sizeof(ip4_addr_t));
       igmp_leavegroup(IPADDR_ANY, &group_addr);
       break;
 
-    case i_xtcp[int i].abort(const xtcp_connection_t &conn):
-      xtcp_connection_t xtcp_conn;
+    case i_xtcp[unsigned i].abort(const xtcp_connection_t &conn):
+      xtcp_connection_t *unsafe xtcp_conn;
+      xtcp_event_type_t event;
 
-      // Take a local copy to pass to the functions
-      const xtcp_connection_t local_conn = conn;
-
-      client_queue_t rmed_item = rm_next_recv_event(local_conn, i);
-      if (rmed_item.pbuf)
-        pbuf_free(rmed_item.pbuf);
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
-        xtcp_conn = t_pcb->xtcp_conn;
+        xtcp_conn = &(t_pcb->xtcp_conn);
         tcp_abort(t_pcb);
-        enqueue_event_and_notify(i, new_event(XTCP_ABORTED, xtcp_conn, NULL, NULL, NULL));
+        event = XTCP_ABORTED;
       } else {
         struct udp_pcb *unsafe u_pcb = (struct udp_pcb *unsafe) conn.stack_conn;
-        xtcp_conn = u_pcb->xtcp_conn;
-        int slot = pcb_contains_connection(u_pcb, local_conn.remote_addr, local_conn.remote_port);
-        if(slot != -1)
+        xtcp_conn = &(u_pcb->xtcp_conn);
+        int slot = pcb_contains_connection(u_pcb, xtcp_conn->remote_addr, xtcp_conn->remote_port);
+        if(slot != -1) {
           remove_pcb_udp_connection(u_pcb, slot);
-        enqueue_event_and_notify(i, new_event(XTCP_CLOSED, xtcp_conn, NULL, NULL, NULL));
+        }
+        event = XTCP_CLOSED;
       }
+
+      enqueue_event_and_notify(i, event, xtcp_conn, NULL);
+      rm_recv_events(xtcp_conn->id, i);
       break;
 
-    case i_xtcp[int i].connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol):
+    case i_xtcp[unsigned i].connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol):
       xtcp_connection_t blank_conn = {0};
       blank_conn.client_num = i;
 
+      /* Make local copies */
       xtcp_ipaddr_t ip;
       memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
       unsigned port_n = port_number;
@@ -435,45 +440,45 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
                                            blank_ip,
                                            port_n, 0, pcb);
         if (add_udp_connection(pcb, ip, port_n)) {
-          enqueue_event_and_notify(i, new_event(XTCP_NEW_CONNECTION, pcb->xtcp_conn, NULL, pcb, NULL));
+          enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
         }
       }
       break;
 
-    case i_xtcp[int i].send(const xtcp_connection_t &conn, char data[], unsigned len):
+    case i_xtcp[unsigned i].send(const xtcp_connection_t &conn, char data[], unsigned len):
       if (len <= 0) break;
+
+      err_t e;
 
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
         if(tcp_sndbuf(t_pcb) >= tcp_mss(t_pcb)) {
           char buffer[XTCP_MAX_RECEIVE_SIZE];
           memcpy(buffer, data, len);
-          err_t e = tcp_write(t_pcb, buffer, len, TCP_WRITE_FLAG_COPY);
-          if (e != ERR_OK)
+          e = tcp_write(t_pcb, buffer, len, TCP_WRITE_FLAG_COPY);
+          if (e != ERR_OK) {
             debug_printf("tcp_write() failed\n");
+          }
           tcp_output(t_pcb);
         }
       } else {
-        // Take a local copy to pass to the functions
-        const xtcp_connection_t local_conn = conn;
-
         struct udp_pcb *unsafe u_pcb = (struct udp_pcb *unsafe) conn.stack_conn;
         struct pbuf *unsafe new_pbuf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
         memcpy(new_pbuf->payload, data, len);
 
-        err_t e;
         if (u_pcb->flags & UDP_FLAGS_CONNECTED) {
           e = udp_send(u_pcb, new_pbuf);
         } else {
-          e = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) local_conn.remote_addr, local_conn.remote_port);
+          e = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) u_pcb->xtcp_conn.remote_addr, u_pcb->xtcp_conn.remote_port);
         }
         pbuf_free(new_pbuf);
-        if (e != ERR_OK)
+        if (e != ERR_OK) {
           debug_printf("udp_send() failed\n");
+        }
       }
       break;
 
-    case i_xtcp[int i].set_appstate(const xtcp_connection_t &conn, xtcp_appstate_t appstate):
+    case i_xtcp[unsigned i].set_appstate(const xtcp_connection_t &conn, xtcp_appstate_t appstate):
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb * unsafe t_pcb = (struct tcp_pcb * unsafe) conn.stack_conn;
         t_pcb->xtcp_conn.appstate = appstate;
@@ -483,7 +488,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    case i_xtcp[int i].request_host_by_name(const char hostname[], unsigned name_len):
+    case i_xtcp[unsigned i].request_host_by_name(const char hostname[], unsigned name_len):
       struct dns_table_entry *unsafe dns;
       int table_entry;
       if (name_len >= DNS_MAX_NAME_LENGTH)
@@ -495,7 +500,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    case i_xtcp[int i].get_ipconfig(xtcp_ipconfig_t &ipconfig):
+    case i_xtcp[unsigned i].get_ipconfig(xtcp_ipconfig_t &ipconfig):
       memcpy(&ipconfig.ipaddr, &my_netif.ip_addr, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.netmask, &my_netif.netmask, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.gateway, &my_netif.gw, sizeof(xtcp_ipaddr_t));
@@ -565,17 +570,17 @@ lwip_tcp_event(void *unsafe arg,
         create_xtcp_state(pcb->xtcp_conn.client_num, XTCP_PROTOCOL_TCP,
                           (unsigned char * unsafe) &pcb->remote_ip,
                           pcb->local_port, pcb->remote_port, pcb);
-        enqueue_event_and_notify(pcb->xtcp_conn.client_num, new_event(XTCP_NEW_CONNECTION, pcb->xtcp_conn, pcb, NULL, NULL));
+        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
       break;
 
     case LWIP_EVENT_RECV:
       if(p != NULL) {
-        enqueue_event_and_notify(pcb->xtcp_conn.client_num, new_event(XTCP_RECV_DATA, pcb->xtcp_conn, pcb, NULL, p));
+        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn), p);
       }
       break;
 
     case LWIP_EVENT_SENT:
-      enqueue_event_and_notify(pcb->xtcp_conn.client_num, new_event(XTCP_SENT_DATA, pcb->xtcp_conn, pcb, NULL, NULL));
+      enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_SENT_DATA, &(pcb->xtcp_conn), NULL);
       break;
 
     case LWIP_EVENT_ERR: {
@@ -586,23 +591,23 @@ lwip_tcp_event(void *unsafe arg,
   return ERR_OK;
 }
 
+/* TODO: Make it so DNS can be called multiple times without dequeuing */
+static xtcp_connection_t dns_dummy = {0};
+
 /* Function called by lwIP when there is a DNS result */
-unsafe void
-lwip_xtcpd_handle_dns_response(ip_addr_t * unsafe ipaddr, int client_num)
+unsafe void lwip_xtcpd_handle_dns_response(ip_addr_t * unsafe ipaddr, int client_num)
 {
-  xtcp_connection_t dummy = {0};
   for (int i=0; i<4; i++)
-    dummy.remote_addr[i] = ((unsigned char * unsafe) ipaddr)[i];
-  enqueue_event_and_notify(client_num, new_event(XTCP_DNS_RESULT, dummy, NULL, NULL, NULL));
+    dns_dummy.remote_addr[i] = ((unsigned char * unsafe) ipaddr)[i];
+  enqueue_event_and_notify(client_num, XTCP_DNS_RESULT, &dns_dummy, NULL);
 }
 
 /* Function called by lwIP when any UDP event happens on a connection */
-unsafe void
-udp_recv_event(void * unsafe arg,
-               struct udp_pcb * unsafe pcb,
-               struct pbuf * unsafe p,
-               const ip_addr_t * unsafe addr,
-               u16_t _port) /* The underscore prefix is added by xtcp_lwip_includes */
+unsafe void udp_recv_event(void * unsafe arg,
+                           struct udp_pcb * unsafe pcb,
+                           struct pbuf * unsafe p,
+                           const ip_addr_t * unsafe addr,
+                           u16_t _port) /* The underscore prefix is added by xtcp_lwip_includes */
 {
   switch (_port) {
     case DHCP_CLIENT_PORT:
@@ -624,11 +629,11 @@ udp_recv_event(void * unsafe arg,
         }
 
         if(add_udp_connection(pcb, (unsigned char * unsafe) addr, _port)) {
-          enqueue_event_and_notify(pcb->xtcp_conn.client_num, new_event(XTCP_NEW_CONNECTION, pcb->xtcp_conn, NULL, pcb, NULL));
+          enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
         }
 
         if (p != NULL)
-          enqueue_event_and_notify(pcb->xtcp_conn.client_num, new_event(XTCP_RECV_DATA, pcb->xtcp_conn, NULL, pcb, p));
+          enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn), p);
       }
       break;
   }
