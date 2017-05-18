@@ -1,6 +1,11 @@
 TCP/IP library change log
 =========================
 
+6.0.1
+-----
+
+  * FIXED: The uIP stack now respects a fixed IP configuration.
+
 6.0.0
 -----
 
