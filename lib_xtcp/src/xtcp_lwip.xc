@@ -427,8 +427,10 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe pcb = tcp_new();
-        tcp_connect(pcb, (struct ip_addr * unsafe) ip, port_n, NULL);
-        pcb->xtcp_conn = blank_conn;
+        if (pcb) {
+          tcp_connect(pcb, (struct ip_addr * unsafe) ip, port_n, NULL);
+          pcb->xtcp_conn = blank_conn;
+        }
       } else {
         /* UDP is basically create, bind local and bind remote */
         struct udp_pcb *unsafe pcb = udp_new();
@@ -528,7 +530,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           linkstate = status;
         }
 
-        if(!get_if_state()) {
+        if (!get_if_state() && netif_is_link_up(netif)) {
           if (dhcp_supplied_address(netif) ||
               using_fixed_ip) {
             xtcp_if_up();

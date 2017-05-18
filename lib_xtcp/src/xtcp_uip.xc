@@ -9,6 +9,8 @@
 #include "xtcp_uip_includes.h"
 #include "xtcp_shared.h"
 
+#include "debug_print.h"
+
 #define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_buf[0])
 #define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_buf[UIP_LLH_LEN])
 
@@ -52,7 +54,10 @@ extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
 
 static unsigned uip_static_ip = 0; // Boolean whether we're using a static IP
+xtcp_ipconfig_t uip_static_ipconfig;
 static unsigned buffer_full = 0;   // Boolean whether the RX buffer is full
+
+static int dhcp_done = 0;
 
 #if UIP_USE_DHCP
 unsafe void
@@ -65,16 +70,21 @@ dhcpc_configured(const struct dhcpc_state * unsafe s)
   uip_setdraddr(s->default_router);
   uip_setnetmask(s->netmask);
   xtcp_if_up();
+  dhcp_done = 1;
 }
 #endif
 
 #if UIP_USE_AUTOIP
 void
-uip_autoip_configured(uip_ipaddr_t ipaddr)
+uip_autoip_configured(uip_ipaddr_t autoip_ipaddr)
 {
-  uip_autoip_stop();
-  uip_sethostaddr(ipaddr);
-  unsafe {
+  if (!dhcp_done) {
+    uip_ipaddr_t ipaddr;
+    uip_sethostaddr(autoip_ipaddr);
+    uip_ipaddr(ipaddr, 255, 255, 0, 0);
+    uip_setnetmask(ipaddr);
+    uip_ipaddr(ipaddr, 0, 0, 0, 0);
+    uip_setdraddr(ipaddr);
     xtcp_if_up();
   }
 }
@@ -135,23 +145,32 @@ register_listener(listener_info_t listeners[],
 void
 uip_linkup(void)
 {
+  if (uip_static_ip) {
+    uip_sethostaddr(uip_static_ipconfig.ipaddr);
+    uip_setdraddr(uip_static_ipconfig.gateway);
+    uip_setnetmask(uip_static_ipconfig.netmask);
+    xtcp_if_up();
+  } else {
+    dhcp_done = 0;
 #if UIP_USE_DHCP
-  dhcpc_stop();
+    dhcpc_stop();
 #endif
 #if UIP_USE_AUTOIP
 #if UIP_USE_DHCP
-  uip_autoip_stop();
+    uip_autoip_stop();
 #else
-  uip_autoip_start();
+    uip_autoip_start();
 #endif
 #endif
 #if UIP_USE_DHCP
-  dhcpc_start();
+    dhcpc_start();
 #endif
+  }
 }
 
 void uip_linkdown(void )
 {
+  dhcp_done = 0;
 #if UIP_USE_DHCP
   dhcpc_stop();
 #endif
@@ -162,6 +181,9 @@ void uip_linkdown(void )
 
 static unsafe void
 xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
+  if (ipconfig != NULL) {
+    memcpy(&uip_static_ipconfig, ipconfig, sizeof(xtcp_ipconfig_t));
+  }
   memcpy(&uip_ethaddr, mac_address, 6);
   uip_init();
 
@@ -173,9 +195,17 @@ xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
     uip_static_ip = 1;
   }
 
-  uip_sethostaddr(ipconfig->ipaddr);
-  uip_setdraddr(ipconfig->gateway);
-  uip_setnetmask(ipconfig->netmask);
+  if (ipconfig == NULL) {
+    uip_ipaddr_t ipaddr;
+    uip_ipaddr(ipaddr, 0, 0, 0, 0);
+    uip_sethostaddr(ipaddr);
+    uip_setdraddr(ipaddr);
+    uip_setnetmask(ipaddr);
+  } else {
+    uip_sethostaddr(ipconfig->ipaddr);
+    uip_setdraddr(ipconfig->gateway);
+    uip_setnetmask(ipconfig->netmask);
+  }
 
 #if UIP_USE_AUTOIP
     int hwsum = mac_address[0] + mac_address[1] + mac_address[2] +
@@ -666,7 +696,7 @@ xtcpd_appcall(void)
     enqueue_event_and_notify(xtcp_conn->client_num, XTCP_RESEND_DATA, xtcp_conn);
   }
 
-  if(uip_poll()) {
+  if (uip_poll()) {
     // Currently does nothing
   }
 
