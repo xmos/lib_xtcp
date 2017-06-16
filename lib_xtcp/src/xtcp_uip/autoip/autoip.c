@@ -1,10 +1,10 @@
 // Copyright (c) 2011-2016, XMOS Ltd, All rights reserved
 
-#include "uip.h"
+#include "../uip.h"
 #include "autoip.h"
-#include "uip_arp.h"
-#include "uip_timer.h"
-#include "clock-arch.h"
+#include "../uip_arp.h"
+#include "../uip_timer.h"
+#include "../clock-arch.h"
 #include <print.h>
 #include <string.h>
 
@@ -247,4 +247,3 @@ void uip_autoip_stop()
 }
 
 #endif
-

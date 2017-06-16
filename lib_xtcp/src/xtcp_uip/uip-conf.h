@@ -222,7 +222,7 @@ typedef xtcp_connection_t uip_udp_appstate_t;
 /*#include "hello-world.h"*/
 /*#include "telnetd.h"*/
 /*#include "webserver.h"*/
-#include "dhcpc.h"
+/*#include "dhcpc.h"*/
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/
 

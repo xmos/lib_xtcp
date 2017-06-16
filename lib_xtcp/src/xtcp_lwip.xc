@@ -362,12 +362,12 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
     case i_xtcp[unsigned i].close(const xtcp_connection_t &conn):
       xtcp_connection_t *unsafe xtcp_conn;
-      
+
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb * unsafe) conn.stack_conn;
         xtcp_conn = &(t_pcb->xtcp_conn);
         tcp_close(t_pcb);
-      } else {
+      } else if (conn.protocol == XTCP_PROTOCOL_UDP) {
         /* Take a local copy to pass to the functions */
         const xtcp_connection_t local_conn = conn;
 
@@ -377,6 +377,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if(slot != -1) {
           remove_pcb_udp_connection(u_pcb, slot);
         }
+      }
+      else {
+        debug_printf("UNKNOWN PROTOCOL\n");
       }
       enqueue_event_and_notify(i, XTCP_CLOSED, xtcp_conn, NULL);
       break;
@@ -412,8 +415,8 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         event = XTCP_CLOSED;
       }
 
-      enqueue_event_and_notify(i, event, xtcp_conn, NULL);
       rm_recv_events(xtcp_conn->id, i);
+      enqueue_event_and_notify(i, event, xtcp_conn, NULL);
       break;
 
     case i_xtcp[unsigned i].connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol):
@@ -475,7 +478,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         }
         pbuf_free(new_pbuf);
         if (e != ERR_OK) {
-          debug_printf("udp_send() failed\n");
+          debug_printf("udp_send() failed with error %d\n",e);
         }
       }
       break;

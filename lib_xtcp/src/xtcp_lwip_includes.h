@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define USE_LWIP
+
 /* The include files */
 #include "lwip/init.h"
 #include "lwip/ip_addr.h"

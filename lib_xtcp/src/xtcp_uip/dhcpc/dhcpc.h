@@ -39,8 +39,8 @@
 extern "C" {
 #endif
 
-#include "uip_timer.h"
-#include "pt.h"
+#include "../uip_timer.h"
+#include "../pt.h"
 
 struct dhcpc_state {
   struct pt pt;

@@ -3,6 +3,7 @@
 #include <platform.h>
 #include "debug_print.h"
 #include "xtcp.h"
+#include "xtcp_stack.h"
 #include "httpd.h"
 #include "smi.h"
 #include "otp_board_info.h"
@@ -12,7 +13,7 @@ enum xtcp_clients {
   NUM_XTCP_CLIENTS
 };
 
-#if USE_UIP
+#if XTCP_STACK_UIP
 
 // Here are the port definitions required by ethernet. This port assignment
 // is for the L16 sliceKIT with the ethernet slice plugged into the
@@ -36,7 +37,7 @@ port p_smi_mdc  = on tile[1]: XS1_PORT_1N;
 // These ports are for accessing the OTP memory
 otp_ports_t otp_ports = on tile[1]: OTP_PORTS_INITIALIZER;
 
-#elif USE_LWIP
+#elif XTCP_STACK_LWIP
 
 // eXplorerKIT RGMII port map
 otp_ports_t otp_ports = on tile[0]: OTP_PORTS_INITIALIZER;
@@ -96,7 +97,7 @@ void ar8035_phy_driver(client interface smi_if smi,
 }
 
 #else
-#error "Must define either USE_UIP=1 or USE_LWIP=1"
+#error "Must define XTCP_STACK"
 #endif
 
 
@@ -116,9 +117,9 @@ int main(void) {
   xtcp_if i_xtcp[NUM_XTCP_CLIENTS];
   smi_if i_smi;
 
-#if USE_UIP
+#if XTCP_STACK_UIP
   mii_if i_mii;
-#else
+#elif XTCP_STACK_LWIP
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
   ethernet_rx_if i_rx[NUM_ETH_CLIENTS];
   ethernet_tx_if i_tx[NUM_ETH_CLIENTS];
@@ -126,7 +127,7 @@ int main(void) {
 #endif
 
   par {
-#if USE_UIP
+#if XTCP_STACK_UIP
     // MII ethernet driver
     on tile[1]: mii(i_mii, p_eth_rxclk, p_eth_rxerr, p_eth_rxd, p_eth_rxdv,
                     p_eth_txclk, p_eth_txen, p_eth_txd, p_eth_timing,
@@ -138,7 +139,7 @@ int main(void) {
                          i_smi, ETHERNET_SMI_PHY_ADDRESS,
                          null, otp_ports, ipconfig);
 
-#else
+#elif XTCP_STACK_LWIP
     // RGMII ethernet driver
     on tile[1]: rgmii_ethernet_mac(i_rx, NUM_ETH_CLIENTS,
                                    i_tx, NUM_ETH_CLIENTS,
