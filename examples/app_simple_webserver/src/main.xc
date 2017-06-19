@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
 
 #include <platform.h>
 #include "debug_print.h"
@@ -104,9 +104,9 @@ void ar8035_phy_driver(client interface smi_if smi,
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP
 xtcp_ipconfig_t ipconfig = {
-  { 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
-  { 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
-  { 0, 0, 0, 0 }  // gateway (eg 192,168,0,1)
+  { 192, 168,   1, 199 }, // ip address (eg 192,168,0,2)
+  { 255, 255, 255,   0 }, // netmask (eg 255,255,255,0)
+  {   0,   0,   0,   0 }  // gateway (eg 192,168,0,1)
 };
 
 #define NUM_HTTP_CONNECTIONS (10)
@@ -116,7 +116,6 @@ xtcp_ipconfig_t ipconfig = {
 int main(void) {
   xtcp_if i_xtcp[NUM_XTCP_CLIENTS];
   smi_if i_smi;
-
 #if XTCP_STACK_UIP
   mii_if i_mii;
 #elif XTCP_STACK_LWIP
@@ -138,7 +137,6 @@ int main(void) {
                          null, null, null,
                          i_smi, ETHERNET_SMI_PHY_ADDRESS,
                          null, otp_ports, ipconfig);
-
 #elif XTCP_STACK_LWIP
     // RGMII ethernet driver
     on tile[1]: rgmii_ethernet_mac(i_rx, NUM_ETH_CLIENTS,
@@ -156,7 +154,6 @@ int main(void) {
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                           null, ETHERNET_SMI_PHY_ADDRESS,
                           null, otp_ports, ipconfig);
-
 #endif
 
     // SMI/ethernet phy driver

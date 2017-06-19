@@ -1,3 +1,4 @@
+// Copyright (c) 2017, XMOS Ltd, All rights reserved
 #include "common.h"
 
 /** Simple UDP reflection thread.
@@ -99,9 +100,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
         case XTCP_RESEND_DATA:
           for (int j=0;j<OPEN_PORTS_PER_PROCESS;j++) {
             if (connection_states[j].conn_id == conn.id) {
-
               // debug_printf("Sending data on port %d\n", conn.local_port);
-              // xtcp_send(c_xtcp, tx_buffer[j], response_lens[j]);
               i_xtcp.send(conn, tx_buffer[j], response_lens[j]);
               break;
             }
@@ -112,25 +111,14 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
           // When a reponse is sent, the connection is closed opening up
           // for another new connection on the listening port
           // debug_printf("Data sent to port %d, completing send\n", conn.local_port);
-          // xtcp_complete_send(c_xtcp);
-
-          if(PROTOCOL == XTCP_PROTOCOL_UDP) {
-            // xtcp_close(c_xtcp, conn);
-            //i_xtcp.close(conn);
-          }
-
           break;
 
         case XTCP_TIMED_OUT:
         case XTCP_ABORTED:
         case XTCP_CLOSED:
           // debug_printf("Closed connection: %d on port %d\n", conn.id, conn.local_port);
-          if(PROTOCOL == XTCP_PROTOCOL_TCP) {
-            // xtcp_close(c_xtcp, conn);
-            // i_xtcp.close(conn);
-          }
 
-          for (int t=0; t<OPEN_PORTS_PER_PROCESS; t++ ) {
+          for (int t=0; t<OPEN_PORTS_PER_PROCESS; t++) {
             // Slight hack to kill off process once python script finishes
             if(rx_tmp[0] == 'a') {
               exit(0);

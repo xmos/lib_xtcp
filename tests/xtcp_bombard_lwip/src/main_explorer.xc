@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2017, XMOS Ltd, All rights reserved
 
 #include "common.h"
 
@@ -89,8 +89,8 @@ int main(void) {
     par (int i=0; i<REFLECT_PROCESSES; i++) {
       on tile[0]: udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
     }
-
   }
+
   return 0;
 }
 

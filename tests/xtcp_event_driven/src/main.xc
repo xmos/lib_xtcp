@@ -453,7 +453,7 @@ int main(void) {
 
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
-    on tile[0]: xtcp_uip(i_xtcp, REFLECT_PROCESSES, null,
+    on tile[0]: xtcp_lwip(i_xtcp, REFLECT_PROCESSES, null,
                       i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                       null, ETHERNET_SMI_PHY_ADDRESS,
                       null, otp_ports, ipconfig);

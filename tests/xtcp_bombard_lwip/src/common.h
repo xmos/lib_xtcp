@@ -1,3 +1,4 @@
+// Copyright (c) 2017, XMOS Ltd, All rights reserved
 #ifndef _COMMON_H_
 #define _COMMON_H_
 

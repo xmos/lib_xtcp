@@ -1,3 +1,4 @@
+// Copyright (c) 2017, XMOS Ltd, All rights reserved
 #include "common.h"
 
 #if SLICEKIT_L16

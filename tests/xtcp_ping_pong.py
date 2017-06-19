@@ -373,14 +373,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     check_and_set_args()
-    if protocol=="UDP":
-        reflect_test()
-    else:
-        tcp_test();
     #connect_test()
     # udp_bind_test()
     # multicast_test()
-    #if args.test == 'webserver':
-    #    webserver_test()
-
+    if args.test == 'webserver':
+        webserver_test()
+    else:
+        if protocol=="UDP":
+            reflect_test()
+        else:
+            tcp_test();
+    
     kill_remote_device()

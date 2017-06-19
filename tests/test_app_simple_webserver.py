@@ -68,7 +68,7 @@ class webTester(xmostest.Tester):
                                  output=output)
 
 def test(device, ip, expected_response):
-    binary = '../examples/app_simple_webserver/bin/UIP/app_simple_webserver_UIP.xe'
+    binary = '../examples/app_simple_webserver/bin/app_simple_webserver.xe'
 
     tester = xmostest.CombinedTester(2, webTester(expected_response, ip,
                                     'lib_xtcp', device + '_configuration_tests', 'webserver', {}))
@@ -108,6 +108,6 @@ def runtest():
         print 'Remote resourcer not avaliable'
         return
 
-    test('explorer', '192.168.2.5', '<!DOCTYPE html>' +
+    test('explorer', '192.168.1.199', '<!DOCTYPE html>' +
                                     '<html><head><title>Hello world</title></head>' +
                                     '<body>Hello World!</body></html>\n')
