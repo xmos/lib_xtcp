@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 #include "xc2compat.h"
 #include <string.h>
 #include <xassert.h>
@@ -116,36 +116,30 @@ void enqueue_event_and_notify(unsigned client_num,
 void rm_recv_events(unsigned conn_id, unsigned client_num)
 {
   unsafe {
-  for(unsigned i=0; i<client_num_events[client_num]; ++i) {
-    unsigned place_in_queue = (client_heads[client_num] + i) % CLIENT_QUEUE_SIZE;
-    client_queue_t current_queue_item = client_queue[client_num][place_in_queue];
+    // Traverse the list once, copying the non-recv events from source to target
+    // This will leave all the elements before target_index as non-recv events
+    unsigned target_index = 0;
+    for(unsigned source_index = 0; source_index<client_num_events[client_num]; source_index++) {
+      const unsigned source_elem_index = (client_heads[client_num] + source_index) % CLIENT_QUEUE_SIZE;
+      const unsigned target_elem_index = (client_heads[client_num] + target_index) % CLIENT_QUEUE_SIZE;
+      const client_queue_t current_queue_item = client_queue[client_num][source_elem_index];
 
-    /* Found item */
-    if(current_queue_item.xtcp_event == XTCP_RECV_DATA &&
-       current_queue_item.xtcp_conn->id == conn_id) {
+      if(current_queue_item.xtcp_event != XTCP_RECV_DATA ||
+         current_queue_item.xtcp_conn->id != conn_id) {
+        client_queue[client_num][target_elem_index] = client_queue[client_num][source_elem_index];
 
-      client_num_events[client_num]--;
-
+        target_index++;
+      } else {
 #if (XTCP_STACK == LWIP)
-      if (current_queue_item.pbuf) {
-        pbuf_free(current_queue_item.pbuf);
-      }
+        if(current_queue_item.pbuf) {
+          pbuf_free(current_queue_item.pbuf);
+        }
 #endif
-
-      /* Move rest of events up queue */
-      for(unsigned j=i; j<client_num_events[client_num]; ++j) {
-        unsigned place = (client_heads[client_num] + j) % CLIENT_QUEUE_SIZE;
-        unsigned next_place = ++place % CLIENT_QUEUE_SIZE;
-        client_queue[client_num][place] = client_queue[client_num][next_place];
       }
-
-      /* uIP can only have one packet in the buffer,
-       * whereas LWIP can have many */
-#if (XTCP_STACK == UIP)
-      break;
-#endif
     }
-  }
+
+    // Set the new event count, which is the current target_index
+    client_num_events[client_num] = target_index;
   } // unsafe
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 #ifndef __xtcp_lwip_includes_h__
 #define __xtcp_lwip_includes_h__
 
@@ -12,6 +12,8 @@
 #ifdef __XC__
 extern "C" {
 #endif
+
+#define USE_LWIP
 
 /* The include files */
 #include "lwip/init.h"

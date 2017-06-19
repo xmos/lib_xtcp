@@ -37,11 +37,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <print.h>
-#include "uip.h"
+#include "../uip.h"
 #include "dhcpc.h"
-#include "uip_timer.h"
-#include "pt.h"
-#include "autoip.h"
+#include "../uip_timer.h"
+#include "../pt.h"
+#include "../autoip/autoip.h"
 
 #define STATE_INITIAL         0
 #define STATE_SENDING         1
@@ -524,4 +524,3 @@ dhcpc_request(void)
 /*---------------------------------------------------------------------------*/
 
 #endif
-
