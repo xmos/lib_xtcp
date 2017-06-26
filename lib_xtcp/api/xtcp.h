@@ -2,6 +2,7 @@
 #ifndef __xtcp_h__
 #define __xtcp_h__
 
+#include <limits.h>
 #include <mii.h>
 #include <smi.h>
 #include <ethernet.h>
@@ -153,6 +154,43 @@ typedef enum xtcp_event_type_t {
   XTCP_DNS_RESULT      /**<   This event occurs when the XTCP connection has a DNS
                               result for a request. **/
 } xtcp_event_type_t;
+
+
+typedef enum xtcp_error_code_t
+{
+  XTCP_EACCES = INT_MIN,
+  XTCP_EADDRINUSE,
+  XTCP_EADDRNOTAVAIL,
+  XTCP_EAFNOSUPPORT,
+  XTCP_EAGAIN,
+  XTCP_EALREADY,
+  XTCP_EBADF,
+  XTCP_ECONNREFUSED,
+  XTCP_ECONNRESET,
+  XTCP_EDESTADDRREQ,
+  XTCP_EFAULT,
+  XTCP_EHOSTUNREACH,
+  XTCP_EINPROGRESS,
+  XTCP_EINTR,
+  XTCP_EINVAL,
+  XTCP_EIO,
+  XTCP_EISCONN,
+  XTCP_EMSGSIZE,
+  XTCP_ENETDOWN,
+  XTCP_ENETUNREACH,
+  XTCP_ENOBUFS,
+  XTCP_ENOENT,
+  XTCP_ENOMEM,
+  XTCP_ENOTCONN,
+  XTCP_ENOTDIR,
+  XTCP_ENOTSOCK,
+  XTCP_EOPNOTSUPP,
+  XTCP_EPIPE,
+  XTCP_EPROTOTYPE,
+  XTCP_ETIMEDOUT,
+  XTCP_ECONNRESET,
+  XTCP_PEERCLOSED = 0
+} xtcp_error_code_t;
 
 /** This type represents a TCP or UDP connection.
  *
