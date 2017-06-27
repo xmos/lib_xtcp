@@ -188,7 +188,6 @@ typedef enum xtcp_error_code_t
   XTCP_EPIPE,
   XTCP_EPROTOTYPE,
   XTCP_ETIMEDOUT,
-  XTCP_ECONNRESET,
   XTCP_PEERCLOSED = 0
 } xtcp_error_code_t;
 
@@ -274,6 +273,11 @@ typedef interface xtcp_if {
    */
   void close(const xtcp_connection_t &conn);
 
+  /**
+   *
+   */
+  int recv(const xtcp_connection_t &conn, char buffer[], unsigned int length);
+
   /** \brief Abort a connection.
    *
    *  For UDP this is the same as closing the connection. For TCP
@@ -305,7 +309,7 @@ typedef interface xtcp_if {
    * \param len         The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    */
-  void send(const xtcp_connection_t &conn, char data[], unsigned len);
+  int send(const xtcp_connection_t &conn, char data[], unsigned int length);
 
   /** \brief Subscribe to a particular IP multicast group address.
    *

@@ -1,5 +1,7 @@
 // Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
 #include "xc2compat.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <smi.h>
 #include <xassert.h>
@@ -9,11 +11,25 @@
 #include "xtcp_lwip_includes.h"
 #include "xtcp_shared.h"
 
+#define MAXIMUM_NUMBER_OF_CLIENTS 10
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 // These pointers are used to store connections for sending in
 // xcoredev.xc
 extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
 extern client interface mii_if * unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
+
+typedef struct client_data_buffer_t
+{
+  int client_num;
+  struct pbuf * unsafe recv;
+  struct pbuf * unsafe send;
+  struct pbuf * unsafe pending;
+} client_data_buffer_t;
+
+client_data_buffer_t client_data_buffers[MAXIMUM_NUMBER_OF_CLIENTS];
 
 static void
 xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6])
@@ -134,6 +150,22 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
   return 0;
 }
 
+int find_client_data_buffer(int client_num)
+{
+  for (int i = 0; i < MAXIMUM_NUMBER_OF_CLIENTS; ++i) {
+    if (client_data_buffers[i].client_num == client_num) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+int get_free_client_data_buffer(void)
+{
+  return find_client_data_buffer(-1);
+}
+
 void
 xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           static const unsigned n_xtcp,
@@ -208,6 +240,10 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   memcpy(&ipaddr, ipconfig.ipaddr, sizeof(xtcp_ipaddr_t));
   memcpy(&netmask, ipconfig.netmask, sizeof(xtcp_ipaddr_t));
   memcpy(&gateway, ipconfig.gateway, sizeof(xtcp_ipaddr_t));
+
+  for (int i = 0; i < MAXIMUM_NUMBER_OF_CLIENTS; ++i) {
+    client_data_buffers[i].client_num = -1;
+  }
 
   netif = &my_netif;
   netif = netif_add(netif, &ipaddr, &netmask, &gateway, NULL);
@@ -450,11 +486,60 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    case i_xtcp[unsigned i].send(const xtcp_connection_t &conn, char data[], unsigned len):
-      if (len <= 0) break;
+    case i_xtcp[unsigned i].send(const xtcp_connection_t &conn, char data[], unsigned len) -> int result:
+      const int index = find_client_data_buffer(conn.client_num);
+      struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe)conn.stack_conn;
 
-      err_t e;
+      if (index != -1) {
+        if (len > 0) {
+          struct pbuf * const unsafe head = client_data_buffers[index].send;
+          struct pbuf * const unsafe pending = client_data_buffers[index].pending;
+          struct pbuf * const unsafe new = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
 
+          if (new != NULL) {
+            memcpy(new->payload, data, len);
+            new->len = len;
+            new->tot_len = len;
+            result = len;
+
+            if (head == NULL) {
+              client_data_buffers[index].send = new;
+            } else {
+              pbuf_cat(head, new);
+            }
+
+            if (pending == NULL) {
+              struct pbuf * const unsafe head = client_data_buffers[index].send;
+              struct pbuf * const unsafe next = client_data_buffers[index].send->next;
+
+              pbuf_ref(next);
+              client_data_buffers[index].pending = head;
+              client_data_buffers[index].send = pbuf_dechain(head);
+              xassert(head != NULL);
+              xassert(t_pcb != NULL);
+              xassert(index != -1);
+              xassert(client_data_buffers[index].pending->len > 0);
+
+              const err_t error = tcp_write(t_pcb, client_data_buffers[index].pending->payload,
+                                            client_data_buffers[index].pending->len,
+                                            TCP_WRITE_FLAG_COPY);
+              if (error != ERR_OK)
+              {
+                result = -1;
+              }
+              tcp_output(t_pcb);
+            }
+          } else {
+            result = XTCP_ENOBUFS;
+          }
+        } else {
+          result = XTCP_EMSGSIZE;
+        }
+      } else {
+        result = XTCP_ENOTCONN;
+      }
+
+      /*err_t e;
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
         if(tcp_sndbuf(t_pcb) >= tcp_mss(t_pcb)) {
@@ -480,7 +565,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if (e != ERR_OK) {
           debug_printf("udp_send() failed with error %d\n",e);
         }
-      }
+      }*/
       break;
 
     case i_xtcp[unsigned i].set_appstate(const xtcp_connection_t &conn, xtcp_appstate_t appstate):
@@ -509,6 +594,33 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       memcpy(&ipconfig.ipaddr, &my_netif.ip_addr, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.netmask, &my_netif.netmask, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.gateway, &my_netif.gw, sizeof(xtcp_ipaddr_t));
+      break;
+
+    case i_xtcp[unsigned i].recv(const xtcp_connection_t &conn, char buffer[], unsigned int length) -> int result:
+      const int index = find_client_data_buffer(conn.client_num);
+
+      if (index != -1) {
+        struct pbuf * const unsafe head = client_data_buffers[index].recv;
+        struct pbuf * const unsafe tail = client_data_buffers[index].recv->next;
+
+        if (head != NULL) {
+          result = MIN(length, head->len);
+
+          if (result != 0) {
+            memcpy(buffer, head->payload, result);
+
+            client_data_buffers[index].recv = tail;
+            pbuf_ref(tail);
+            pbuf_free(head);
+          } else {
+            result = XTCP_EAGAIN;
+          }
+        } else {
+          result = XTCP_EAGAIN;
+        }
+      } else {
+        result = XTCP_ENOTCONN;
+      }
       break;
 
     case(size_t i = 0; i < NUM_TIMEOUTS; i++)
@@ -576,16 +688,55 @@ lwip_tcp_event(void *unsafe arg,
                           (unsigned char * unsafe) &pcb->remote_ip,
                           pcb->local_port, pcb->remote_port, pcb);
         enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
+
+        const int index = get_free_client_data_buffer();
+        client_data_buffers[index].client_num = pcb->xtcp_conn.client_num;
+        client_data_buffers[index].recv = NULL;
+        client_data_buffers[index].send = NULL;
+        client_data_buffers[index].pending = NULL;
       break;
 
     case LWIP_EVENT_RECV:
       if(p != NULL) {
-        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn), p);
+        //enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn), p);
+
+        const int index = find_client_data_buffer(pcb->xtcp_conn.client_num);
+        xassert(index != -1);
+
+        if (client_data_buffers[index].recv == NULL) {
+          pbuf_ref(p);
+          client_data_buffers[index].recv = p;
+        } else {
+          pbuf_chain(client_data_buffers[index].recv, p);
+        }
       }
       break;
 
     case LWIP_EVENT_SENT:
-      enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_SENT_DATA, &(pcb->xtcp_conn), NULL);
+      //enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_SENT_DATA, &(pcb->xtcp_conn), NULL);
+
+      const int index = find_client_data_buffer(pcb->xtcp_conn.client_num);
+      xassert(index != -1);
+
+      unsafe {
+        pbuf_free(client_data_buffers[index].pending);
+      }
+      client_data_buffers[index].pending = NULL;
+
+      if (client_data_buffers[index].send != NULL) {
+        struct pbuf * unsafe head = client_data_buffers[index].send;
+        struct pbuf * unsafe next = client_data_buffers[index].send->next;
+
+        pbuf_ref(next);
+        client_data_buffers[index].pending = head;
+        client_data_buffers[index].send = pbuf_dechain(head);
+
+        const err_t error = tcp_write(pcb, client_data_buffers[index].pending->payload,
+                                      client_data_buffers[index].pending->len,
+                                      TCP_WRITE_FLAG_COPY);
+        xassert(error != ERR_OK);
+        tcp_output(pcb);
+      }
       break;
 
     case LWIP_EVENT_ERR: {
