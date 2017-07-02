@@ -299,7 +299,12 @@ typedef interface xtcp_if {
    * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
    *                    or XTCP_PROTOCOL_UDP)
    */
-  void connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol);
+  int connect(xtcp_connection_t &conn, unsigned short port_number, xtcp_ipaddr_t ipaddr);
+
+  /**
+   *
+   */
+  xtcp_connection_t socket(xtcp_protocol_t protocol);
 
   /** \brief Send data to the connection.
    *

@@ -53,6 +53,28 @@ static unsigned get_guid(void)
   return guid;
 }
 
+xtcp_connection_t create_xtcp_empty_state(int xtcp_num, xtcp_protocol_t protocol)
+{
+  return create_xtcp_state(xtcp_num, protocol, NULL, -1, -1, NULL);
+}
+
+xtcp_connection_t fill_xtcp_state(xtcp_connection_t conn, unsigned char * unsafe remote_addr, int local_port, int remote_port, void * unsafe uip_lwip_conn)
+{
+  unsafe {
+    for (int i=0; i<4; i++) {
+      conn.remote_addr[i] = remote_addr[i];
+    }
+  }
+  conn.remote_port = remote_port;
+  conn.local_port = local_port;
+  if(conn.protocol == XTCP_PROTOCOL_UDP)
+    conn.mss = MAX_PACKET_BYTES;
+
+  conn.stack_conn = (int) uip_lwip_conn;
+
+  return conn;
+}
+
 xtcp_connection_t create_xtcp_state(int xtcp_num,
                                     xtcp_protocol_t protocol,
                                     unsigned char * unsafe remote_addr,
