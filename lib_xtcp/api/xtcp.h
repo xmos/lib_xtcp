@@ -254,7 +254,7 @@ typedef interface xtcp_if {
    * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
    *                    or XTCP_PROTOCOL_UDP)
    */
-  void listen(int port_number, xtcp_protocol_t protocol);
+  int listen(xtcp_connection_t &conn, int port_number, xtcp_protocol_t protocol);
 
   /** \brief Stop listening to a particular incoming port.
    *

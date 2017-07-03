@@ -55,7 +55,13 @@ static unsigned get_guid(void)
 
 xtcp_connection_t create_xtcp_empty_state(int xtcp_num, xtcp_protocol_t protocol)
 {
-  return create_xtcp_state(xtcp_num, protocol, NULL, -1, -1, NULL);
+  xtcp_connection_t xtcp_conn = {0};
+
+  xtcp_conn.client_num = xtcp_num;
+  xtcp_conn.id = get_guid();
+  xtcp_conn.protocol = protocol;
+
+  return xtcp_conn;
 }
 
 xtcp_connection_t fill_xtcp_state(xtcp_connection_t conn, unsigned char * unsafe remote_addr, int local_port, int remote_port, void * unsafe uip_lwip_conn)
