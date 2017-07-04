@@ -236,14 +236,14 @@ typedef interface xtcp_if {
    * \param length      An integer where the server can indicate
    *                    the length of the sent packet.
    */
-  [[clears_notification]] void get_packet(xtcp_connection_t &conn, char data[n], unsigned n, unsigned &length);
+  [[clears_notification]] xtcp_event_type_t get_event(xtcp_connection_t &conn);
 
   /** \brief Notifies the client that there is data/information
    *         ready for them.
    *
    *  After this notification is raised a call to get_packet() is needed.
    */
-  [[notification]] slave void packet_ready();
+  [[notification]] slave void event_ready();
 
   /** \brief Listen to a particular incoming port.
    *

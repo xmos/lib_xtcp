@@ -36,7 +36,7 @@ void renotify(unsigned client_num)
 {
   unsafe {
     if(client_num_events[client_num] > 0) {
-      i_xtcp[client_num].packet_ready();
+      i_xtcp[client_num].event_ready();
     }
   }
 }
@@ -119,25 +119,18 @@ client_queue_t dequeue_event(unsigned client_num)
 
 void enqueue_event_and_notify(unsigned client_num,
                               xtcp_event_type_t xtcp_event,
-                              xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                              , struct pbuf *unsafe pbuf
-#endif
-                              )
+                              xtcp_connection_t * unsafe xtcp_conn)
 {
   unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
   client_queue[client_num][position].xtcp_event = xtcp_event;
   client_queue[client_num][position].xtcp_conn = xtcp_conn;
-#if (XTCP_STACK == LWIP)
-  client_queue[client_num][position].pbuf = pbuf;
-#endif
 
   client_num_events[client_num]++;
   xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
 
   /* Notify */
   unsafe {
-    i_xtcp[client_num].packet_ready();
+    i_xtcp[client_num].event_ready();
   }
 }
 
@@ -157,12 +150,6 @@ void rm_recv_events(unsigned conn_id, unsigned client_num)
         client_queue[client_num][target_elem_index] = client_queue[client_num][source_elem_index];
 
         target_index++;
-      } else {
-#if (XTCP_STACK == LWIP)
-        if(current_queue_item.pbuf) {
-          pbuf_free(current_queue_item.pbuf);
-        }
-#endif
       }
     }
 
@@ -185,11 +172,7 @@ void xtcp_if_up(void)
     ifstate = 1;
     // memset(&if_up_dummy, 0, sizeof(if_up_dummy));
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
-      enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy, NULL);
-#else /* uIP */
       enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy);
-#endif
     }
   }
 }
@@ -199,11 +182,7 @@ void xtcp_if_down(void)
   unsafe {
     ifstate = 0;
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
-      enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy, NULL);
-#else /* uIP */
       enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy);
-#endif
     }
   }
 }

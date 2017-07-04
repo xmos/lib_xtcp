@@ -29,12 +29,8 @@ xtcp_connection_t fill_xtcp_state(xtcp_connection_t conn,
 
 client_queue_t dequeue_event(unsigned client_num);
 void enqueue_event_and_notify(unsigned client_num,
-                                     xtcp_event_type_t xtcp_event,
-                                     xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                                     ,struct pbuf *unsafe pbuf
-#endif
-                                     );
+                              xtcp_event_type_t xtcp_event,
+                              xtcp_connection_t * unsafe xtcp_conn);
 
 void rm_recv_events(unsigned conn_id, unsigned client_num);
 
