@@ -456,7 +456,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         client_data_buffers[index].id = result.id;
         client_data_buffers[index].recv = NULL;
         client_data_buffers[index].state = XTCP_NULL_STATE;
-
         break;
 
       case i_xtcp[unsigned i].connect(xtcp_connection_t &conn, unsigned short port_number, xtcp_ipaddr_t ipaddr) -> int result:
@@ -561,6 +560,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
               pbuf_ref(head->next);
               client_data_buffers[index].recv = pbuf_dechain(head);
               pbuf_free(head);
+              tcp_recved(t_pcb, result);
 
               if (client_data_buffers[index].recv != NULL) {
                 enqueue_event_and_notify(t_pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(t_pcb->xtcp_conn));
@@ -629,6 +629,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         break;
 
       default:
+        //tcp_fasttmr();
         break;
       }
     }
