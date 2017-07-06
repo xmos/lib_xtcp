@@ -514,7 +514,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         }
         break;
 
-      case i_xtcp[unsigned i].send(const xtcp_connection_t &conn, char data[], unsigned len) -> int result:
+      case i_xtcp[unsigned i].send(xtcp_connection_t &conn, char data[], unsigned len) -> int result:
         const int index = find_client_data_buffer(conn.client_num, conn.id);
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe)conn.stack_conn;
 
@@ -580,7 +580,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         memcpy(&ipconfig.gateway, &my_netif.gw, sizeof(xtcp_ipaddr_t));
         break;
 
-      case i_xtcp[unsigned i].recv(const xtcp_connection_t &conn, char buffer[], unsigned int length) -> int result:
+      case i_xtcp[unsigned i].recv(xtcp_connection_t &conn, char buffer[], unsigned int length) -> int result:
         const int index = find_client_data_buffer(conn.client_num, conn.id);
 
         if (index != -1) {

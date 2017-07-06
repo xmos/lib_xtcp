@@ -276,7 +276,7 @@ typedef interface xtcp_if {
   /**
    *
    */
-  int recv(const xtcp_connection_t &conn, char buffer[], unsigned int length);
+  int recv(xtcp_connection_t &conn, char buffer[], unsigned int length);
 
   /** \brief Abort a connection.
    *
@@ -314,7 +314,7 @@ typedef interface xtcp_if {
    * \param len         The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    */
-  int send(const xtcp_connection_t &conn, char data[], unsigned int length);
+  int send(xtcp_connection_t &conn, char data[], unsigned int length);
 
   /** \brief Subscribe to a particular IP multicast group address.
    *
