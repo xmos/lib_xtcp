@@ -30,7 +30,7 @@ def attempt_connect(failures, process_port, sock=None):
     for _ in range(3):
         try:
             sock = socket.socket(socket.AF_INET, args.protocol)
-            sock.settimeout(1) # seconds
+            sock.settimeout(10) # seconds
             sock.connect((args.ip, process_port))
             return (failures, sock)
 
@@ -229,7 +229,6 @@ def tcp_test():
 
     pool.close()
     pool.join()
-    pool.terminate()
 
 def connect_test():
     tests_to_perform = args.packets
@@ -383,5 +382,5 @@ if __name__ == '__main__':
             reflect_test()
         else:
             tcp_test();
-    
-    kill_remote_device()
+
+    #kill_remote_device()

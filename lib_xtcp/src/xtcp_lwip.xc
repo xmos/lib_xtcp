@@ -11,7 +11,7 @@
 #include "xtcp_lwip_includes.h"
 #include "xtcp_shared.h"
 
-#define MAXIMUM_NUMBER_OF_CLIENTS 10
+#define MAXIMUM_NUMBER_OF_CLIENTS 32
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -173,6 +173,18 @@ int find_client_data_buffer(int client_num, int id)
 int get_free_client_data_buffer(void)
 {
   return find_client_data_buffer(-1, -1);
+}
+
+void free_client_data_buffer(int index)
+{
+  if (index != -1) {
+    client_data_buffers[index].id = -1;
+    client_data_buffers[index].client_num = -1;
+
+    if (client_data_buffers[index].recv != NULL) {
+      pbuf_free(client_data_buffers[index].recv);
+    }
+  }
 }
 
 void
@@ -409,6 +421,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           else {
             debug_printf("UNKNOWN PROTOCOL\n");
           }
+          free_client_data_buffer(index);
           enqueue_event_and_notify(i, XTCP_CLOSED, xtcp_conn);
         }
         break;
@@ -426,6 +439,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         break;
 
       case i_xtcp[unsigned i].abort(const xtcp_connection_t &conn):
+        const int index = find_client_data_buffer(conn.client_num, conn.id);
         xtcp_connection_t *unsafe xtcp_conn;
         xtcp_event_type_t event;
 
@@ -446,6 +460,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
         rm_recv_events(xtcp_conn->id, i);
         enqueue_event_and_notify(i, event, xtcp_conn);
+        if (index != -1) {
+          free_client_data_buffer(index);
+        }
         break;
 
       case i_xtcp[unsigned i].socket(xtcp_protocol_t protocol) -> xtcp_connection_t result:
@@ -503,11 +520,30 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
         if (index != -1) {
           if (len > 0) {
-            char data_tmp[1536] = {};
-            result = MIN(1536, len);
-            memcpy(data_tmp, data, result);
-            const err_t error = tcp_write(t_pcb, data_tmp, result, TCP_WRITE_FLAG_COPY);
-            xassert(error == ERR_OK);
+            if (conn.protocol == XTCP_PROTOCOL_TCP) {
+              char data_tmp[1536] = {};
+              result = MIN(1536, len);
+              memcpy(data_tmp, data, result);
+
+              struct tcp_pcb * unsafe const t_pcb = (struct tcp_pcb * unsafe const)conn.stack_conn;
+              const err_t error = tcp_write(t_pcb, data_tmp, result, TCP_WRITE_FLAG_COPY);
+              xassert(error == ERR_OK);
+            } else {
+              struct pbuf *unsafe new_pbuf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
+              result = MIN(1536, len);
+              memcpy(new_pbuf->payload, data, len);
+
+              struct udp_pcb * unsafe const u_pcb = (struct udp_pcb * unsafe const) conn.stack_conn;
+              if (u_pcb->flags & UDP_FLAGS_CONNECTED) {
+                const err_t error = udp_send(u_pcb, new_pbuf);
+                xassert(error == ERR_OK);
+              } else {
+                const err_t error = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) u_pcb->xtcp_conn.remote_addr, u_pcb->xtcp_conn.remote_port);
+                xassert(error == ERR_OK);
+              }
+
+              pbuf_free(new_pbuf);
+            }
           } else {
             result = XTCP_EMSGSIZE;
           }
@@ -546,7 +582,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
       case i_xtcp[unsigned i].recv(const xtcp_connection_t &conn, char buffer[], unsigned int length) -> int result:
         const int index = find_client_data_buffer(conn.client_num, conn.id);
-        struct tcp_pcb * unsafe const t_pcb = (struct tcp_pcb * unsafe const)conn.stack_conn;
 
         if (index != -1) {
           struct pbuf * const unsafe head = client_data_buffers[index].recv;
@@ -557,24 +592,41 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
             if (result != 0) {
               memcpy(buffer, head->payload, result);
 
-              pbuf_ref(head->next);
-              client_data_buffers[index].recv = pbuf_dechain(head);
-              pbuf_free(head);
-              tcp_recved(t_pcb, result);
+              if (conn.protocol == XTCP_PROTOCOL_TCP) {
+                struct tcp_pcb * unsafe const t_pcb = (struct tcp_pcb * unsafe const)conn.stack_conn;
 
-              if (client_data_buffers[index].recv != NULL) {
-                enqueue_event_and_notify(t_pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(t_pcb->xtcp_conn));
-              }
+                if (result < head->len) {
+                  memmove(head->payload, head->payload + result, head->len - result);
+                  head->len -= result;
+                  head->tot_len -= result;
+                } else {
+                  pbuf_ref(head->next);
+                  client_data_buffers[index].recv = pbuf_dechain(head);
+                  pbuf_free(head);
+                }
 
-              /*if (result < head->len) {
-                memmove(head->payload, head->payload + result, head->len - result);
-                head->len -= result;
-                head->tot_len -= result;
+                if (client_data_buffers[index].recv != NULL) {
+                  enqueue_event_and_notify(t_pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(t_pcb->xtcp_conn));
+                }
+
+                tcp_recved(t_pcb, result);
               } else {
-                pbuf_ref(head->next);
-                client_data_buffers[index].recv = pbuf_dechain(head);
-                pbuf_free(head);
-              }*/
+                struct udp_pcb * unsafe const u_pcb = (struct udp_pcb * unsafe const) conn.stack_conn;
+
+                if (result < head->len) {
+                  memmove(head->payload, head->payload + result, head->len - result);
+                  head->len -= result;
+                  head->tot_len -= result;
+                } else {
+                  pbuf_ref(head->next);
+                  client_data_buffers[index].recv = pbuf_dechain(head);
+                  pbuf_free(head);
+                }
+
+                if (client_data_buffers[index].recv != NULL) {
+                  enqueue_event_and_notify(u_pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(u_pcb->xtcp_conn));
+                }
+              }
             } else {
               result = XTCP_EAGAIN;
             }
@@ -654,10 +706,14 @@ lwip_tcp_event(void *unsafe arg,
       enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION,
                               &(pcb->xtcp_conn));
 
-      client_data_buffers[index].client_num = pcb->xtcp_conn.client_num;
-      client_data_buffers[index].id = pcb->xtcp_conn.id;
-      client_data_buffers[index].recv = NULL;
-      client_data_buffers[index].state = XTCP_CONNECTED;
+      if (index != -1) {
+        client_data_buffers[index].client_num = pcb->xtcp_conn.client_num;
+        client_data_buffers[index].id = pcb->xtcp_conn.id;
+        client_data_buffers[index].recv = NULL;
+        client_data_buffers[index].state = XTCP_CONNECTED;
+      } else {
+        tcp_close(pcb);
+      }
       break;
 
     case LWIP_EVENT_CONNECTED:
@@ -691,7 +747,7 @@ lwip_tcp_event(void *unsafe arg,
       break;
 
     case LWIP_EVENT_ERR: {
-      debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
+      //debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
       break;
     }
   }
@@ -742,11 +798,30 @@ unsafe void udp_recv_event(void * unsafe arg,
 
         if(add_udp_connection(pcb, (unsigned char * unsafe) addr, _port)) {
           enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn));
+
+          const int index = find_client_data_buffer(pcb->xtcp_conn.client_num, pcb->xtcp_conn.id);
+          client_data_buffers[index].recv = NULL;
+          client_data_buffers[index].state = XTCP_CONNECTED;
         }
 
-        if (p != NULL)
+        if (p != NULL) {
           enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn));
+
+          const int index = find_client_data_buffer(pcb->xtcp_conn.client_num, pcb->xtcp_conn.id);
+          if (index != -1) {
+            if (client_data_buffers[index].recv == NULL) {
+              pbuf_ref(p);
+              client_data_buffers[index].recv = p;
+            } else {
+              pbuf_chain(client_data_buffers[index].recv, p);
+            }
+          }
+        }
       }
       break;
+  }
+
+  if (p != NULL) {
+    pbuf_free(p);
   }
 }
