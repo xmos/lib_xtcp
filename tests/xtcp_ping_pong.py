@@ -199,7 +199,7 @@ def kill_remote_device():
 
     except socket.error as err:
         # Do nothing and wait for remote device to timeout
-        print 'ERROR: Could not kill remote device'
+        print 'WARNING: Could not kill remote device'
 
 def reflect_test():
     # Each process handles one remote port
@@ -229,6 +229,7 @@ def tcp_test():
 
     pool.close()
     pool.join()
+    pool.terminate()
 
 def connect_test():
     tests_to_perform = args.packets

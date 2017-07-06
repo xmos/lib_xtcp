@@ -26,7 +26,7 @@ void reverse(char * buffer, int size)
  */
 void udp_reflect(client xtcp_if i_xtcp, int start_port)
 {
-  debug_printf("Starting.\n");
+  debug_printf("start.\n");
   // A temporary variable to hold connections associated with an event
   xtcp_connection_t conn[OPEN_PORTS_PER_PROCESS];
 
