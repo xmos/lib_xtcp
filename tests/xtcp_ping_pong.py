@@ -383,4 +383,4 @@ if __name__ == '__main__':
         else:
             tcp_test();
 
-    #kill_remote_device()
+    kill_remote_device()

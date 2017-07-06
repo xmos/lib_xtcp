@@ -26,6 +26,7 @@ void reverse(char * buffer, int size)
  */
 void udp_reflect(client xtcp_if i_xtcp, int start_port)
 {
+  debug_printf("Starting.\n");
   // A temporary variable to hold connections associated with an event
   xtcp_connection_t conn[OPEN_PORTS_PER_PROCESS];
 
@@ -58,12 +59,16 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
           char buffer[RX_BUFFER_SIZE];
           const int result = i_xtcp.recv(client_conn, buffer, RX_BUFFER_SIZE);
           if (result > 0) {
-            reverse(buffer, result);
-            for (int i = 0; i < result;) {
-              const int sent = i_xtcp.send(client_conn, buffer + i, result - i);
+            if (memcmp(buffer, "a", 1) == 0) {
+              running = 0;
+            } else {
+              reverse(buffer, result);
+              for (int i = 0; i < result;) {
+                const int sent = i_xtcp.send(client_conn, buffer + i, result - i);
 
-              if (sent > 0 ) {
-                i += sent;
+                if (sent > 0 ) {
+                  i += sent;
+                }
               }
             }
           }
