@@ -744,6 +744,7 @@ lwip_tcp_event(void *unsafe arg,
       break;
 
     case LWIP_EVENT_SENT:
+      enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_SENT_DATA, &(pcb->xtcp_conn));
       break;
 
     case LWIP_EVENT_ERR: {

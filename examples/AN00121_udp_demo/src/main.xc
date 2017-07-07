@@ -31,9 +31,9 @@ otp_ports_t otp_ports = on tile[1]: OTP_PORTS_INITIALIZER;
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP/AutoIP
 xtcp_ipconfig_t ipconfig = {
-        { 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
-        { 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
-        { 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
+        { 192, 168,   1, 195 }, // ip address (eg 192,168,0,2)
+        { 255, 255, 255,   0 }, // netmask (eg 255,255,255,0)
+        {   0,   0,   0,   0 } // gateway (eg 192,168,0,1)
 };
 
 // Defines
@@ -67,8 +67,8 @@ static inline void printip(xtcp_ipaddr_t ipaddr)
  */
 void udp_reflect(client xtcp_if i_xtcp)
 {
-  xtcp_connection_t conn;  // A temporary variable to hold
-                           // connections associated with an event
+  xtcp_connection_t conn = i_xtcp.socket(XTCP_PROTOCOL_UDP);
+
   xtcp_connection_t responding_connection; // The connection to the remote end
                                            // we are responding to
   xtcp_connection_t broadcast_connection; // The connection out to the broadcast
@@ -97,16 +97,17 @@ void udp_reflect(client xtcp_if i_xtcp)
   broadcast_connection.id = INIT_VAL;
 
   // Instruct server to listen and create new connections on the incoming port
-  i_xtcp.listen(INCOMING_PORT, XTCP_PROTOCOL_UDP);
+  i_xtcp.listen(conn, INCOMING_PORT, XTCP_PROTOCOL_UDP);
 
   tmr :> time;
   while (1) {
+    xtcp_connection_t client_conn;
     select {
       // Respond to an event from the tcp server
-      case i_xtcp.packet_ready():
-        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
-        switch (conn.event)
-          {
+      case i_xtcp.event_ready():
+        const xtcp_event_type_t event = i_xtcp.get_event(client_conn);
+        switch (event)
+        {
           case XTCP_IFUP:
             // Show the IP address of the interface
             xtcp_ipconfig_t ipconfig;
@@ -118,9 +119,8 @@ void udp_reflect(client xtcp_if i_xtcp)
             // When the interface goes up, set up the broadcast connection.
             // This connection will persist while the interface is up
             // and is only used for outgoing broadcast messages
-            i_xtcp.connect(BROADCAST_PORT,
-                           broadcast_addr,
-                           XTCP_PROTOCOL_UDP);
+            client_conn = i_xtcp.socket(XTCP_PROTOCOL_UDP);
+            i_xtcp.connect(client_conn, BROADCAST_PORT, broadcast_addr);
             break;
 
           case XTCP_IFDOWN:
@@ -143,19 +143,19 @@ void udp_reflect(client xtcp_if i_xtcp)
             if (XTCP_IPADDR_CMP(conn.remote_addr, broadcast_addr)) {
               // This is the broadcast connection
               printstr("New broadcast connection established:");
-              printintln(conn.id);
-              broadcast_connection = conn;
+              printintln(client_conn.id);
+              broadcast_connection = client_conn;
            }
             else {
               // This is a new connection to the listening port
               printstr("New connection to listening port:");
-              printintln(conn.local_port);
+              printintln(client_conn.local_port);
               if (responding_connection.id == INIT_VAL) {
-                responding_connection = conn;
+                responding_connection = client_conn;
               }
               else {
                 printstr("Cannot handle new connection");
-                i_xtcp.close(conn);
+                i_xtcp.close(client_conn);
               }
             }
             break;
@@ -166,6 +166,7 @@ void udp_reflect(client xtcp_if i_xtcp)
             //  - fill the tx buffer
             //  - send a response to that connection
             //
+            data_len = i_xtcp.recv(client_conn, rx_buffer, RX_BUFFER_SIZE);
             printstr("Got data: ");
             printint(data_len);
             printstr(" bytes\n");
@@ -174,21 +175,9 @@ void udp_reflect(client xtcp_if i_xtcp)
             for (int i=0;i<response_len;i++)
               tx_buffer[i] = rx_buffer[i];
 
-            i_xtcp.send(conn, tx_buffer, response_len);
+            i_xtcp.send(client_conn, tx_buffer, response_len);
             printstr("Responding\n");
             break;
-
-        case XTCP_RESEND_DATA:
-          // The tcp server wants data, this may be for the broadcast connection
-          // or the reponding connection
-
-          if (conn.id == broadcast_connection.id) {
-            i_xtcp.send(conn, broadcast_buffer, broadcast_len);
-          }
-          else {
-            i_xtcp.send(conn, tx_buffer, response_len);
-          }
-          break;
 
         case XTCP_SENT_DATA:
           if (conn.id == broadcast_connection.id) {
@@ -200,7 +189,7 @@ void udp_reflect(client xtcp_if i_xtcp)
             // When a reponse is sent, the connection is closed opening up
             // for another new connection on the listening port
             printstr("Sent Response\n");
-            i_xtcp.close(conn);
+            i_xtcp.close(client_conn);
             responding_connection.id = INIT_VAL;
           }
           break;
@@ -209,7 +198,7 @@ void udp_reflect(client xtcp_if i_xtcp)
         case XTCP_ABORTED:
         case XTCP_CLOSED:
           printstr("Closed connection:");
-          printintln(conn.id);
+          printintln(client_conn.id);
           break;
         }
       break;
