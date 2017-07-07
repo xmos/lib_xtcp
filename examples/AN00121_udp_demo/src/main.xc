@@ -31,9 +31,9 @@ otp_ports_t otp_ports = on tile[1]: OTP_PORTS_INITIALIZER;
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP/AutoIP
 xtcp_ipconfig_t ipconfig = {
-        { 192, 168,   1, 195 }, // ip address (eg 192,168,0,2)
-        { 255, 255, 255,   0 }, // netmask (eg 255,255,255,0)
-        {   0,   0,   0,   0 } // gateway (eg 192,168,0,1)
+  { 0, 0, 0, 0 }, // ip address (eg 192,168,0,2)
+  { 0, 0, 0, 0 }, // netmask (eg 255,255,255,0)
+  { 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
 };
 
 // Defines
