@@ -57,14 +57,14 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
           case XTCP_RECV_DATA:
             char buffer[RX_BUFFER_SIZE];
             recv_count += 1;
-            const int result = i_xtcp.recv(client_conn, buffer, RX_BUFFER_SIZE);
-            if (result > 0) {
+            const int recved = i_xtcp.recv(client_conn, buffer, RX_BUFFER_SIZE);
+            if (recved > 0) {
               if (memcmp(buffer, "a", 1) == 0) {
                 running = 0;
               } else {
-                reverse(buffer, result);
-                for (int i = 0; i < result;) {
-                  const int sent = i_xtcp.send(client_conn, buffer + i, result - i);
+                reverse(buffer, recved);
+                for (int i = 0; i < recved;) {
+                  const int sent = i_xtcp.send(client_conn, buffer + i, recved - i);
 
                   if (sent > 0 ) {
                     i += sent;
@@ -73,12 +73,6 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
               }
             }
             break;
-
-          case XTCP_TIMED_OUT:
-          case XTCP_ABORTED:
-          case XTCP_CLOSED:
-            --running;
-            break;
         }
         break;
     }
@@ -86,5 +80,4 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port)
 
   debug_printf("recieved %d packets\n", recv_count);
   debug_printf("done.\n");
-  exit(0);
 }

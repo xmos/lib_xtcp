@@ -3,7 +3,7 @@ VERSION = 6.1.0
 DEPENDENT_MODULES = lib_ethernet(>=3.2.0) lib_otpinfo(>=2.0.0) lib_random(>=1.0.0)
 
 # Build flags
-MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2 -g -O3
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2 -O3
 
 # Source directories
 # Note: only includes IPv4 of lwIP
