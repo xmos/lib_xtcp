@@ -377,6 +377,11 @@ typedef interface xtcp_if {
    * \param ipconfig    IPconfig to be filled.
    */
   void get_ipconfig(xtcp_ipconfig_t &ipconfig);
+
+  /**
+   *
+   */
+  int is_ifup(void);
 } xtcp_if;
 
 typedef struct pbuf * unsafe pbuf_p;

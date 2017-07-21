@@ -521,16 +521,18 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if (index != -1) {
           if (len > 0) {
             if (conn.protocol == XTCP_PROTOCOL_TCP) {
-              char data_tmp[1536] = {};
-              result = MIN(1536, len);
+              char data_tmp[1000] = {};
+              result = MIN(1000, len);
               memcpy(data_tmp, data, result);
 
               struct tcp_pcb * unsafe const t_pcb = (struct tcp_pcb * unsafe const)conn.stack_conn;
               const err_t error = tcp_write(t_pcb, data_tmp, result, TCP_WRITE_FLAG_COPY);
-              xassert(error == ERR_OK);
+              if (error != ERR_OK) {
+                printf("error = %d\n", error);
+              }
             } else {
               struct pbuf *unsafe new_pbuf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
-              result = MIN(1536, len);
+              result = MIN(1000, len);
               memcpy(new_pbuf->payload, data, len);
 
               struct udp_pcb * unsafe const u_pcb = (struct udp_pcb * unsafe const) conn.stack_conn;
@@ -636,6 +638,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         } else {
           result = XTCP_ENOTCONN;
         }
+        break;
+      case i_xtcp[unsigned i].is_ifup(void) -> int result:
+        result = get_if_state();
         break;
 
       case(size_t i = 0; i < NUM_TIMEOUTS; i++)
@@ -820,9 +825,5 @@ unsafe void udp_recv_event(void * unsafe arg,
         }
       }
       break;
-  }
-
-  if (p != NULL) {
-    pbuf_free(p);
   }
 }
