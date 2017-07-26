@@ -824,6 +824,7 @@ unsafe void udp_recv_event(void * unsafe arg,
           }
         }
       }
+      pbuf_free(p);
       break;
   }
 }

@@ -59,6 +59,7 @@ xtcp_ipconfig_t uip_static_ipconfig;
 static unsigned buffer_full = 0;   // Boolean whether the RX buffer is full
 
 static int dhcp_done = 0;
+static int ifup = 0;
 
 #if UIP_USE_DHCP
 unsafe void
@@ -167,6 +168,8 @@ uip_linkup(void)
     dhcpc_start();
 #endif
   }
+
+  ifup = 1;
 }
 
 void uip_linkdown(void )
@@ -178,6 +181,8 @@ void uip_linkdown(void )
 #if UIP_USE_AUTOIP
   uip_autoip_stop();
 #endif
+
+  ifup = 0;
 }
 
 static unsafe void
@@ -586,6 +591,10 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       memcpy(&ipconfig.ipaddr, uip_hostaddr, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.netmask, uip_netmask, sizeof(xtcp_ipaddr_t));
       memcpy(&ipconfig.gateway, uip_draddr, sizeof(xtcp_ipaddr_t));
+      break;
+
+    case i_xtcp[unsigned i].is_ifup(void) -> int result:
+      result = ifup;
       break;
 
     case tmr when timerafter(timeout) :> timeout:
