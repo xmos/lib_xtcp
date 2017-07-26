@@ -528,7 +528,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
               struct tcp_pcb * unsafe const t_pcb = (struct tcp_pcb * unsafe const)conn.stack_conn;
               const err_t error = tcp_write(t_pcb, data_tmp, result, TCP_WRITE_FLAG_COPY);
               if (error != ERR_OK) {
-                printf("error = %d\n", error);
+                debug_printf("error = %d\n", error);
               }
             } else {
               struct pbuf *unsafe new_pbuf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
