@@ -529,6 +529,15 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
               const err_t error = tcp_write(t_pcb, data_tmp, result, TCP_WRITE_FLAG_COPY);
               if (error != ERR_OK) {
                 debug_printf("error = %d\n", error);
+                result = XTCP_ECONNRESET;
+                tcp_abort(t_pcb);
+
+                rm_recv_events(conn.id, i);
+                if (index != -1) {
+                  free_client_data_buffer(index);
+                }
+
+                enqueue_event_and_notify(t_pcb->xtcp_conn.client_num, XTCP_ABORTED, &(t_pcb->xtcp_conn));
               }
             } else {
               struct pbuf *unsafe new_pbuf = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
@@ -752,10 +761,9 @@ lwip_tcp_event(void *unsafe arg,
       enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_SENT_DATA, &(pcb->xtcp_conn));
       break;
 
-    case LWIP_EVENT_ERR: {
-      //debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
+    case LWIP_EVENT_ERR:
+      debug_printf("LWIP_EVENT_ERR: %s\n", lwip_strerr(err));
       break;
-    }
   }
 
   if (p != NULL) {
