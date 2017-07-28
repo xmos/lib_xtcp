@@ -755,7 +755,7 @@ lwip_tcp_event(void *unsafe arg,
           }
         }
       } else {
-        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_CLOSED, &(pcb->xtcp_conn), NULL);
+        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_CLOSED, &(pcb->xtcp_conn));
       }
       break;
 
