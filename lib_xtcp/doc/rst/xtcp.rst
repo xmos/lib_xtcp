@@ -218,6 +218,9 @@ by the library on build).
        DHCP is a protocol for dynamically acquiring an IP address from
        a centralised DHCP server.  This option is enabled by default.
 
+The stack being used can be detected with the ``XTCP_STACK_UIP`` and ``XTCP_STACK_LWIP`` defines.
+These are defined in ``xtcp_stack.h``.
+
 .. _lib_xtcp_api:
 
 Functional API
