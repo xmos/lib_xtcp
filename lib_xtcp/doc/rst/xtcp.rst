@@ -57,13 +57,11 @@ functions can be passed a structure with an IP address that is all zeros::
 Events and Connections
 ......................
 
-The TCP/IP stack client interface is a low-level event based
-interface. This is to allow applications to manage buffering and
-connections in the most efficient way possible for the application.
+The TCP/IP stack client interface is a Berkley-like interface.
 
 Each client will receive packet ready *events* from the server to indicate that
 the server has new data for that client. The client then collects the packet
-using the :c:func:`get_packet` call.
+using the :c:func:`recv` call.
 
 The packets sent from the server can be either data or control packets. The type
 of packet is indicated in the connection state :c:member:`event` member. The
@@ -72,14 +70,12 @@ possible packet types are defined in :ref:`lib_xtcp_event_types`.
 A client will typically handle its connection to the XTCP server in the following
 manner::
 
-  xtcp_connection_t conn;
-  char buffer[ETHERNET_MAX_PACKET_SIZE];
-  unsigned data_len;
+  xtcp_connection_t conn = i_xtcp.socket(...);
+  ...
   select {
-    case i.xtcp.packet_ready():
-      i_xtcp.get_packet(conn, buffer, ETHERNET_MAX_PACKET_SIZE, data_len);
+    case i_xtcp.event_ready():
       // Handle event
-      switch (conn.event) {
+      switch (i_xtcp.get_event(conn)) {
         ...
       }
       break;
@@ -117,37 +113,32 @@ TCP and UDP
 
 The XTCP API treats UDP and TCP connections in the same way. The only
 difference is when the protocol is specified on initializing
-connections with the interface :c:func:`connect` or :c:func:`listen`
-functions.
+connections with the interface :c:func:`connect`, :c:func:`socket` or :c:func:`listen`
+functions. Note that the protocol given in :c:func:`socket` must match the protocol
+given in the corresponding call to :c:func:`connect` or :c:func:`listen`.
 
 For example, an HTTP client would listen for TCP connections on port 80::
 
-  i_xtcp.listen(80, XTCP_PROTOCOL_TCP);
+  xtcp_connection_t conn = i_xtcp.socket(XTCP_PROTOCOL_TCP);
+  i_xtcp.listen(conn, 80, XTCP_PROTOCOL_TCP);
 
 A client could create a new UDP connection to port 15333 on a machine at
 192.168.0.2 using::
 
   xtcp_ipaddr_t addr = { 192, 168, 0, 2 };
-  i_xtcp.connect(15333, addr, XTCP_PROTOCOL_UDP);
+  xtcp_connection_t conn = i_xtcp.socket(XTCP_PROTOCOL_UDP);
+  i_xtcp.connect(conn, 15333, addr, XTCP_PROTOCOL_UDP);
 
 Receiving Data
 ..............
 
 When data is received for a client the server will indicate that there is a
-packet ready and the :c:func:`get_packet` call will indicate that the event
-type is :c:member:`XTCP_RECV_DATA` and the packet data will have been returned
-to the :c:func:`get_packet` call.
-
-Data is sent from the XTCP server to client as the UDP or TCP packets arrive
-from the ethernet MAC. There is no buffering in the server so it will wait for the client
-to handle the event before processing new incoming packets.
+packet ready and the :c:func:`get_event` call will indicate that the event
+type is :c:member:`XTCP_RECV_DATA`. This will gaurantee that data is available
+to read with a :c:func:`recv` call on the associated :c:member:`xtcp_connection_t`.
 
 Sending Data
 ............
-
-When sending data, the client is responsible for dividing the data
-into chunks for the server and re-transmitting the previous chunk if a
-transmission error occurs.
 
 .. note:: Note that re-transmission may be needed on
           both TCP and UDP connections. On UDP connections, the
@@ -161,17 +152,16 @@ The client sends a packet by calling the :c:func:`send` interface function.
           `xtcp_send` is contained in the `mss` field of the connection
           structure relating to the event.
 
-After this data is sent to the server, two things can happen: Either
-the server will respond with an :c:member:`XTCP_SENT_DATA` event, in
-which case the next chunk of data can be sent. Or with an
-:c:member:`XTCP_RESEND_DATA` event in which case the client must
-re-transmit the previous chunk of data.
-
   .. figure:: images/events.*
      :width: 50%
 
      Example send sequence
 
+Closed Connection
+.................
+
+In the event that the connection is disconnected by the remote host on a TCP socket,
+a :c:member:`XTCP_CLOSED` event is raised.
 
 Link Status Events
 ..................
@@ -227,6 +217,9 @@ by the library on build).
        code. This will save approximately 2kB.
        DHCP is a protocol for dynamically acquiring an IP address from
        a centralised DHCP server.  This option is enabled by default.
+
+The stack being used can be detected with the ``XTCP_STACK_UIP`` and ``XTCP_STACK_LWIP`` defines.
+These are defined in ``xtcp_stack.h``.
 
 .. _lib_xtcp_api:
 

@@ -25,10 +25,11 @@ typedef struct httpd_state_t {
 httpd_state_t connection_states[NUM_HTTPD_CONNECTIONS];
 
 // Initialize the HTTP state
-void httpd_init(client xtcp_if i_xtcp)
+xtcp_connection_t httpd_init(client xtcp_if i_xtcp)
 {
+  xtcp_connection_t conn = i_xtcp.socket(XTCP_PROTOCOL_TCP);
   // Listen on the http port
-  i_xtcp.listen(80, XTCP_PROTOCOL_TCP);
+  i_xtcp.listen(conn, 80, XTCP_PROTOCOL_TCP);
 
   for (int i = 0; i < NUM_HTTPD_CONNECTIONS; i++ ) {
     connection_states[i].active = 0;
@@ -36,6 +37,8 @@ void httpd_init(client xtcp_if i_xtcp)
       connection_states[i].dptr = NULL;
     }
   }
+
+  return conn;
 }
 
 // Parses a HTTP request for a GET
@@ -163,48 +166,42 @@ void xhttpd(client xtcp_if i_xtcp)
   printstr("**WELCOME TO THE SIMPLE WEBSERVER DEMO**\n");
 
   // Initiate the HTTP state
-  httpd_init(i_xtcp);
+  xtcp_connection_t conn = httpd_init(i_xtcp);
 
   // Loop forever processing TCP events
   while(1) {
-    xtcp_connection_t conn;
+    xtcp_connection_t client_conn;
     char rx_buffer[RX_BUFFER_SIZE];
     unsigned data_len;
 
     select {
-      case i_xtcp.packet_ready(): {
-        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
+      case i_xtcp.event_ready(): {
+        const xtcp_event_type_t event = i_xtcp.get_event(client_conn);
 
-        if (conn.local_port == 80) {
+        if (client_conn.local_port == 80) {
           // HTTP connections
-          switch (conn.event) {
+          switch (event) {
             case XTCP_NEW_CONNECTION:
-              httpd_init_state(i_xtcp, conn);
+              httpd_init_state(i_xtcp, client_conn);
               break;
             case XTCP_RECV_DATA:
-              httpd_recv(i_xtcp, conn, rx_buffer, data_len);
+              data_len = i_xtcp.recv(client_conn, rx_buffer, RX_BUFFER_SIZE);
+              httpd_recv(i_xtcp, client_conn, rx_buffer, data_len);
               break;
             case XTCP_SENT_DATA:
-              httpd_send(i_xtcp, conn);
-              break;
-            case XTCP_RESEND_DATA:
-              unsafe {
-                struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
-                i_xtcp.send(conn, (char*)hs->prev_dptr, (hs->dptr - hs->prev_dptr));
-              }
+              httpd_send(i_xtcp, client_conn);
               break;
             case XTCP_TIMED_OUT:
             case XTCP_ABORTED:
             case XTCP_CLOSED:
-                httpd_free_state(conn);
+                httpd_free_state(client_conn);
                 break;
             default:
-              // Ignore anything else
               break;
           }
         } else {
           // Other connections
-          switch(conn.event) {
+          switch(event) {
             case XTCP_IFUP:
               xtcp_ipconfig_t ipconfig;
               i_xtcp.get_ipconfig(ipconfig);

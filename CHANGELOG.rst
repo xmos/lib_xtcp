@@ -1,6 +1,34 @@
 TCP/IP library change log
 =========================
 
+7.0.0
+-----
+
+  * CHANGE: Added a more POSIX-like socket API.
+  * CHANGE: Can now query interface's physical state.
+  * CHANGE: Added specific tests for each network stack, on each platform.
+  * FIXED: Reduced the TCP timeout to improve network latency.
+  * FIXED: rm_recv_events now correctly removes recv events.
+
+6.1.0
+-----
+
+  * CHANGE: Added a header xtcp_stack.h with defines XTCP_STACK_LWIP or
+    XTCP_STACK_UIP depending on which XTCP stack is being used.
+  * CHANGE: Updated the tests and examples to build against the new XTCP
+    library.
+  * FIXED: Events are now routed to the correct XTCP interface.
+  * FIXED: A possible double-free when closing a connection.
+
+  * Changes to dependencies:
+
+    - lib_random: Added dependency 1.0.0
+
+6.0.1
+-----
+
+  * FIXED: The uIP stack now respects a fixed IP configuration.
+
 6.0.0
 -----
 

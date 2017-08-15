@@ -1,7 +1,8 @@
-// Copyright (c) 2011-2016, XMOS Ltd, All rights reserved
+// Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
 #ifndef __xtcp_h__
 #define __xtcp_h__
 
+#include <limits.h>
 #include <mii.h>
 #include <smi.h>
 #include <ethernet.h>
@@ -154,6 +155,42 @@ typedef enum xtcp_event_type_t {
                               result for a request. **/
 } xtcp_event_type_t;
 
+
+typedef enum xtcp_error_code_t
+{
+  XTCP_EACCES = INT_MIN,
+  XTCP_EADDRINUSE,
+  XTCP_EADDRNOTAVAIL,
+  XTCP_EAFNOSUPPORT,
+  XTCP_EAGAIN,
+  XTCP_EALREADY,
+  XTCP_EBADF,
+  XTCP_ECONNREFUSED,
+  XTCP_ECONNRESET,
+  XTCP_EDESTADDRREQ,
+  XTCP_EFAULT,
+  XTCP_EHOSTUNREACH,
+  XTCP_EINPROGRESS,
+  XTCP_EINTR,
+  XTCP_EINVAL,
+  XTCP_EIO,
+  XTCP_EISCONN,
+  XTCP_EMSGSIZE,
+  XTCP_ENETDOWN,
+  XTCP_ENETUNREACH,
+  XTCP_ENOBUFS,
+  XTCP_ENOENT,
+  XTCP_ENOMEM,
+  XTCP_ENOTCONN,
+  XTCP_ENOTDIR,
+  XTCP_ENOTSOCK,
+  XTCP_EOPNOTSUPP,
+  XTCP_EPIPE,
+  XTCP_EPROTOTYPE,
+  XTCP_ETIMEDOUT,
+  XTCP_PEERCLOSED = 0
+} xtcp_error_code_t;
+
 /** This type represents a TCP or UDP connection.
  *
  *  This is the main type containing connection information for the client
@@ -189,35 +226,31 @@ typedef interface xtcp_if {
    *
    *  If the data buffer is not large enough then an exception will be raised.
    *
-   * \param conn        The connection structure to be passed in that will
-   *                    contain all the connection information.
-   * \param data        An array where XTCP server can write data to. This data
-   *                    array must be large enough to receive the packets being
-   *                    sent to the client. In most cases it should be assumed
-   *                    that packets of ETHERNET_MAX_PACKET_SIZE can be received.
-   * \param n           Size of the data array.
-   * \param length      An integer where the server can indicate
-   *                    the length of the sent packet.
+   * \param conn  The connection structure to be passed in that will
+   *              contain all the connection information.
+   * \returns     The event type produced on the given connection.
    */
-  [[clears_notification]] void get_packet(xtcp_connection_t &conn, char data[n], unsigned n, unsigned &length);
+  [[clears_notification]] xtcp_event_type_t get_event(xtcp_connection_t &conn);
 
   /** \brief Notifies the client that there is data/information
    *         ready for them.
    *
    *  After this notification is raised a call to get_packet() is needed.
    */
-  [[notification]] slave void packet_ready();
+  [[notification]] slave void event_ready();
 
   /** \brief Listen to a particular incoming port.
    *
    *  After this call, when a connection is established an
    *  XTCP_NEW_CONNECTION event is signalled.
    *
+   * \param conn        The xtcp connection object to listen on
    * \param port_number The local port number to listen to
    * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
    *                    or XTCP_PROTOCOL_UDP)
+   * \returns           A xtcp_error_code_t describing the state of the listen
    */
-  void listen(int port_number, xtcp_protocol_t protocol);
+  int listen(xtcp_connection_t &conn, int port_number, xtcp_protocol_t protocol);
 
   /** \brief Stop listening to a particular incoming port.
    *
@@ -236,6 +269,22 @@ typedef interface xtcp_if {
    */
   void close(const xtcp_connection_t &conn);
 
+  /** \brief Recieve data on a connection.
+   *
+   * Copies data from an internal buffer to the given buffer, if data is
+   * available.
+   *
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
+   * \param buffer      The destination buffer where recieved data will be
+   *                    stored.
+   * \param length      The length of the given buffer and the maximum amount
+   *                    of data that will be copied.
+   * \returns           Either the total number of bytes copied to the given
+   *                    buffer or an xtcp_error_code_t.
+   */
+  int recv(xtcp_connection_t &conn, char buffer[], unsigned int length);
+
   /** \brief Abort a connection.
    *
    *  For UDP this is the same as closing the connection. For TCP
@@ -252,12 +301,23 @@ typedef interface xtcp_if {
    *  For UDP this will assign a random local port and bind the remote
    *  end of the connection to the host specified.
    *
+   * \param conn        The connection structure to be passed in that will
+   *                    contain all the connection information.
    * \param port_number The remote port to try to connect to
    * \param ipaddr      The ip addr of the remote host
-   * \param protocol    The protocol to connect with (XTCP_PROTOCOL_TCP
-   *                    or XTCP_PROTOCOL_UDP)
+   * \returns           A xtcp_error_code_t describing the connection attempt's
+   *                    state.
    */
-  void connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol);
+  int connect(xtcp_connection_t &conn, unsigned short port_number, xtcp_ipaddr_t ipaddr);
+
+  /** \brief Create an xtcp connection structure
+   *
+   *  \param protocol   The intended protocol for any communication over the
+   *                    returned connection.
+   *  \returns          A xtcp connection structure that will hold all the
+   *                    connection information.
+   */
+  xtcp_connection_t socket(xtcp_protocol_t protocol);
 
   /** \brief Send data to the connection.
    *
@@ -266,8 +326,10 @@ typedef interface xtcp_if {
    * \param data        An array of data to send
    * \param len         The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
+   * \returns           The number of bytes accepted by xtcp or an
+   *                    xtcp_error_code_t.
    */
-  void send(const xtcp_connection_t &conn, char data[], unsigned len);
+  int send(xtcp_connection_t &conn, char data[], unsigned int length);
 
   /** \brief Subscribe to a particular IP multicast group address.
    *
@@ -330,6 +392,12 @@ typedef interface xtcp_if {
    * \param ipconfig    IPconfig to be filled.
    */
   void get_ipconfig(xtcp_ipconfig_t &ipconfig);
+
+  /** \brief Query if the underlying interface is up.
+   *
+   * \returns           1 if the underlying interface us up, 0 otherwise.
+   */
+  int is_ifup(void);
 } xtcp_if;
 
 typedef struct pbuf * unsafe pbuf_p;

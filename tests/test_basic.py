@@ -3,10 +3,10 @@ import re
 
 # This tester is a mashup of the built in ComparisonTester and
 # the AnalogueInputTester from USB Audio. It checks for errors on
-# the XMOS device and checks the output from a python program 
+# the XMOS device and checks the output from a python program
 # running on a PC
 class xTCPTester(xmostest.Tester):
-    def __init__(self, total_connections, packets, protocol, product, group, 
+    def __init__(self, total_connections, packets, protocol, product, group,
                  test, config = {}, env = {}):
         super(xTCPTester, self).__init__()
         self.register_test(product, group, test, config)
@@ -36,7 +36,7 @@ class xTCPTester(xmostest.Tester):
 
         while(python_output[-1] == ''):
             del python_output[-1]
-        
+
         # Check for any xC device errors
         for line in (xc_output + python_output):
             if re.match('.*ERROR|.*error|.*Error|.*Problem', line):
@@ -76,7 +76,7 @@ class xTCPTester(xmostest.Tester):
                 self.record_failure("Packet error rate too high \n" +
                                     "  Allowable loss rate: 0 packets\n" +
                                     "  Actual loss rate:    {} packets\n".format(total_errors))
-        
+
         output = {'python_output':''.join(python_output),
                   'device_output':''.join(xc_output)}
 
@@ -92,19 +92,20 @@ class xTCPTester(xmostest.Tester):
                                  output=output)
 
 
-def test(packets, delay, device, ip, remote_processes, connections, interface, protocol):
+def test(packets, delay, device, ip, remote_processes, connections, interface, protocol, library):
     setup = '{}_{}_{}_{}_{}'.format(remote_processes, connections, protocol, device, interface)
-    binary = 'xtcp_bombard/bin/{}/xtcp_bombard_{}.xe'.format(setup, setup)
+    binary = 'xtcp_bombard_{}/bin/{}/xtcp_bombard_{}_{}.xe'.format(library.lower(), setup, library.lower(), setup)
 
-    tester = xmostest.CombinedTester(2, xTCPTester(remote_processes*connections, 
+    tester = xmostest.CombinedTester(2, xTCPTester(remote_processes*connections,
                                      packets, protocol,
-                                    'lib_xtcp', device.lower() + '_configuration_tests', setup, {}))
-    
+                                    'lib_xtcp', device.lower() + '_configuration_tests', '{}_{}'.format(setup, library), {}))
+
     resources = xmostest.request_resource('xtcp_resources', tester)
 
-    run_job = xmostest.run_on_xcore(resources[device.lower()], binary, 
+    run_job = xmostest.run_on_xcore(resources[device.lower()], binary,
                                     tester=tester[0],
-                                    enable_xscope=True)
+                                    enable_xscope=True,
+                                    timeout=120)
 
     START_PORT = 15533
 
@@ -112,7 +113,7 @@ def test(packets, delay, device, ip, remote_processes, connections, interface, p
                                     ['python', 'xtcp_ping_pong.py',
                                     '--ip', '{}'.format(ip),
                                     '--start-port', '{}'.format(START_PORT),
-                                    '--remote-processes', '{}'.format(remote_processes), 
+                                    '--remote-processes', '{}'.format(remote_processes),
                                     '--remote-ports', '{}'.format(connections),
                                     '--protocol', '{}'.format(protocol),
                                     '--packets', '{}'.format(packets),
@@ -137,32 +138,47 @@ def runtest():
     else: # weekend
         packets = 100000
 
-    tests = [# device     ip              processes ports mii    protocol
-             ['EXPLORER', '10.0.102.205', 1,        1,    'ETH', 'UDP'],
-             ['EXPLORER', '10.0.102.205', 1,        1,    'ETH', 'TCP'],
-             ['EXPLORER', '10.0.102.205', 2,        2,    'ETH', 'UDP'],
-             ['EXPLORER', '10.0.102.205', 2,        2,    'ETH', 'TCP'],
+    tests = [# device     ip               processes ports mii    protocol
+             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'UDP', 'UIP'],
+             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'TCP', 'UIP'],
+             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'UDP', 'UIP'],
+             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'TCP', 'UIP'],
 
-             ['MICARRAY', '10.0.102.206', 1,        1,    'RAW', 'UDP'],
-             ['MICARRAY', '10.0.102.206', 1,        1,    'RAW', 'TCP'],
-             ['MICARRAY', '10.0.102.206', 2,        2,    'RAW', 'UDP'],
-             ['MICARRAY', '10.0.102.206', 2,        2,    'RAW', 'TCP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'UDP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'TCP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'UDP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'TCP', 'UIP'],
 
-             ['MICARRAY', '10.0.102.206', 1,        1,    'ETH', 'UDP'],
-             ['MICARRAY', '10.0.102.206', 1,        1,    'ETH', 'TCP'],
-             ['MICARRAY', '10.0.102.206', 2,        2,    'ETH', 'UDP'],
-             ['MICARRAY', '10.0.102.206', 2,        2,    'ETH', 'TCP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'UDP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'TCP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'UDP', 'UIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'TCP', 'UIP'],
 
-             ['SLICEKIT', '10.0.102.198', 1,        1,    'RAW', 'UDP'],
-             ['SLICEKIT', '10.0.102.198', 1,        1,    'RAW', 'TCP'],
-             ['SLICEKIT', '10.0.102.198', 2,        2,    'RAW', 'UDP'],
-             ['SLICEKIT', '10.0.102.198', 2,        2,    'RAW', 'TCP'],
+             ['SLICEKIT', '192.168.1.196', 1,        1,    'RAW', 'UDP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 1,        1,    'RAW', 'TCP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 2,        2,    'RAW', 'UDP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 2,        2,    'RAW', 'TCP', 'UIP'],
 
-             ['SLICEKIT', '10.0.102.198', 1,        1,    'ETH', 'UDP'],
-             ['SLICEKIT', '10.0.102.198', 1,        1,    'ETH', 'TCP'],
-             ['SLICEKIT', '10.0.102.198', 2,        2,    'ETH', 'UDP'],
-             ['SLICEKIT', '10.0.102.198', 2,        2,    'ETH', 'TCP'],
+             ['SLICEKIT', '192.168.1.196', 1,        1,    'ETH', 'UDP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 1,        1,    'ETH', 'TCP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 2,        2,    'ETH', 'UDP', 'UIP'],
+             ['SLICEKIT', '192.168.1.196', 2,        2,    'ETH', 'TCP', 'UIP'],
+
+             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'UDP', 'LWIP'],
+             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'TCP', 'LWIP'],
+             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'UDP', 'LWIP'],
+             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'TCP', 'LWIP'],
+
+             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'UDP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'TCP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'UDP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'TCP', 'LWIP'],
+
+             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'UDP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'TCP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'UDP', 'LWIP'],
+             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'TCP', 'LWIP'],
             ]
 
     for conf in tests:
-        test(packets, 0.001, *conf)
+        test(packets, 0.002, *conf)
