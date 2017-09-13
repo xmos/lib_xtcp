@@ -31,11 +31,12 @@ def use_module(bld):
     include_dirs = xtcp_source_dirs + ['api']
     optional_headers = ['xtcp_client_conf.h', 'xtcp_conf.h']
 
-    bld.env.XCC_C_FLAGS += [
+    bld.env.MODULE_XCC_FLAGS = bld.env.XCC_FLAGS
+    bld.env.MODULE_XCC_C_FLAGS = bld.env.XCC_C_FLAGS + [
         '-Wno-ignored-attributes', '-Wno-typedef-redefinition',
         '-DUNSAFE_LIBC', '-Os'
     ]
-    bld.env.XCC_XC_FLAGS += ['-DUNSAFE_LIBC', '-Os']
+    bld.env.MODULE_XCC_XC_FLAGS = bld.env.XCC_XC_FLAGS + ['-DUNSAFE_LIBC', '-Os']
 
     bld.env[
         'XCC_FLAGS_xcoredev.xc'] = bld.env.XCC_XC_FLAGS + ['-fsubword-select']
