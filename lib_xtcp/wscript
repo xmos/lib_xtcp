@@ -53,7 +53,7 @@ def use_module(bld):
         '-Wno-parentheses-equality'
     ]
 
-    if bld.env['LWIP_XTCP'] == 1:
+    if bld.env['LWIP_XTCP'] == 1 or bld.env['LWIP_XTCP'] == '1':
         exclude_files += [
             'uip_xtcp.c', 'xcoredev.xc', 'uip_server_support.c', 'xtcp.xc',
             'dhcpc.c', 'autoip/autoip.c', 'uip-split.c', 'uip_arp.c', 'uip.c',
@@ -82,4 +82,5 @@ def use_module(bld):
         source=source,
         includes=include_dirs,
         depends_on=depends_on,
+        optional_headers=optional_headers,
         version='5.1.0')
