@@ -62,7 +62,7 @@ def use_module(bld):
         source_dirs += lwip_source_dirs + mbedtls_source_dirs
         include_dirs += lwip_include_dirs + mbedtls_include_dirs
     else:
-        exclude_files += 'xtcp_lwip.xc'
+        exclude_files += ['xtcp_lwip.xc']
 
     source_dirs = [bld.path.find_node(d) for d in source_dirs]
     source = []
