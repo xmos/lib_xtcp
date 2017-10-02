@@ -83,4 +83,4 @@ def use_module(bld):
         includes=include_dirs,
         depends_on=depends_on,
         optional_headers=optional_headers,
-        version='5.1.0')
+        version='7.0.0')
