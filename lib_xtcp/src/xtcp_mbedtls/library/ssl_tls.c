@@ -38,7 +38,6 @@
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_internal.h"
-#include "xtcp_blocking_client.h"
 
 #include <string.h>
 
