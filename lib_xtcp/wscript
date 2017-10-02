@@ -57,7 +57,7 @@ def use_module(bld):
         exclude_files += [
             'uip_xtcp.c', 'xcoredev.xc', 'uip_server_support.c', 'xtcp.xc',
             'dhcpc.c', 'autoip/autoip.c', 'uip-split.c', 'uip_arp.c', 'uip.c',
-            'psock.c'
+            'psock.c', 'xtcp_uip.xc'
         ]
         source_dirs += lwip_source_dirs + mbedtls_source_dirs
         include_dirs += lwip_include_dirs + mbedtls_include_dirs
