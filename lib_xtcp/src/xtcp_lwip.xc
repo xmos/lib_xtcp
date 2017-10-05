@@ -815,7 +815,9 @@ unsafe void udp_recv_event(void * unsafe arg,
         if(add_udp_connection(pcb, (unsigned char * unsafe) addr, _port)) {
           enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn));
 
-          const int index = find_client_data_buffer(pcb->xtcp_conn.client_num, pcb->xtcp_conn.id);
+          const int index = get_free_client_data_buffer();
+          client_data_buffers[index].client_num = pcb->xtcp_conn.client_num;
+          client_data_buffers[index].id = pcb->xtcp_conn.id;
           client_data_buffers[index].recv = NULL;
           client_data_buffers[index].state = XTCP_CONNECTED;
         }
