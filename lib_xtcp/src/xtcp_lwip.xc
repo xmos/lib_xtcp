@@ -158,7 +158,7 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
   return 0;
 }
 
-int find_client_data_buffer(int client_num, int id)
+static int find_client_data_buffer(int client_num, int id)
 {
   for (int i = 0; i < MAXIMUM_NUMBER_OF_CLIENTS; ++i) {
     if (client_data_buffers[i].client_num == client_num &&
@@ -170,12 +170,12 @@ int find_client_data_buffer(int client_num, int id)
   return -1;
 }
 
-int get_free_client_data_buffer(void)
+static int get_free_client_data_buffer(void)
 {
   return find_client_data_buffer(-1, -1);
 }
 
-void free_client_data_buffer(int index)
+static void free_client_data_buffer(int index)
 {
   if (index != -1) {
     client_data_buffers[index].id = -1;
