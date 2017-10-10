@@ -303,6 +303,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
 
         if (desc.type == ETH_DATA) {
           process_rx_packet(buffer, desc.len, netif);
+          if (!get_if_state()) netif_set_link_up(netif);
         }
         else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
           if (((unsigned char *)buffer)[0] == ETHERNET_LINK_UP) {
