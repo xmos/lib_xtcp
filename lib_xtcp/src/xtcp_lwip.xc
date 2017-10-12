@@ -795,7 +795,6 @@ unsafe void udp_recv_event(void * unsafe arg,
                            u16_t _port) /* The underscore prefix is added by xtcp_lwip_includes */
 {
   switch (_port) {
-    case DHCP_CLIENT_PORT:
     case DHCP_SERVER_PORT:
       dhcp_recv(arg, pcb, p, addr, _port);
       break;
