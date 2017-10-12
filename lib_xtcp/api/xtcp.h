@@ -529,7 +529,18 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
               const char (&?mac_address0)[6],
               otp_ports_t &?otp_ports,
               xtcp_ipconfig_t &ipconfig);
+#else
+#define unsafe
 #endif /* __XC__ */
+
+unsafe int xtcp_wait_for_ifup(CLIENT_INTERFACE(xtcp_if, i_xtcp));
+unsafe xtcp_connection_t xtcp_socket(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_protocol_t protocol);
+unsafe int xtcp_get_host_by_name(CLIENT_INTERFACE(xtcp_if, i_xtcp), const char name[], xtcp_ipaddr_t addr);
+unsafe int xtcp_read(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_connection_t * unsafe conn, char buffer[], const unsigned n);
+unsafe int xtcp_write(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_connection_t * unsafe conn, char buffer[], const unsigned n);
+unsafe int xtcp_close(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_connection_t * unsafe conn);
+unsafe int xtcp_connect(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_connection_t * unsafe conn, unsigned short port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol);
+unsafe int xtcp_wait_for_connection(CLIENT_INTERFACE(xtcp_if, i_xtcp), xtcp_connection_t * unsafe server_conn);
 
 /** Copy an IP address data structure.
  */
