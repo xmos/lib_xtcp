@@ -1884,7 +1884,7 @@ static int x509_crt_verify_top(
                      void *p_vrfy )
 #endif
 {
-    int ret;
+    // int ret;
     uint32_t ca_flags = 0;
     int check_path_cnt;
     unsigned char hash[MBEDTLS_MD_MAX_SIZE];
