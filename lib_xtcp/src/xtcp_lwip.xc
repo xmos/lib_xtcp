@@ -12,7 +12,6 @@
 #include "xtcp_shared.h"
 
 #define MAXIMUM_NUMBER_OF_CLIENTS 32
-#define MAX(x, y) (((x) >= (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 // These pointers are used to store connections for sending in
