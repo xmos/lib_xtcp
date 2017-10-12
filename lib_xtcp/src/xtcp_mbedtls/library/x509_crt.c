@@ -2107,7 +2107,7 @@ static int x509_crt_verify_child(
         /* Is our parent part of the chain or at the top? */
         if( grandparent != NULL )
         {
-            #warning TODO: remove recursion
+            // #warning TODO: remove recursion
 #if 0
             ret = x509_crt_verify_child( parent, grandparent, trust_ca, ca_crl,
                                          profile, path_cnt + 1, &parent_flags,
