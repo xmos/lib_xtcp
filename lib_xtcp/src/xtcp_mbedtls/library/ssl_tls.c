@@ -2253,10 +2253,10 @@ int mbedtls_ssl_fetch_input( mbedtls_ssl_context *ssl, size_t nb_want )
 
         if (ssl->in_msgtype == MBEDTLS_SSL_MSG_HANDSHAKE) {
             debug_printf("Handshake message...\n");
-            ret = xtcp_read(ssl->xtcp_chan, ssl->xtcp_conn, ssl->in_hdr + ssl->in_left, len);
+            ret = xtcp_read(ssl->xtcp_chan, ssl->xtcp_conn, (char*)ssl->in_hdr + ssl->in_left, len);
         }
         else {
-            ret = xtcp_read(ssl->xtcp_chan, ssl->xtcp_conn, ssl->in_hdr + ssl->in_left, len);
+            ret = xtcp_read(ssl->xtcp_chan, ssl->xtcp_conn, (char*)ssl->in_hdr + ssl->in_left, len);
         }
 
         MBEDTLS_SSL_DEBUG_RET( 2, "ssl->f_recv(_timeout)", ret );
@@ -2323,7 +2323,7 @@ int mbedtls_ssl_flush_output( mbedtls_ssl_context *ssl )
 
         buf = ssl->out_hdr + mbedtls_ssl_hdr_len( ssl ) +
               ssl->out_msglen - ssl->out_left;
-        ret = xtcp_write(ssl->xtcp_chan, ssl->xtcp_conn, buf, ssl->out_left);
+        ret = xtcp_write(ssl->xtcp_chan, ssl->xtcp_conn, (char*)buf, ssl->out_left);
 
         MBEDTLS_SSL_DEBUG_RET( 2, "ssl->f_send", ret );
 
