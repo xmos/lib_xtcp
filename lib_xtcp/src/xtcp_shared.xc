@@ -186,3 +186,58 @@ void xtcp_if_down(void)
     }
   }
 }
+
+extends client interface xtcp_if : {
+  void await_ifup(client xtcp_if self)
+  {
+    while(!self.is_ifup()) {
+      xtcp_connection_t tmp;
+      select {
+        case self.event_ready():
+          switch(self.get_event(tmp)) {
+            case XTCP_IFUP:
+              return;
+          }
+          break;
+      }
+    }
+  }
+
+  xtcp_connection_t await_connect(client xtcp_if self, xtcp_ipaddr_t & ip_address, uint16_t ip_port)
+  {
+    xtcp_connection_t result = self.socket(XTCP_PROTOCOL_TCP);
+    self.connect(result, ip_port, ip_address);
+
+    while (1) {
+      select {
+        case self.event_ready():
+          switch(self.get_event(result)) {
+            case XTCP_NEW_CONNECTION:
+              return result;
+          }
+          break;
+      }
+    }
+  }
+
+  int await_recv(client xtcp_if self, xtcp_connection_t &conn, char buffer[], unsigned int length)
+  {
+    const int result = self.recv(conn, buffer, length);
+
+    if (result) {
+      return result;
+    } else {
+      while (1) {
+        xtcp_connection_t tmp;
+        select {
+          case self.event_ready():
+            switch(self.get_event(tmp)) {
+              case XTCP_RECV_DATA:
+                return self.recv(conn, buffer, length);
+            }
+            break;
+        }
+      }
+    }
+  }
+};
