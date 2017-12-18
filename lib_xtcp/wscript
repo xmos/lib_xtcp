@@ -16,7 +16,7 @@ def use_module(bld):
             'src/xtcp_lwip/core/ipv4', 'src/xtcp_lwip/netif',
             'src/xtcp_lwip/xcore/src'
         ]
-        mbedtls_source_dirs = ['src/xtcp_mbedtls/library']
+        mbedtls_source_dirs = []
         xtcp_source_dirs = [
             'src', 'src/xtcp_uip', 'src/xtcp_uip/autoip', 'src/xtcp_uip/dhcpc',
             'src/xtcp_uip/igmp'
@@ -27,7 +27,7 @@ def use_module(bld):
     lwip_include_dirs = [
         'src/xtcp_lwip/include', 'src/xtcp_lwip/xcore/include'
     ]
-    mbedtls_include_dirs = ['src/xtcp_mbedtls/include']
+    mbedtls_include_dirs = []
     include_dirs = xtcp_source_dirs + ['api']
     optional_headers = ['xtcp_client_conf.h', 'xtcp_conf.h']
 
