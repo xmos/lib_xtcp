@@ -222,22 +222,27 @@ extends client interface xtcp_if : {
 
   int await_recv(client xtcp_if self, xtcp_connection_t &conn, char buffer[], unsigned int length)
   {
-    const int result = self.recv(conn, buffer, length);
+    int result = self.recv(conn, buffer, length);
 
-    if (result) {
+    if (result > 0) {
       return result;
     } else {
-      while (1) {
+      while (result <= 0) {
         xtcp_connection_t tmp;
         select {
           case self.event_ready():
             switch(self.get_event(tmp)) {
               case XTCP_RECV_DATA:
-                return self.recv(conn, buffer, length);
+                result = self.recv(conn, buffer, length);
             }
             break;
         }
       }
     }
+  }
+
+  int await_send(client xtcp_if self, xtcp_connection_t &conn, char buffer[], unsigned int length)
+  {
+    return self.send(conn, buffer, length);
   }
 };
