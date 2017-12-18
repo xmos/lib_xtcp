@@ -121,12 +121,14 @@ void enqueue_event_and_notify(unsigned client_num,
                               xtcp_event_type_t xtcp_event,
                               xtcp_connection_t * unsafe xtcp_conn)
 {
-  unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
-  client_queue[client_num][position].xtcp_event = xtcp_event;
-  client_queue[client_num][position].xtcp_conn = xtcp_conn;
+  if (client_num_events[client_num] < CLIENT_QUEUE_SIZE) {
+    unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
+    client_queue[client_num][position].xtcp_event = xtcp_event;
+    client_queue[client_num][position].xtcp_conn = xtcp_conn;
 
-  client_num_events[client_num]++;
-  xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
+    client_num_events[client_num]++;
+    xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
+  }
 
   /* Notify */
   unsafe {
