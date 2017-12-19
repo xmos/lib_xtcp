@@ -385,7 +385,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       }
       break;
 
-    // case i_xtcp[unsigned i].listen(int port_number, xtcp_protocol_t protocol):
     case i_xtcp[unsigned i].listen(xtcp_connection_t &conn, int port_number, xtcp_protocol_t protocol) -> int result:
       if (protocol == XTCP_PROTOCOL_TCP) {
         uip_listen(HTONS(port_number));
@@ -406,7 +405,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       break;
 
     // Client calls get_packet after the server has notified
-    // case i_xtcp[unsigned i].get_packet(xtcp_connection_t &conn, char data[n], unsigned int n, unsigned &length):
     case i_xtcp[unsigned i].get_event(xtcp_connection_t &conn) -> xtcp_event_type_t event:
       client_queue_t head = dequeue_event(i);
       event = head.xtcp_event;
@@ -475,7 +473,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       result = create_xtcp_empty_state(i, protocol);
       break;
 
-    // case i_xtcp[unsigned i].connect(unsigned port_number, xtcp_ipaddr_t ipaddr, xtcp_protocol_t protocol):
     case i_xtcp[unsigned i].connect(xtcp_connection_t &conn, unsigned short port_number, xtcp_ipaddr_t ipaddr) -> int result:
       uip_ipaddr_t uipaddr;
       uip_ipaddr(uipaddr, ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3]);
@@ -498,7 +495,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       result = XTCP_EINPROGRESS;
       break;
 
-    // case i_xtcp[unsigned i].send(const xtcp_connection_t &conn, char data[], unsigned len):
     case i_xtcp[unsigned i].send(xtcp_connection_t &conn, char data[], unsigned len) -> int result:
       if (len > 0) {
         set_uip_state(conn);
@@ -519,7 +515,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
         } else {
           uip_process(UIP_UDP_SEND_CONN);
           uip_arp_out(uip_udp_conn);
-          //enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, &(uip_udp_conn->xtcp_conn));
         }
         xtcp_tx_buffer();
         result = len;
@@ -584,7 +579,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       break;
 
     case i_xtcp[unsigned i].request_host_by_name(const char hostname[], unsigned name_len):
-      // NOT SUPPORTED BY uIP
+      xassert(0 && "NOT SUPPORTED BY uIP");
       break;
 
     case i_xtcp[unsigned i].get_ipconfig(xtcp_ipconfig_t &ipconfig):
@@ -718,7 +713,6 @@ xtcpd_appcall(void)
   }
 
   if (uip_acked()) {
-    // enqueue_event_and_notify(xtcp_conn->client_num, XTCP_SENT_DATA, xtcp_conn);
   }
 
   if (uip_rexmit()) {
