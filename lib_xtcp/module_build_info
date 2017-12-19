@@ -9,11 +9,9 @@ MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2 -g -Os
 # Note: only includes IPv4 of lwIP
 LWIP_SOURCE_DIRS = src src/xtcp_lwip/api src/xtcp_lwip/core src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
 UIP_SOURCE_DIRS  = src src/xtcp_uip src/xtcp_uip/autoip src/xtcp_uip/dhcpc src/xtcp_uip/igmp
-MBEDTLS_SOURCE_DIRS = src/xtcp_mbedtls/library
 
 # Include directories
 LWIP_INCLUDE_DIRS = src src/xtcp_lwip/include src/xtcp_lwip/xcore/include
-MBEDTLS_INCLUDE_DIRS = src/xtcp_mbedtls/include
 
 # Exclude files
 UIP_EXCLUDE_FILES  += uip-fw.c uip-neighbor.c xtcp_lwip.xc xtcp_lwip_includes.h
@@ -38,15 +36,15 @@ endif
 endif
 
 ifeq ($(XTCP_STACK), UIP)
-SOURCE_DIRS   += $(UIP_SOURCE_DIRS) $(MBEDTLS_SOURCE_DIRS)
-INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api $(MBEDTLS_INCLUDE_DIRS)
+SOURCE_DIRS   += $(UIP_SOURCE_DIRS)
+INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api
 EXCLUDE_FILES += $(UIP_EXCLUDE_FILES)
 # Defined in program
 MODULE_XCC_FLAGS += -DXTCP_STACK=UIP
 
 else ifeq ($(XTCP_STACK), LWIP)
-SOURCE_DIRS   += $(LWIP_SOURCE_DIRS) $(MBEDTLS_SOURCE_DIRS)
-INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api $(MBEDTLS_INCLUDE_DIRS)
+SOURCE_DIRS   += $(LWIP_SOURCE_DIRS)
+INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api
 EXCLUDE_FILES += $(LWIP_EXCLUDE_FILES)
 # Defined in program
 MODULE_XCC_FLAGS += -DXTCP_STACK=LWIP
