@@ -408,7 +408,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
                client ethernet_tx_if ?i_eth_tx,
                client smi_if ?i_smi,
                uint8_t phy_address,
-               const char (&?mac_address0)[6],
+               const char (&?mac_address)[6],
                otp_ports_t &?otp_ports,
                xtcp_ipconfig_t &ipconfig);
 
@@ -458,7 +458,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
               client ethernet_tx_if ?i_eth_tx,
               client smi_if ?i_smi,
               uint8_t phy_address,
-              const char (&?mac_address0)[6],
+              const char (&?mac_address)[6],
               otp_ports_t &?otp_ports,
               xtcp_ipconfig_t &ipconfig);
 #endif /* __XC__ */
