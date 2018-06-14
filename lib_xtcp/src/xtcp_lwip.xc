@@ -143,7 +143,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           client ethernet_tx_if ?i_eth_tx,
           client smi_if ?i_smi,
           uint8_t phy_address,
-          const char (&?mac_address0)[6],
+          const char (&?_mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig)
 {
@@ -158,8 +158,8 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   struct netif my_netif;
   struct netif *unsafe netif;
 
-  if (!isnull(mac_address0)) {
-    memcpy(mac_address, mac_address0, 6);
+  if (!isnull(_mac_address)) {
+    memcpy(mac_address, _mac_address, 6);
   } else if (!isnull(otp_ports)) {
     otp_board_info_get_mac(otp_ports, 0, mac_address);
   } else if (!isnull(i_eth_cfg)) {
