@@ -19,7 +19,7 @@ def print_errors(failure_list):
         print '    \ttype\tid\ttime\tlocal\tremote\tsent_l\t?ret_l\t?err\t?mess\t?recv'
         print ''.join(failure_list)
 
-    print 'Lost_packets: {} of {}'.format(len(failure_list), 
+    print 'Lost_packets: {} of {}'.format(len(failure_list),
                                           args.packets * args.remote_processes * args.remote_ports)
 
 def format_message(message, width):
@@ -57,7 +57,7 @@ def process_test(process_port):
     if sock is None:
         return failures
 
-    # Once connected, send packets continuously and 
+    # Once connected, send packets continuously and
     # match against rebounded packet
     while tests_to_perform:
         time.sleep(args.delay_between_packets)
@@ -69,7 +69,7 @@ def process_test(process_port):
 
         try:
             sock.send(message)
-            returned_message = sock.recv(1460)
+            returned_message = sock.recv(length_of_message)
             # if returned_message != message:
             if returned_message != message[::-1]: # Reverse string
                 failures.append('FAIL\tmiss' +
@@ -80,7 +80,7 @@ def process_test(process_port):
                                 '\t{}'.format(length_of_message) + # Packet length
                                 '\t{}'.format(len(returned_message)) +
                                 '\t' +
-                                '\t{}'.format(message) + 
+                                '\t{}'.format(message) +
                                 '\t{}\n'.format(returned_message)
                                 )
 
@@ -110,7 +110,78 @@ def process_test(process_port):
                 break
 
         tests_to_perform -= 1
-    
+
+    if sock is not None:
+        sock.shutdown(socket.SHUT_RDWR)
+        sock.close()
+
+    return failures
+
+
+def process_test_tcp(process_port):
+    # Each thread now has a different seed
+    random.seed(args.seed_base + process_port)
+    tests_to_perform = args.packets
+    failures = []
+
+    (failures, sock) = attempt_connect(failures, process_port)
+    if sock is None:
+        return failures
+
+    # Once connected, send packets continuously and
+    # match against rebounded packet
+    while tests_to_perform:
+        time.sleep(args.delay_between_packets)
+        # length_of_message = random.randint(1, packet_size_limit)
+        length_of_message = 100
+        # Don't allow an 'a' char to be sent, as this kills the remote device
+        message = ''.join( [random.choice(string.lowercase[1:]) for c in xrange(length_of_message)] )
+        # message = 'bbccdd'
+
+        try:
+            sock.send(message)
+            returned_message = sock.recv(length_of_message)
+            # if returned_message != message:
+            if returned_message != message[::-1]: # Reverse string
+                failures.append('FAIL\tmiss' +
+                                '\t{}'.format(process_port - 15533) +
+                                '\t_{0:.2f}'.format(time.time() - args.start_time) + # Time
+                                '\t{}'.format(sock.getsockname()[1]) + # Local port
+                                '\t{}'.format(process_port) + # Remote port
+                                '\t{}'.format(length_of_message) + # Packet length
+                                '\t{}'.format(len(returned_message)) +
+                                '\t' +
+                                '\t{}'.format(message) +
+                                '\t{}\n'.format(returned_message)
+                                )
+
+        except socket.timeout as err:
+            failures.append('FAIL\ttime' +
+                            '\t{}'.format(process_port - 15533) +
+                            '\t_{0:.2f}'.format(time.time() - args.start_time) + # Time
+                            '\t{}'.format(sock.getsockname()[1]) + # Local port
+                            '\t{}'.format(process_port) + # Remote port
+                            '\t{}\n'.format(length_of_message) # Packet length
+                            )
+
+        except socket.error as err:
+            failures.append('FAIL\terr ' +
+                            '\t{}'.format(process_port - 15533) +
+                            '\t{0:.2f}'.format(time.time() - args.start_time) + # Time
+                            '\t{}'.format(sock.getsockname()[1]) + # Local port
+                            '\t{}'.format(process_port) + # Remote port
+                            '\t{}'.format(length_of_message) + # Packet length
+                            '\t' +
+                            '\t{}\n'.format(err)
+                            )
+
+            # Reconnect
+            (failures, sock) = attempt_connect(failures, process_port, sock)
+            if sock is None:
+                break
+
+        tests_to_perform -= 1
+
     if sock is not None:
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
@@ -131,7 +202,7 @@ def kill_remote_device():
         print 'ERROR: Could not kill remote device'
 
 def reflect_test():
-    # Each process handles one remote port 
+    # Each process handles one remote port
     pool = Pool(args.remote_processes * args.remote_ports)
 
     # Each process on the xC device has a pool of ports it can
@@ -145,9 +216,24 @@ def reflect_test():
     pool.join()
     pool.terminate()
 
+def tcp_test():
+    # Each process handles one remote port
+    pool = Pool(args.remote_processes * args.remote_ports)
+
+    # Each process on the xC device has a pool of ports it can
+    # read from, with each pool spaced 10 apart
+    port_pool = [ j + (10*i) for i in range(0, args.remote_processes) for j in range(args.start_port, args.start_port + args.remote_ports)]
+    # port_pool = [15533, 15533, 15533, 15533]
+    pool.map_async(process_test_tcp, port_pool, 1, callback=print_errors).get(9999999)
+    # .get(9999999) is added to avoid this bug: https://bugs.python.org/issue8296
+
+    pool.close()
+    pool.join()
+    pool.terminate()
+
 def connect_test():
     tests_to_perform = args.packets
-    
+
     try:
         sock = socket.socket(socket.AF_INET, args.protocol)
         sock.bind(('', 15533))
@@ -163,7 +249,7 @@ def connect_test():
             tests_to_perform -= 1
 
         sock.close()
-    
+
     except socket.error as err:
         print 'ERROR: Could not connect to device'
 
@@ -185,7 +271,7 @@ def multicast_test():
 def udp_bind_test():
     print "UDP BIND"
     tests_to_perform = args.packets
-    
+
     try:
         # Test only performed for UDP
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -204,7 +290,7 @@ def udp_bind_test():
             tests_to_perform -= 1
 
         sock.close()
-    
+
     except socket.error as err:
         print err
         print 'ERROR: Could not connect to device'
@@ -239,7 +325,7 @@ def webserver_test():
     try:
         response = urllib2.urlopen('http://' + args.ip + ':' + str(args.start_port), timeout=10)
         html = response.read()
-        
+
         print ''.join(html.split('\n'))
 
     except urllib2.URLError, e:
@@ -263,7 +349,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='TCP/UDP tester')
     # Non-default arguments
-    parser.add_argument('--ip', type=str, 
+    parser.add_argument('--ip', type=str,
       help="IP address")
     parser.add_argument('--start-port', type=int,
       help="TCP/IP port")
@@ -287,11 +373,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     check_and_set_args()
-    # reflect_test()
-    # connect_test()
+    #connect_test()
     # udp_bind_test()
     # multicast_test()
     if args.test == 'webserver':
         webserver_test()
-        
-    # kill_remote_device()
+    else:
+        if protocol=="UDP":
+            reflect_test()
+        else:
+            tcp_test();
+    
+    kill_remote_device()

@@ -3,10 +3,10 @@ import re
 
 # This tester is a mashup of the built in ComparisonTester and
 # the AnalogueInputTester from USB Audio. It checks for errors on
-# the XMOS device and checks the output from a python program 
+# the XMOS device and checks the output from a python program
 # running on a PC
 class webTester(xmostest.Tester):
-    def __init__(self, expected_response, ip, product, group, 
+    def __init__(self, expected_response, ip, product, group,
                  test, config = {}, env = {}):
         super(webTester, self).__init__()
         self.register_test(product, group, test, config)
@@ -34,7 +34,7 @@ class webTester(xmostest.Tester):
 
         while(python_output[-1] == ''):
             del python_output[-1]
-        
+
         # Check for any xC device errors
         for line in (xc_output + python_output):
             if re.match('.*ERROR|.*error|.*Error|.*Problem', line):
@@ -50,9 +50,9 @@ class webTester(xmostest.Tester):
                 found_ip = line.strip('IP Address: ').strip('\n')
                 if(found_ip != ip):
                     self.record_failure('Differing IP address used by device than expected\n' +
-                                        '  Expected: {}\n'.format(ip) + 
+                                        '  Expected: {}\n'.format(ip) +
                                         '  Found:    {}'.format(found_ip))
-        
+
         output = {'python_output':''.join(python_output),
                   'device_output':''.join(xc_output)}
 
@@ -68,11 +68,11 @@ class webTester(xmostest.Tester):
                                  output=output)
 
 def test(device, ip, expected_response):
-    binary = '../examples/app_simple_webserver/bin/UIP/app_simple_webserver_UIP.xe'
+    binary = '../examples/app_simple_webserver/bin/app_simple_webserver.xe'
 
     tester = xmostest.CombinedTester(2, webTester(expected_response, ip,
                                     'lib_xtcp', device + '_configuration_tests', 'webserver', {}))
-    
+
     resources = xmostest.request_resource('xtcp_resources', tester)
 
     if not resources[device]:
@@ -108,6 +108,6 @@ def runtest():
         print 'Remote resourcer not avaliable'
         return
 
-    test('slicekit', '192.168.2.5', '<!DOCTYPE html>' +
+    test('explorer', '192.168.1.199', '<!DOCTYPE html>' +
                                     '<html><head><title>Hello world</title></head>' +
                                     '<body>Hello World!</body></html>\n')

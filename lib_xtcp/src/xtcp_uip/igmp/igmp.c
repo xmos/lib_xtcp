@@ -1,8 +1,8 @@
 // Copyright (c) 2011-2016, XMOS Ltd, All rights reserved
 
-#include "uip.h"
-#include "uip_arp.h"
-#include "uip_timer.h"
+#include "../uip.h"
+#include "../uip_arp.h"
+#include "../uip_timer.h"
 #include <string.h>
 #include <print.h>
 
