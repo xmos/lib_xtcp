@@ -105,7 +105,7 @@ def test(packets, delay, device, ip, remote_processes, connections, interface, p
     run_job = xmostest.run_on_xcore(resources[device.lower()], binary,
                                     tester=tester[0],
                                     enable_xscope=True,
-                                    timeout=30)
+                                    timeout=120)
 
     START_PORT = 15533
 

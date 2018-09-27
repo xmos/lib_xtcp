@@ -17,19 +17,20 @@ typedef struct client_queue_t {
 unsigned get_if_state(void);
 void renotify(unsigned client_num);
 void xtcp_init_queue(static const unsigned n_xtcp, server xtcp_if i_xtcp_init[n_xtcp]);
+xtcp_connection_t create_xtcp_empty_state(int xtcp_num, xtcp_protocol_t protocol);
 xtcp_connection_t create_xtcp_state(int xtcp_num, xtcp_protocol_t protocol,
                                            unsigned char * unsafe remote_addr,
                                            int local_port, int remote_port,
                                            void * unsafe uip_lwip_conn);
+xtcp_connection_t fill_xtcp_state(xtcp_connection_t conn,
+                                  unsigned char * unsafe remote_addr,
+                                  int local_port, int remote_port,
+                                  void * unsafe uip_lwip_conn);
 
 client_queue_t dequeue_event(unsigned client_num);
 void enqueue_event_and_notify(unsigned client_num,
-                                     xtcp_event_type_t xtcp_event,
-                                     xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                                     ,struct pbuf *unsafe pbuf
-#endif
-                                     );
+                              xtcp_event_type_t xtcp_event,
+                              xtcp_connection_t * unsafe xtcp_conn);
 
 void rm_recv_events(unsigned conn_id, unsigned client_num);
 

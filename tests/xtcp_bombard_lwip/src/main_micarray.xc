@@ -72,8 +72,11 @@ int main(void) {
     }
 
     // The simple udp reflector thread
-    par (int i=0; i<REFLECT_PROCESSES; i++) {
-      on tile[0]: udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
+    on tile[0]: {
+      par (int i=0; i<REFLECT_PROCESSES; i++) {
+        udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
+      }
+      exit(0);
     }
   }
 

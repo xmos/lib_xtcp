@@ -1,6 +1,15 @@
 TCP/IP library change log
 =========================
 
+7.0.0
+-----
+
+  * CHANGE: Added a more POSIX-like socket API.
+  * CHANGE: Can now query interface's physical state.
+  * CHANGE: Added specific tests for each network stack, on each platform.
+  * FIXED: Reduced the TCP timeout to improve network latency.
+  * FIXED: rm_recv_events now correctly removes recv events.
+
 6.1.0
 -----
 

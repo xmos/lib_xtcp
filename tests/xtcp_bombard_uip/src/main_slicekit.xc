@@ -66,11 +66,14 @@ int main(void) {
                           i_smi, ETHERNET_SMI_PHY_ADDRESS,
                           null, otp_ports, ipconfig);
 #endif
-    // The simple udp reflector thread
-    par (int i=0; i<REFLECT_PROCESSES; i++) {
-      on tile[0]: udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
-    }
 
+    // The simple udp reflector thread
+    on tile[0]: {
+      par (int i=0; i<REFLECT_PROCESSES; i++) {
+        udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
+      }
+      exit(0);
+    }
   }
   return 0;
 }

@@ -581,7 +581,6 @@ udp_sendto_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip,
     ip_addr_debug_print(UDP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, dst_ip);
     LWIP_DEBUGF(UDP_DEBUG, ("\n"));
     UDP_STATS_INC(udp.rterr);
-    debug_printf("No outgoing network interface found?\n");
     return ERR_RTE;
   }
 #if LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UDP
@@ -637,14 +636,12 @@ udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_i
       src_ip = ip6_2_ip(ip6_select_source_address(netif, ip_2_ip6(dst_ip)), &src_ip_tmp);
       if (src_ip == NULL) {
         /* No suitable source address was found. */
-        debug_printf("No suitable source address was found\n");
         return ERR_RTE;
       }
     } else {
       /* use UDP PCB local IPv6 address as source address, if still valid. */
       if (netif_get_ip6_addr_match(netif, ip_2_ip6(&pcb->local_ip)) < 0) {
         /* Address isn't valid anymore. */
-        debug_printf("Address isn't valid anymore\n");
         return ERR_RTE;
       }
       src_ip = &pcb->local_ip;
@@ -1002,7 +999,6 @@ udp_connect(struct udp_pcb *pcb, const ip_addr_t *ipaddr, u16_t port)
       if ((netif = ip_route(PCB_ISIPV6(pcb), (const ip_addr_t*)NULL, &pcb->remote_ip)) == NULL) {
         LWIP_DEBUGF(UDP_DEBUG, ("udp_connect: No route to %s\n", ipaddr_ntoa(&pcb->remote_ip)));
         UDP_STATS_INC(udp.rterr);
-        debug_printf("udp_connect: No route to %s\n", ipaddr_ntoa(&pcb->remote_ip));
         return ERR_RTE;
       }
       /** TODO: this will bind the udp pcb locally, to the interface which
@@ -1091,7 +1087,6 @@ struct udp_pcb *xtcp_lookup_udp_pcb_state(int conn_id) {
 struct udp_pcb *xtcp_lookup_udp_pcb_state_from_port(unsigned port_number) {
   struct udp_pcb *upcb;
   for (upcb = udp_pcbs; upcb != NULL; upcb = upcb->next) {
-    xtcp_connection_t conn = upcb->xtcp_conn;
     if (upcb->xtcp_conn.local_port == port_number) return upcb;
   }
   return NULL;
