@@ -45,10 +45,9 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
     pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
   }
 
-  struct pbuf *unsafe q;
   unsigned byte_cnt = 0;
   unsafe {
-    for (q = p; q != NULL; q = q->next) {
+    for (struct pbuf *unsafe q = p; q != NULL; q = q->next) {
       memcpy((char *unsafe)&txbuf[byte_cnt], q->payload, q->len);
       byte_cnt += q->len;
     }

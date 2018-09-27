@@ -30,7 +30,7 @@ def attempt_connect(failures, process_port, sock=None):
     for _ in range(3):
         try:
             sock = socket.socket(socket.AF_INET, args.protocol)
-            sock.settimeout(1) # seconds
+            sock.settimeout(10) # seconds
             sock.connect((args.ip, process_port))
             return (failures, sock)
 
@@ -199,7 +199,7 @@ def kill_remote_device():
 
     except socket.error as err:
         # Do nothing and wait for remote device to timeout
-        print 'ERROR: Could not kill remote device'
+        print 'WARNING: Could not kill remote device'
 
 def reflect_test():
     # Each process handles one remote port
@@ -383,5 +383,5 @@ if __name__ == '__main__':
             reflect_test()
         else:
             tcp_test();
-    
+
     kill_remote_device()

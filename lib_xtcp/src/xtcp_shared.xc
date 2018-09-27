@@ -36,7 +36,7 @@ void renotify(unsigned client_num)
 {
   unsafe {
     if(client_num_events[client_num] > 0) {
-      i_xtcp[client_num].packet_ready();
+      i_xtcp[client_num].event_ready();
     }
   }
 }
@@ -51,6 +51,34 @@ static unsigned get_guid(void)
   }
 
   return guid;
+}
+
+xtcp_connection_t create_xtcp_empty_state(int xtcp_num, xtcp_protocol_t protocol)
+{
+  xtcp_connection_t xtcp_conn = {0};
+
+  xtcp_conn.client_num = xtcp_num;
+  xtcp_conn.id = get_guid();
+  xtcp_conn.protocol = protocol;
+
+  return xtcp_conn;
+}
+
+xtcp_connection_t fill_xtcp_state(xtcp_connection_t conn, unsigned char * unsafe remote_addr, int local_port, int remote_port, void * unsafe uip_lwip_conn)
+{
+  unsafe {
+    for (int i=0; i<4; i++) {
+      conn.remote_addr[i] = remote_addr[i];
+    }
+  }
+  conn.remote_port = remote_port;
+  conn.local_port = local_port;
+  if(conn.protocol == XTCP_PROTOCOL_UDP)
+    conn.mss = MAX_PACKET_BYTES;
+
+  conn.stack_conn = (int) uip_lwip_conn;
+
+  return conn;
 }
 
 xtcp_connection_t create_xtcp_state(int xtcp_num,
@@ -91,25 +119,20 @@ client_queue_t dequeue_event(unsigned client_num)
 
 void enqueue_event_and_notify(unsigned client_num,
                               xtcp_event_type_t xtcp_event,
-                              xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                              , struct pbuf *unsafe pbuf
-#endif
-                              )
+                              xtcp_connection_t * unsafe xtcp_conn)
 {
-  unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
-  client_queue[client_num][position].xtcp_event = xtcp_event;
-  client_queue[client_num][position].xtcp_conn = xtcp_conn;
-#if (XTCP_STACK == LWIP)
-  client_queue[client_num][position].pbuf = pbuf;
-#endif
+  if (client_num_events[client_num] < CLIENT_QUEUE_SIZE) {
+    unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
+    client_queue[client_num][position].xtcp_event = xtcp_event;
+    client_queue[client_num][position].xtcp_conn = xtcp_conn;
 
-  client_num_events[client_num]++;
-  xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
+    client_num_events[client_num]++;
+    xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
+  }
 
   /* Notify */
   unsafe {
-    i_xtcp[client_num].packet_ready();
+    i_xtcp[client_num].event_ready();
   }
 }
 
@@ -129,12 +152,6 @@ void rm_recv_events(unsigned conn_id, unsigned client_num)
         client_queue[client_num][target_elem_index] = client_queue[client_num][source_elem_index];
 
         target_index++;
-      } else {
-#if (XTCP_STACK == LWIP)
-        if(current_queue_item.pbuf) {
-          pbuf_free(current_queue_item.pbuf);
-        }
-#endif
       }
     }
 
@@ -157,11 +174,7 @@ void xtcp_if_up(void)
     ifstate = 1;
     // memset(&if_up_dummy, 0, sizeof(if_up_dummy));
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
-      enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy, NULL);
-#else /* uIP */
       enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy);
-#endif
     }
   }
 }
@@ -171,11 +184,67 @@ void xtcp_if_down(void)
   unsafe {
     ifstate = 0;
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
-      enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy, NULL);
-#else /* uIP */
       enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy);
-#endif
     }
   }
 }
+
+extends client interface xtcp_if : {
+  void await_ifup(client xtcp_if self)
+  {
+    while(!self.is_ifup()) {
+      xtcp_connection_t tmp;
+      select {
+        case self.event_ready():
+          switch(self.get_event(tmp)) {
+            case XTCP_IFUP:
+              return;
+          }
+          break;
+      }
+    }
+  }
+
+  xtcp_connection_t await_connect(client xtcp_if self, xtcp_ipaddr_t & ip_address, uint16_t ip_port)
+  {
+    xtcp_connection_t result = self.socket(XTCP_PROTOCOL_TCP);
+    self.connect(result, ip_port, ip_address);
+
+    while (1) {
+      select {
+        case self.event_ready():
+          switch(self.get_event(result)) {
+            case XTCP_NEW_CONNECTION:
+              return result;
+          }
+          break;
+      }
+    }
+  }
+
+  int await_recv(client xtcp_if self, xtcp_connection_t &conn, char buffer[], unsigned int length)
+  {
+    int result = self.recv(conn, buffer, length);
+
+    if (result > 0) {
+      return result;
+    } else {
+      while (result <= 0) {
+        xtcp_connection_t tmp;
+        select {
+          case self.event_ready():
+            switch(self.get_event(tmp)) {
+              case XTCP_RECV_DATA:
+                result = self.recv(conn, buffer, length);
+            }
+            break;
+        }
+      }
+    }
+  }
+
+  int await_send(client xtcp_if self, xtcp_connection_t &conn, char buffer[], unsigned int length)
+  {
+    return self.send(conn, buffer, length);
+  }
+};

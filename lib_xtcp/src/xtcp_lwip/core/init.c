@@ -316,56 +316,61 @@ extern hwlock_t lwip_lock;
 void
 lwip_init(void)
 {
-  lwip_lock = hwlock_alloc();
-  if (lwip_lock == HWLOCK_NOT_ALLOCATED) fail("");
-  /* Modules initialization */
-  stats_init();
+  static int guard = 0;
+  if (!guard)
+  {
+    guard = 1;
+    lwip_lock = hwlock_alloc();
+    if (lwip_lock == HWLOCK_NOT_ALLOCATED) fail("");
+    /* Modules initialization */
+    stats_init();
 #if !NO_SYS
-  sys_init();
+    sys_init();
 #endif /* !NO_SYS */
-  mem_init();
-  memp_init();
-  pbuf_init();
-  netif_init();
+    mem_init();
+    memp_init();
+    pbuf_init();
+    netif_init();
 #if LWIP_IPV4
-  ip_init();
+    ip_init();
 #if LWIP_ARP
-  etharp_init();
+    etharp_init();
 #endif /* LWIP_ARP */
 #endif /* LWIP_IPV4 */
 #if LWIP_RAW
-  raw_init();
+    raw_init();
 #endif /* LWIP_RAW */
 #if LWIP_UDP
-  udp_init();
+    udp_init();
 #endif /* LWIP_UDP */
 #if LWIP_TCP
-  tcp_init();
+    tcp_init();
 #endif /* LWIP_TCP */
 #if LWIP_SNMP
-  snmp_init();
+    snmp_init();
 #endif /* LWIP_SNMP */
 #if LWIP_AUTOIP
-  autoip_init();
+    autoip_init();
 #endif /* LWIP_AUTOIP */
 #if LWIP_IGMP
-  igmp_init();
+    igmp_init();
 #endif /* LWIP_IGMP */
 #if LWIP_DNS
-  dns_init();
+    dns_init();
 #endif /* LWIP_DNS */
 #if LWIP_IPV6
-  ip6_init();
-  nd6_init();
+    ip6_init();
+    nd6_init();
 #if LWIP_IPV6_MLD
-  mld6_init();
+    mld6_init();
 #endif /* LWIP_IPV6_MLD */
 #endif /* LWIP_IPV6 */
 #if PPP_SUPPORT
-  ppp_init();
+    ppp_init();
 #endif
 
 #if LWIP_TIMERS
-  sys_timeouts_init();
+    sys_timeouts_init();
 #endif /* LWIP_TIMERS */
+  }
 }

@@ -1,0 +1,86 @@
+def use_module(bld):
+    depends_on = [
+        'lib_ethernet(>=3.0.3)', 'lib_otpinfo(>=2.0.0)', 'lib_crypto(>=1.0.0)'
+    ]
+
+    if bld.variant == 'IPV6':
+        xtcp_source_dirs = ['src', 'src/xtcp_uip6']
+        exclude_files = [
+            'uip_arp.c', 'autoip.c', 'dhcp.c', 'igmp.c', 'rpl.c', 'rpl-dag.c',
+            'rpl-ext-header.c', 'rpl-icmp6.c', 'rpl-mrhof.c', 'rpl-of0.c',
+            'rpl-timers.c'
+        ]
+    else:
+        lwip_source_dirs = [
+            'src/xtcp_lwip/api', 'src/xtcp_lwip/core',
+            'src/xtcp_lwip/core/ipv4', 'src/xtcp_lwip/netif',
+            'src/xtcp_lwip/xcore/src'
+        ]
+        mbedtls_source_dirs = []
+        xtcp_source_dirs = [
+            'src', 'src/xtcp_uip', 'src/xtcp_uip/autoip', 'src/xtcp_uip/dhcpc',
+            'src/xtcp_uip/igmp'
+        ]
+        exclude_files = ['uip-fw.c', 'uip-neighbor.c']
+
+    source_dirs = xtcp_source_dirs
+    lwip_include_dirs = [
+        'src/xtcp_lwip/include', 'src/xtcp_lwip/xcore/include'
+    ]
+    mbedtls_include_dirs = []
+    include_dirs = xtcp_source_dirs + ['api']
+    optional_headers = ['xtcp_client_conf.h', 'xtcp_conf.h']
+
+    bld.env.MODULE_XCC_FLAGS = bld.env.XCC_FLAGS
+    bld.env.MODULE_XCC_C_FLAGS = bld.env.XCC_C_FLAGS + [
+        '-Wno-ignored-attributes', '-Wno-typedef-redefinition',
+        '-DUNSAFE_LIBC', '-Os'
+    ]
+    bld.env.MODULE_XCC_XC_FLAGS = bld.env.XCC_XC_FLAGS + ['-DUNSAFE_LIBC', '-Os']
+
+    bld.env[
+        'XCC_FLAGS_xcoredev.xc'] = bld.env.XCC_XC_FLAGS + ['-fsubword-select']
+    bld.env['XCC_FLAGS_xtcp_server.xc'] = bld.env.XCC_XC_FLAGS + [
+        '-fsubword-select'
+    ]
+    bld.env['XCC_FLAGS_uip_xtcp_support.xc'] = bld.env.XCC_XC_FLAGS + [
+        '-fsubword-select'
+    ]
+    bld.env['XCC_FLAGS_uip_single_server.xc'] = bld.env.XCC_XC_FLAGS + [
+        '-fsubword-select'
+    ]
+    bld.env['XCC_FLAGS_uip_xtcp.xc'] = bld.env.XCC_XC_FLAGS + [
+        '-Wno-parentheses-equality'
+    ]
+
+    if bld.env['LWIP_XTCP'] == 1 or bld.env['LWIP_XTCP'] == '1':
+        exclude_files += [
+            'uip_xtcp.c', 'xcoredev.xc', 'uip_server_support.c', 'xtcp.xc',
+            'dhcpc.c', 'autoip/autoip.c', 'uip-split.c', 'uip_arp.c', 'uip.c',
+            'psock.c', 'xtcp_uip.xc'
+        ]
+        source_dirs += lwip_source_dirs
+        include_dirs += lwip_include_dirs
+    else:
+        exclude_files += ['xtcp_lwip.xc']
+
+    source_dirs = [bld.path.find_node(d) for d in source_dirs]
+    source = []
+    for d in source_dirs:
+        source += d.ant_glob(['*.xc', '*.c'])
+
+    def should_exclude(path):
+        for f in exclude_files:
+            if path.endswith(f):
+                return True
+        return False
+
+    source = [f for f in source if not should_exclude(f.abspath())]
+    include_dirs = [bld.path.find_node(d) for d in include_dirs]
+
+    bld.module(
+        source=source,
+        includes=include_dirs,
+        depends_on=depends_on,
+        optional_headers=optional_headers,
+        version='7.0.0')
