@@ -20,7 +20,7 @@ print ("Connected")
 
 msg = "hello world"
 print ("Sending message: " + msg)
-sock.send(bytes(msg))
+sock.send(bytes(msg, "ascii"))
 
 print ("Closing...")
 sock.close()

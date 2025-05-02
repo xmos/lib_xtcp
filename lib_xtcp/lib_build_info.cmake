@@ -1,0 +1,22 @@
+set(LIB_NAME                lib_xtcp)
+
+set(LIB_VERSION             6.1.0)
+
+set(LIB_INCLUDES            api
+                            src
+                            src/xtcp_lwip/include
+                            src/xtcp_lwip/xcore/include)
+             
+set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.0.0)"
+                            "lib_logging(3.3.1)"
+                            "lib_xassert(4.3.1)"
+                            "lib_random(1.0.0)"
+                            "lib_otpinfo(2.0.0)")
+
+set(LIB_COMPILER_FLAGS      -g
+                            -O3
+                            -mno-dual-issue
+                            -DLWIP=1 -DUIP=2
+                            -DXTCP_STACK=LWIP)
+
+XMOS_REGISTER_MODULE()
