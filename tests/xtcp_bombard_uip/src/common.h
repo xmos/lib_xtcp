@@ -6,7 +6,6 @@
 #include <string.h>
 #include "debug_print.h"
 #include <xtcp.h>
-#include "xtcp_stack.h"
 #include <stdlib.h>
 #include <xassert.h>
 

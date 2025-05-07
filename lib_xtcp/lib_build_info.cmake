@@ -1,6 +1,6 @@
 set(LIB_NAME                lib_xtcp)
 
-set(LIB_VERSION             6.1.0)
+set(LIB_VERSION             7.1.0) # Should this be 7 or 8? 7.0.0 is also used on Jakes branch
 
 set(LIB_INCLUDES            api
                             src
@@ -15,8 +15,8 @@ set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.0.0)"
 
 set(LIB_COMPILER_FLAGS      -g
                             -O3
-                            -mno-dual-issue
-                            -DLWIP=1 -DUIP=2
-                            -DXTCP_STACK=LWIP)
+                            -mno-dual-issue)
+
+# set(LIB_COMPILER_FLAGS_xcoredev.xc   -fsubword-select)
 
 XMOS_REGISTER_MODULE()

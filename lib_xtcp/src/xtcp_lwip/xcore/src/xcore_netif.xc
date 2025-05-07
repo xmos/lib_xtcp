@@ -76,6 +76,3 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
 
   return ERR_OK;
 }
-
-
-void xcoredev_send(void) {};

@@ -11,9 +11,9 @@ extern unsigned int uip_buf32[];
 extern unsigned char * unsafe uip_buf;
 extern void * unsafe uip_sappdata;
 
-client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx = NULL;
-client interface mii_if * unsafe xtcp_i_mii = NULL;
-mii_info_t xtcp_mii_info;
+client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx_uip = NULL;
+client interface mii_if * unsafe xtcp_i_mii_uip = NULL;
+mii_info_t xtcp_mii_info_uip;
 
 #ifndef UIP_MAX_TRANSMIT_SIZE
 #define UIP_MAX_TRANSMIT_SIZE 1520 /* bytes */
@@ -28,7 +28,7 @@ mii_send(void)
   
   if (first_packet_sent) {
     select {
-    case mii_packet_sent(xtcp_mii_info):
+    case mii_packet_sent(xtcp_mii_info_uip):
       break;
     }
   }
@@ -41,7 +41,7 @@ mii_send(void)
   }
 
   memcpy(txbuf, uip_buf32, len);
-  xtcp_i_mii->send_packet(txbuf, len);
+  xtcp_i_mii_uip->send_packet(txbuf, len);
   first_packet_sent=1;
 }
 
@@ -51,14 +51,14 @@ xcoredev_send(void)
   unsafe {
     int len = uip_len;
     if (len != 0) {
-      if (xtcp_i_eth_tx != NULL) {
+      if (xtcp_i_eth_tx_uip != NULL) {
         if (len < 60) {
           for (int i=len; i<60; i++) {
             (uip_buf32, unsigned char[])[i] = 0;
           }
           len=60;
         }
-        xtcp_i_eth_tx->send_packet((char *) uip_buf32, len, ETHERNET_ALL_INTERFACES);
+        xtcp_i_eth_tx_uip->send_packet((char *) uip_buf32, len, ETHERNET_ALL_INTERFACES);
       } else {
         mii_send();
       }

@@ -49,9 +49,9 @@ unsafe {
 unsigned int rx_buffer[(UIP_BUFSIZE + 5) >> 2];
 
 // These pointers are used to store connections for sending in xcoredev.xc
-extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
-extern client interface mii_if * unsafe xtcp_i_mii;
-extern mii_info_t xtcp_mii_info;
+extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx_uip;
+extern client interface mii_if * unsafe xtcp_i_mii_uip;
+extern mii_info_t xtcp_mii_info_uip;
 
 static unsigned uip_static_ip = 0; // Boolean whether we're using a static IP
 xtcp_ipconfig_t uip_static_ipconfig;
@@ -317,12 +317,12 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
 
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
-    xtcp_mii_info = mii_info;
-    xtcp_i_mii = (client mii_if * unsafe) &i_mii;
+    xtcp_mii_info_uip = mii_info;
+    xtcp_i_mii_uip = (client mii_if * unsafe) &i_mii;
   }
 
   if (!isnull(i_eth_cfg)) {
-    xtcp_i_eth_tx = (client ethernet_tx_if * unsafe) &i_eth_tx;
+    xtcp_i_eth_tx_uip = (client ethernet_tx_if * unsafe) &i_eth_tx;
     i_eth_cfg.set_macaddr(0, mac_address);
 
     size_t index = i_eth_rx.get_index();
@@ -420,7 +420,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
 
       if (uip_udpconnection()) {
         uip_udp_conn->lport = 0;
-        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, &(uip_udp_conn->xtcp_conn));
+        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, &(uip_udp_conn->xtcp_conn), NULL);
       } else {
         uip_close();
         uip_process(UIP_TCP_SEND);
@@ -436,12 +436,12 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       if (uip_udpconnection()) {
         uip_udp_conn->lport = 0;
         xtcp_conn_ptr = &(uip_udp_conn->xtcp_conn);
-        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, xtcp_conn_ptr);
+        enqueue_event_and_notify(conn.client_num, XTCP_CLOSED, xtcp_conn_ptr, NULL);
       } else {
         uip_abort();
         uip_process(UIP_TCP_SEND);
         xtcp_conn_ptr = &(uip_conn->xtcp_conn);
-        enqueue_event_and_notify(conn.client_num, XTCP_ABORTED, xtcp_conn_ptr);
+        enqueue_event_and_notify(conn.client_num, XTCP_ABORTED, xtcp_conn_ptr, NULL);
       }
 
       rm_recv_events(xtcp_conn_ptr->id, i);
@@ -496,7 +496,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
                                               conn->lport,
                                               port_number,
                                               conn);
-          enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(conn->xtcp_conn));
+          enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(conn->xtcp_conn), NULL);
         }
       }
       break;
@@ -522,7 +522,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       } else {
         uip_process(UIP_UDP_SEND_CONN);
         uip_arp_out(uip_udp_conn);
-        enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, &(uip_udp_conn->xtcp_conn));
+        enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, &(uip_udp_conn->xtcp_conn), NULL);
       }
       xtcp_tx_buffer();
       break;
@@ -667,7 +667,7 @@ xtcpd_appcall(void)
                                      HTONS(uip_conn->rport),
                                      uip_conn);
     }
-    enqueue_event_and_notify(client_num, XTCP_NEW_CONNECTION, xtcp_conn);
+    enqueue_event_and_notify(client_num, XTCP_NEW_CONNECTION, xtcp_conn, NULL);
   }
 
   // Store data in rx_buffer and raise guard on MII/MAC interfaces
@@ -675,25 +675,25 @@ xtcpd_appcall(void)
     buffer_full = 1;
     xtcp_conn->packet_length = uip_len;
     memcpy(rx_buffer, uip_appdata, uip_len);
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_RECV_DATA, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_RECV_DATA, xtcp_conn, NULL);
   }
 
   else if (uip_timedout()) {
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_TIMED_OUT, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_TIMED_OUT, xtcp_conn, NULL);
     return;
   }
 
   else if (uip_aborted()) {
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_ABORTED, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_ABORTED, xtcp_conn, NULL);
     return;
   }
 
   if (uip_acked()) {
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_SENT_DATA, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_SENT_DATA, xtcp_conn, NULL);
   }
 
   if (uip_rexmit()) {
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_RESEND_DATA, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_RESEND_DATA, xtcp_conn, NULL);
   }
 
   if (uip_poll()) {
@@ -701,6 +701,6 @@ xtcpd_appcall(void)
   }
 
   if (uip_closed()) {
-    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_CLOSED, xtcp_conn);
+    enqueue_event_and_notify(xtcp_conn->client_num, XTCP_CLOSED, xtcp_conn, NULL);
   }
 }

@@ -3,7 +3,6 @@
 #include <platform.h>
 #include "debug_print.h"
 #include "xtcp.h"
-#include "xtcp_stack.h"
 #include "httpd.h"
 #include "smi.h"
 #include "otp_board_info.h"
@@ -97,7 +96,7 @@ void ar8035_phy_driver(client interface smi_if smi,
 }
 
 #else
-#error "Must define XTCP_STACK"
+#error "Must define XTCP_STACK_LWIP or XTCP_STACK_UIP"
 #endif
 
 

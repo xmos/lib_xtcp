@@ -6,8 +6,6 @@
 #include "smi.h"
 #include "xk_eth_xu316_dual_100m/board.h"
 #include "xtcp.h"
-//#include "xtcp_uip_includes.h"
-#include "xtcp_lwip_includes.h"
 #include "udp_reflect.h"
 
 port p_smi_mdio = MDIO;
@@ -79,13 +77,22 @@ int main()
 
     on tile[1]: dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
-                            
+                    
+#ifdef XTCP_STACK_LWIP
     // TCP component
     on tile[1]: xtcp_lwip(
       i_xtcp, 1, null,
       i_cfg[CFG_TO_ICMP], i_rx[ETH_TO_ICMP], i_tx[ETH_TO_ICMP],
       null, 0,
       mac_address_phy, null, ipconfig);
+#elif defined( XTCP_STACK_UIP )
+    // TCP component
+    on tile[1]: xtcp_uip(
+      i_xtcp, 1, null,
+      i_cfg[CFG_TO_ICMP], i_rx[ETH_TO_ICMP], i_tx[ETH_TO_ICMP],
+      null, 0,
+      mac_address_phy, null, ipconfig);
+#endif 
 
     // The simple udp reflector thread
     on tile[0]: udp_reflect(i_xtcp[0]);

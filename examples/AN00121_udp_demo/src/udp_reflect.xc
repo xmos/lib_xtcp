@@ -4,8 +4,6 @@
 #include <string.h>
 #include <print.h>
 #include "xtcp.h"
-//#include "xtcp_uip_includes.h"
-#include "xtcp_lwip_includes.h"
 
 // Defines
 #define RX_BUFFER_SIZE 300
