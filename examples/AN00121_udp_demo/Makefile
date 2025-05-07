@@ -1,7 +1,7 @@
 # The TARGET variable determines what target system the application is
 # compiled for. It either refers to an XN file in the source directories
 # or a valid argument for the --target option when compiling
-TARGET = SLICEKIT-L16
+TARGET = xk-eth-xu316-dual-100m.xn
 
 # The APP_NAME variable determines the name of the final .xe file. It should
 # not include the .xe postfix. If left blank the name will default to
@@ -9,19 +9,15 @@ TARGET = SLICEKIT-L16
 APP_NAME = 
 
 # The USED_MODULES variable lists other module used by the application.
-USED_MODULES = lib_xtcp(>=6.0.0)
+USED_MODULES = lib_xtcp(>=6.0.0) lib_board_support(>=1.2.2)
 
 # The flags passed to xcc when building the application
 # You can also set the following to override flags for a particular language:
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-GEN_XCC_FLAGS = -g -O2 -save-temps -fxscope
+XCC_FLAGS = -g -O2 -save-temps -fxscope -DBOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M -DDEBUG_PRINT_ENABLE -DXTCP_STACK_LWIP
 
-XCC_FLAGS =
-
-XCC_C_FLAGS = $(GEN_XCC_FLAGS)
-XCC_XC_FLAGS = $(GEN_XCC_FLAGS)
 XCC_MAP_FLAGS = -report
 
 # The VERBOSE variable, if set to 1, enables verbose output from the make

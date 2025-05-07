@@ -17,6 +17,4 @@ set(LIB_COMPILER_FLAGS      -g
                             -O3
                             -mno-dual-issue)
 
-# set(LIB_COMPILER_FLAGS_xcoredev.xc   -fsubword-select)
-
 XMOS_REGISTER_MODULE()
