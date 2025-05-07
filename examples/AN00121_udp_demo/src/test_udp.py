@@ -14,14 +14,14 @@ args = parser.parse_args()
 # This is to test the simple UDP example XC program
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-print ("Connecting..")
+print("Connecting..")
 sock.connect((args.ip, 15533))
-print ("Connected")
+print("Connected")
 
 msg = "hello world"
-print ("Sending message: " + msg)
+print("Sending message: " + msg)
 sock.send(bytes(msg, "ascii"))
 
-print ("Closing...")
+print("Closing...")
 sock.close()
-print ("Closed")
+print("Closed")
