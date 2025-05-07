@@ -95,6 +95,8 @@ int main()
       i_cfg[CFG_TO_TCP], i_rx[ETH_TO_TCP], i_tx[ETH_TO_TCP],
       null, 0,
       mac_address_phy, null, ipconfig);
+#else 
+      #error "Please define either XTCP_STACK_LWIP or XTCP_STACK_UIP in XCC_FLAGS"
 #endif 
 
     // The simple udp reflector thread
