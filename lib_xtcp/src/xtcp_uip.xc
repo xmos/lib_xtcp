@@ -11,8 +11,8 @@
 
 #include "debug_print.h"
 
-#define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_buf[0])
-#define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_buf[UIP_LLH_LEN])
+#define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_struct->eth_hdr)
+#define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_struct->udpip_hdr)
 
 #define NO_CLIENT -1
 
@@ -43,6 +43,14 @@ extern void * unsafe uip_sappdata; // Pointer to start position of data in packe
 unsigned int uip_buf32[(UIP_BUFSIZE + 5) >> 2];  // uIP buffer in 32bit words
 unsafe {
   u8_t * unsafe uip_buf = (u8_t *) &uip_buf32[0];/* uIP buffer 8bit */
+}
+
+struct uip_buf_s {
+  struct uip_eth_hdr   eth_hdr;
+  struct uip_udpip_hdr udpip_hdr;
+};
+unsafe {
+  struct uip_buf_s * unsafe uip_struct = (struct uip_buf_s *) &uip_buf32[0];
 }
 
 // Extra buffer to hold data until the client is ready
@@ -322,6 +330,9 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
   } else {
     fail("Must supply OTP ports or MAC address to xtcp component");
   }
+
+  // debug_printf("UIP struct-e: %p\n", &uip_struct->eth_hdr);
+  // debug_printf("UIP struct-u: %p\n", &uip_struct->udpip_hdr);
 
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
