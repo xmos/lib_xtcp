@@ -179,6 +179,14 @@ void uip_linkdown(void )
 #endif
 }
 
+static unsigned is_ipaddr_static(xtcp_ipaddr_t ipaddr) {
+  unsigned is_static = 0;
+  if ((ipaddr[0] != 0) || (ipaddr[1] != 0) || (ipaddr[2] != 0) || (ipaddr[3] != 0)) {
+    is_static = 1;
+  }
+  return is_static;
+}
+
 static unsafe void
 xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
   if (ipconfig != NULL) {
@@ -191,8 +199,8 @@ xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
   igmp_init();
 #endif
 
-  if (ipconfig != NULL && (*((int*)ipconfig->ipaddr) != 0)) {
-    uip_static_ip = 1;
+  if (ipconfig != NULL) {
+    uip_static_ip = is_ipaddr_static(ipconfig->ipaddr);
   }
 
   if (ipconfig == NULL) {
