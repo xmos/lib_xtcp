@@ -7,7 +7,6 @@
 #include <string.h>
 
 extern unsigned short uip_len;
-extern unsigned int uip_buf32[];
 extern unsigned char * unsafe uip_buf;
 extern void * unsafe uip_sappdata;
 
@@ -35,12 +34,12 @@ mii_send(void)
   
   if (len < 60) {
     for (int i=len; i < 60; i++) {
-      (uip_buf32, unsigned char[])[i] = 0;
+      uip_buf[i] = 0;
     }
     len=60;
   }
 
-  memcpy(txbuf, uip_buf32, len);
+  memcpy(txbuf, uip_buf, len);
   xtcp_i_mii_uip->send_packet(txbuf, len);
   first_packet_sent=1;
 }
@@ -54,11 +53,11 @@ xcoredev_send(void)
       if (xtcp_i_eth_tx_uip != NULL) {
         if (len < 60) {
           for (int i=len; i<60; i++) {
-            (uip_buf32, unsigned char[])[i] = 0;
+            uip_buf[i] = 0;
           }
           len=60;
         }
-        xtcp_i_eth_tx_uip->send_packet((char *) uip_buf32, len, ETHERNET_ALL_INTERFACES);
+        xtcp_i_eth_tx_uip->send_packet((char *) uip_buf, len, ETHERNET_ALL_INTERFACES);
       } else {
         mii_send();
       }

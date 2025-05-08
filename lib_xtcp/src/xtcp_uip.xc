@@ -11,8 +11,8 @@
 
 #include "debug_print.h"
 
-#define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_buf[0])
-#define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_buf[UIP_LLH_LEN])
+#define ETHBUF (&uip_struct->eth_hdr)
+#define UDPBUF (&uip_struct->udpip_hdr)
 
 #define NO_CLIENT -1
 
@@ -40,9 +40,17 @@ listener_info_t udp_listeners[NUM_UDP_LISTENERS] = {{0}};
 extern unsigned short uip_len;     // Length of data in buffer
 extern unsigned short uip_slen;    // Length of data to be sent in buffer
 extern void * unsafe uip_sappdata; // Pointer to start position of data in packet buffer
-unsigned int uip_buf32[(UIP_BUFSIZE + 5) >> 2];  // uIP buffer in 32bit words
+unsigned int uip_buf32[(UIP_BUFSIZE + 5) >> 2];  // uIP buffer in 32bit words, for alignment
 unsafe {
   u8_t * unsafe uip_buf = (u8_t *) &uip_buf32[0];/* uIP buffer 8bit */
+}
+
+struct uip_buf_s {
+  struct uip_eth_hdr   eth_hdr;
+  struct uip_udpip_hdr udpip_hdr;
+};
+unsafe {
+  struct uip_buf_s * unsafe uip_struct = (struct uip_buf_s *) &uip_buf32[0];
 }
 
 // Extra buffer to hold data until the client is ready
@@ -179,6 +187,14 @@ void uip_linkdown(void )
 #endif
 }
 
+static unsigned is_ipaddr_static(xtcp_ipaddr_t ipaddr) {
+  unsigned is_static = 0;
+  if ((ipaddr[0] != 0) || (ipaddr[1] != 0) || (ipaddr[2] != 0) || (ipaddr[3] != 0)) {
+    is_static = 1;
+  }
+  return is_static;
+}
+
 static unsafe void
 xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
   if (ipconfig != NULL) {
@@ -191,8 +207,8 @@ xtcp_uip_init(xtcp_ipconfig_t* ipconfig, unsigned char mac_address[6]) {
   igmp_init();
 #endif
 
-  if (ipconfig != NULL && (*((int*)ipconfig->ipaddr) != 0)) {
-    uip_static_ip = 1;
+  if (ipconfig != NULL) {
+    uip_static_ip = is_ipaddr_static(ipconfig->ipaddr);
   }
 
   if (ipconfig == NULL) {
@@ -315,6 +331,9 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
     fail("Must supply OTP ports or MAC address to xtcp component");
   }
 
+  // debug_printf("UIP struct-e: %p\n", &uip_struct->eth_hdr);
+  // debug_printf("UIP struct-u: %p\n", &uip_struct->udpip_hdr);
+
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
     xtcp_mii_info_uip = mii_info;
@@ -356,7 +375,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       {data, nbytes, timestamp} = i_mii.get_incoming_packet();
       if (data) {
         if (nbytes <= UIP_BUFSIZE) {
-          memcpy(uip_buf32, data, nbytes);
+          memcpy(uip_buf, data, nbytes);
           xtcp_process_incoming_packet(nbytes);
         }
         i_mii.release_packet(data);
@@ -366,11 +385,11 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
     // Only accept new packets if there's nothing in the buffer already
     case (!isnull(i_eth_rx) && !buffer_full) => i_eth_rx.packet_ready():
       ethernet_packet_info_t desc;
-      i_eth_rx.get_packet(desc, (char *) uip_buf32, UIP_BUFSIZE);
+      i_eth_rx.get_packet(desc, (char *) uip_buf, UIP_BUFSIZE);
       if (desc.type == ETH_DATA) {
         xtcp_process_incoming_packet(desc.len);
       } else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
-        if (((unsigned char *)uip_buf32)[0] == ETHERNET_LINK_UP) {
+        if (uip_buf[0] == ETHERNET_LINK_UP) {
           uip_linkup();
         }
         else {
