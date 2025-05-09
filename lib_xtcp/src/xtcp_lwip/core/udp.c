@@ -1091,7 +1091,6 @@ struct udp_pcb *xtcp_lookup_udp_pcb_state(int conn_id) {
 struct udp_pcb *xtcp_lookup_udp_pcb_state_from_port(unsigned port_number) {
   struct udp_pcb *upcb;
   for (upcb = udp_pcbs; upcb != NULL; upcb = upcb->next) {
-    xtcp_connection_t conn = upcb->xtcp_conn;
     if (upcb->xtcp_conn.local_port == port_number) return upcb;
   }
   return NULL;

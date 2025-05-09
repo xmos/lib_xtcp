@@ -248,7 +248,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         process_rx_packet(buffer, desc.len, netif);
       }
       else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
-        if (((unsigned char *)buffer)[0] == ETHERNET_LINK_UP) {
+        if (buffer[0] == ETHERNET_LINK_UP) {
           netif_set_link_up(netif);
         } else {
           netif_set_link_down(netif);
@@ -332,14 +332,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
       struct udp_pcb *unsafe u_pcb = (struct udp_pcb * unsafe) conn.stack_conn;
 
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(xtcp_ipaddr_t));
       unsigned port_n = port_number;
 
-      err_t e = udp_connect(u_pcb, (struct ip_addr * unsafe) ip, port_n);
+      err_t e = udp_connect(u_pcb, &ip, port_n);
       if(e != ERR_OK)
         debug_printf("udp_connect() failed\n");
-      add_udp_connection(u_pcb, ip, port_n);
+      add_udp_connection(u_pcb, (unsigned char *)&ip, port_n);
       break;
 
     case i_xtcp[unsigned i].unlisten(unsigned port_number):
@@ -424,14 +424,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       blank_conn.client_num = i;
 
       /* Make local copies */
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(ip_addr_t));
       unsigned port_n = port_number;
 
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe pcb = tcp_new();
         if (pcb) {
-          tcp_connect(pcb, (struct ip_addr * unsafe) ip, port_n, NULL);
+          tcp_connect(pcb, &ip, port_n, NULL);
           pcb->xtcp_conn = blank_conn;
         }
       } else {
@@ -442,9 +442,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         memset(pcb->connection_ports, 0, sizeof(unsigned) * CONNECTIONS_PER_UDP_PORT);
         memset(pcb->connection_addrs, 0, sizeof(unsigned char) * CONNECTIONS_PER_UDP_PORT * 4);
         pcb->xtcp_conn = create_xtcp_state(i, XTCP_PROTOCOL_UDP,
-                                           blank_ip,
+                                           (unsigned char *)&ip,
                                            port_n, 0, pcb);
-        if (add_udp_connection(pcb, ip, port_n)) {
+        if (add_udp_connection(pcb, (unsigned char *)&ip, port_n)) {
           enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
         }
       }
@@ -474,7 +474,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if (u_pcb->flags & UDP_FLAGS_CONNECTED) {
           e = udp_send(u_pcb, new_pbuf);
         } else {
-          e = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) u_pcb->xtcp_conn.remote_addr, u_pcb->xtcp_conn.remote_port);
+          ip_addr_t ip_remote;
+          memcpy(&ip_remote, u_pcb->xtcp_conn.remote_addr, sizeof(ip_remote));
+          e = udp_sendto(u_pcb, new_pbuf, &ip_remote, u_pcb->xtcp_conn.remote_port);
         }
         pbuf_free(new_pbuf);
         if (e != ERR_OK) {
@@ -534,8 +536,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         }
 
         if (!get_if_state() && netif_is_link_up(netif)) {
-          if (dhcp_supplied_address(netif) ||
-              using_fixed_ip) {
+          if (dhcp_supplied_address(netif) || using_fixed_ip) {
             xtcp_if_up();
           }
         }
