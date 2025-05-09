@@ -11,6 +11,8 @@ typedef struct client_queue_t {
   struct pbuf *unsafe pbuf;
 } client_queue_t;
 
+inline void printip(xtcp_ipaddr_t ipaddr);
+
 unsigned get_if_state(void);
 void renotify(unsigned client_num);
 void xtcp_init_queue(static const unsigned n_xtcp, server xtcp_if i_xtcp_init[n_xtcp]);

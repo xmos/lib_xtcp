@@ -19,6 +19,17 @@ static server xtcp_if * unsafe i_xtcp; /* Used for notifying */
 static unsigned ifstate = 0;           /* Connection state */
 static unsigned n_xtcp;                /* Number of clients */
 
+void printip(xtcp_ipaddr_t ipaddr)
+{
+  printint(ipaddr[0]);
+  printstr(".");
+  printint(ipaddr[1]);
+  printstr(".");
+  printint(ipaddr[2]);
+  printstr(".");
+  printint(ipaddr[3]);
+}
+
 void xtcp_init_queue(static const unsigned n_xtcp_init,
                      server xtcp_if i_xtcp_init[n_xtcp_init])
 {

@@ -2,8 +2,10 @@
 
 #include <platform.h>
 #include <string.h>
+#include <ctype.h>
 #include <print.h>
 #include "xtcp.h"
+#include "xtcp_shared.h"
 
 // Defines
 #define RX_BUFFER_SIZE 300
@@ -13,17 +15,6 @@
 #define BROADCAST_ADDR {255,255,255,255}
 #define BROADCAST_MSG "XMOS Broadcast\n"
 #define INIT_VAL -1
-
-static inline void printip(xtcp_ipaddr_t ipaddr)
-{
-  printint(ipaddr[0]);
-  printstr(".");
-  printint(ipaddr[1]);
-  printstr(".");
-  printint(ipaddr[2]);
-  printstr(".");
-  printint(ipaddr[3]);
-}
 
 /** Simple UDP reflection thread.
  *
@@ -123,7 +114,7 @@ void udp_reflect(client xtcp_if i_xtcp)
                 responding_connection = conn;
               }
               else {
-                printstr("Cannot handle new connection");
+                printstrln("Cannot handle new connection");
                 i_xtcp.close(conn);
               }
             }
@@ -137,14 +128,15 @@ void udp_reflect(client xtcp_if i_xtcp)
             //
             printstr("Got data: ");
             printint(data_len);
-            printstr(" bytes\n");
+            printstrln(" bytes");
 
             response_len = data_len;
-            for (int i=0;i<response_len;i++)
-              tx_buffer[i] = rx_buffer[i];
+            for (int i=0;i<response_len;i++) {
+              tx_buffer[i] = toupper( rx_buffer[i] );
+            }
 
             i_xtcp.send(conn, tx_buffer, response_len);
-            printstr("Responding\n");
+            printstrln("Responding");
             break;
 
         case XTCP_RESEND_DATA:
@@ -163,12 +155,12 @@ void udp_reflect(client xtcp_if i_xtcp)
           if (conn.id == broadcast_connection.id) {
             // When a broadcast message send is complete the connection is kept
             // open for the next one
-            printstr("Sent Broadcast\n");
+            printstrln("Sent Broadcast");
           }
           else {
             // When a reponse is sent, the connection is closed opening up
             // for another new connection on the listening port
-            printstr("Sent Response\n");
+            printstrln("Sent Response");
             i_xtcp.close(conn);
             responding_connection.id = INIT_VAL;
           }
@@ -189,7 +181,7 @@ void udp_reflect(client xtcp_if i_xtcp)
       // A broadcast message can be sent if the connection is established
       // and one is not already being sent on that connection
       if (broadcast_connection.id != INIT_VAL)  {
-        printstr("Sending broadcast message\n");
+        printstrln("Sending broadcast message");
         broadcast_len = strlen(broadcast_buffer);
         i_xtcp.send(conn, broadcast_buffer, broadcast_len);
       }
