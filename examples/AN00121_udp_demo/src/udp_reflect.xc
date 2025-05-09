@@ -189,7 +189,7 @@ void udp_reflect(client xtcp_if i_xtcp)
       // A broadcast message can be sent if the connection is established
       // and one is not already being sent on that connection
       if (broadcast_connection.id != INIT_VAL)  {
-        printstln("Sending broadcast message");
+        printstrln("Sending broadcast message");
         broadcast_len = strlen(broadcast_buffer);
         i_xtcp.send(conn, broadcast_buffer, broadcast_len);
       }
