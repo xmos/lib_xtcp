@@ -11,8 +11,8 @@
 
 #include "debug_print.h"
 
-#define ETHBUF ((struct uip_eth_hdr   * unsafe) &uip_struct->eth_hdr)
-#define UDPBUF ((struct uip_udpip_hdr * unsafe) &uip_struct->udpip_hdr)
+#define ETHBUF (&uip_struct->eth_hdr)
+#define UDPBUF (&uip_struct->udpip_hdr)
 
 #define NO_CLIENT -1
 
