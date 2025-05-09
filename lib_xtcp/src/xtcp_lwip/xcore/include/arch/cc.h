@@ -60,7 +60,7 @@ typedef u32_t mem_ptr_t;
 #define X8_F "x"
 
 /* Compiler hints for packing structures */
-#ifdef __XC__
+#if 1
 #define PACK_STRUCT_FIELD(x) x
 #else
 #define PACK_STRUCT_FIELD(x) x __attribute__((packed))
