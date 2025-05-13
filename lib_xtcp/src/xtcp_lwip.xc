@@ -424,14 +424,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       blank_conn.client_num = i;
 
       /* Make local copies */
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(ip_addr_t));
       unsigned port_n = port_number;
 
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe pcb = tcp_new();
         if (pcb) {
-          tcp_connect(pcb, (struct ip_addr * unsafe) ip, port_n, NULL);
+          tcp_connect(pcb, &ip, port_n, NULL);
           pcb->xtcp_conn = blank_conn;
         }
       } else {
@@ -442,9 +442,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         memset(pcb->connection_ports, 0, sizeof(unsigned) * CONNECTIONS_PER_UDP_PORT);
         memset(pcb->connection_addrs, 0, sizeof(unsigned char) * CONNECTIONS_PER_UDP_PORT * 4);
         pcb->xtcp_conn = create_xtcp_state(i, XTCP_PROTOCOL_UDP,
-                                           blank_ip,
+                                           (unsigned char *)&ip,
                                            port_n, 0, pcb);
-        if (add_udp_connection(pcb, ip, port_n)) {
+        if (add_udp_connection(pcb, (unsigned char *)&ip, port_n)) {
           enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
         }
       }
