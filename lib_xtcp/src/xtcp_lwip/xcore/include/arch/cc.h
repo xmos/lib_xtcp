@@ -89,7 +89,7 @@ typedef u32_t mem_ptr_t;
 #define LWIP_PLATFORM_HTONL(x) __builtin_bswap32(x)
 
 #include <random.h>
-static random_generator_t rng;
+extern random_generator_t rng;
 
 #define LWIP_RAND() random_get_random_number(&rng)
 

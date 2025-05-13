@@ -5,6 +5,8 @@
 #include "hwlock.h"
 
 #if SYS_LIGHTWEIGHT_PROT
+random_generator_t rng;
+
 hwlock_t lwip_lock;
 
 /** sys_prot_t sys_arch_protect(void)
