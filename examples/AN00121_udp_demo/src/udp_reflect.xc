@@ -4,6 +4,7 @@
 #include <string.h>
 #include <print.h>
 #include "xtcp.h"
+#include "xtcp_shared.h"
 
 // Defines
 #define RX_BUFFER_SIZE 300
@@ -13,17 +14,6 @@
 #define BROADCAST_ADDR {255,255,255,255}
 #define BROADCAST_MSG "XMOS Broadcast\n"
 #define INIT_VAL -1
-
-static inline void printip(xtcp_ipaddr_t ipaddr)
-{
-  printint(ipaddr[0]);
-  printstr(".");
-  printint(ipaddr[1]);
-  printstr(".");
-  printint(ipaddr[2]);
-  printstr(".");
-  printint(ipaddr[3]);
-}
 
 /** Simple UDP reflection thread.
  *
