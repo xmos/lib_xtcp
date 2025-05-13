@@ -332,14 +332,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
       struct udp_pcb *unsafe u_pcb = (struct udp_pcb * unsafe) conn.stack_conn;
 
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(xtcp_ipaddr_t));
       unsigned port_n = port_number;
 
-      err_t e = udp_connect(u_pcb, (struct ip_addr * unsafe) ip, port_n);
+      err_t e = udp_connect(u_pcb, &ip, port_n);
       if(e != ERR_OK)
         debug_printf("udp_connect() failed\n");
-      add_udp_connection(u_pcb, ip, port_n);
+      add_udp_connection(u_pcb, (unsigned char *)&ip, port_n);
       break;
 
     case i_xtcp[unsigned i].unlisten(unsigned port_number):
@@ -474,7 +474,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if (u_pcb->flags & UDP_FLAGS_CONNECTED) {
           e = udp_send(u_pcb, new_pbuf);
         } else {
-          e = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) u_pcb->xtcp_conn.remote_addr, u_pcb->xtcp_conn.remote_port);
+          ip_addr_t ip_remote;
+          memcpy(&ip_remote, u_pcb->xtcp_conn.remote_addr, sizeof(ip_remote));
+          e = udp_sendto(u_pcb, new_pbuf, &ip_remote, u_pcb->xtcp_conn.remote_port);
         }
         pbuf_free(new_pbuf);
         if (e != ERR_OK) {
