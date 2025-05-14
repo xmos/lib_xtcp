@@ -12,13 +12,10 @@ set(COMPILER_FLAGS_COMMON   -g
                             -O3
                             -report
                             -DDEBUG_PRINT_ENABLE
-                            -Wno-reinterpret-alignment
                             -DBOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
                             -DXTCP_STACK_LWIP)
 
-set(APP_COMPILER_FLAGS          ${COMPILER_FLAGS_COMMON})
-set(APP_COMPILER_FLAGS_icmp.xc  ${COMPILER_FLAGS_COMMON}
-                                -Wno-reinterpret-alignment)
+set(APP_COMPILER_FLAGS      ${COMPILER_FLAGS_COMMON})
 
 set(APP_XSCOPE_SRCS         src/config.xscope)
 
