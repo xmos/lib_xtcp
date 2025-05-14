@@ -104,7 +104,7 @@ get_listener_linknum(listener_info_t listeners[],
                      int local_port)
 {
   int client_num = NO_CLIENT;
-  for (unsigned i=0; i<n_ports; i++) {
+  for (int i=0; i<n_ports; i++) {
     if (listeners[i].active &&
         local_port == listeners[i].port_number) {
       client_num = listeners[i].client_num;
@@ -120,7 +120,7 @@ unregister_listener(listener_info_t listeners[],
                     int port_number,
                     int n_ports)
 {
-  for (unsigned i=0; i<n_ports; i++) {
+  for (int i=0; i<n_ports; i++) {
     if (listeners[i].active &&
       listeners[i].port_number == port_number) {
       listeners[i].active = 0;
@@ -134,7 +134,7 @@ register_listener(listener_info_t listeners[],
                   int port_number,
                   int n_ports)
 {
-  unsigned i;
+  int i;
   for (i=0; i<n_ports; i++) {
     if (!listeners[i].active) {
       break;
