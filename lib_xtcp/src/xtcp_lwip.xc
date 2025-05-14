@@ -477,6 +477,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           ip_addr_t ip_remote;
           memcpy(&ip_remote, u_pcb->xtcp_conn.remote_addr, sizeof(ip_remote));
           e = udp_sendto(u_pcb, new_pbuf, &ip_remote, u_pcb->xtcp_conn.remote_port);
+        
+          struct udp_pcb *unsafe u_pcb = (struct udp_pcb *unsafe) conn.stack_conn;
+          enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, &(u_pcb->xtcp_conn), NULL);
         }
         pbuf_free(new_pbuf);
         if (e != ERR_OK) {
