@@ -86,14 +86,12 @@ int main()
     on tile[1]: xtcp_lwip(
       i_xtcp, 1, null,
       i_cfg[CFG_TO_TCP], i_rx[ETH_TO_TCP], i_tx[ETH_TO_TCP],
-      null, 0,
       mac_address_phy, null, ipconfig);
 #elif defined( XTCP_STACK_UIP )
     // TCP component
     on tile[1]: xtcp_uip(
       i_xtcp, NUM_TCP_CLIENTS, null,
       i_cfg[CFG_TO_TCP], i_rx[ETH_TO_TCP], i_tx[ETH_TO_TCP],
-      null, 0,
       mac_address_phy, null, ipconfig);
 #else 
       #error "Please define either XTCP_STACK_LWIP or XTCP_STACK_UIP in XCC_FLAGS"

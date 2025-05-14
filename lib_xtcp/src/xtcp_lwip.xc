@@ -141,8 +141,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
           client ethernet_cfg_if ?i_eth_cfg,
           client ethernet_rx_if ?i_eth_rx,
           client ethernet_tx_if ?i_eth_tx,
-          client smi_if ?i_smi,
-          uint8_t phy_address,
           const char (&?_mac_address)[6],
           otp_ports_t &?otp_ports,
           xtcp_ipconfig_t &ipconfig)
@@ -247,7 +245,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       if (desc.type == ETH_DATA) {
         process_rx_packet(buffer, desc.len, netif);
       }
-      else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
+      else if (desc.type == ETH_IF_STATUS) {
         if (buffer[0] == ETHERNET_LINK_UP) {
           netif_set_link_up(netif);
         } else {
@@ -522,21 +520,6 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       switch (i) {
       case ARP_TIMEOUT: {
         etharp_tmr();
-        if (!isnull(i_smi)) {
-          static int linkstate = 0;
-          ethernet_link_state_t status = smi_get_link_state(i_smi, phy_address);
-          if (!status && linkstate) {
-            if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-            xtcp_if_down();
-            netif_set_link_down(netif);
-          } else if (status && !linkstate) {
-            if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-            netif_set_link_up(netif);
-          }
-          linkstate = status;
-        }
 
         if (!get_if_state() && netif_is_link_up(netif)) {
           if (dhcp_supplied_address(netif) || using_fixed_ip) {

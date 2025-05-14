@@ -13,7 +13,7 @@ set(COMPILER_FLAGS_COMMON   -g
                             -report
                             -DDEBUG_PRINT_ENABLE
                             -DBOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
-                            -DXTCP_STACK_LWIP)
+                            -DXTCP_STACK_UIP)
 
 set(APP_COMPILER_FLAGS      ${COMPILER_FLAGS_COMMON})
 

@@ -1,7 +1,6 @@
 // Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
 #include "xtcp.h"
 #include <string.h>
-#include <smi.h>
 #include <xassert.h>
 #include <print.h>
 #include <malloc.h>
@@ -305,8 +304,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
               client ethernet_cfg_if ?i_eth_cfg,
               client ethernet_rx_if ?i_eth_rx,
               client ethernet_tx_if ?i_eth_tx,
-              client smi_if ?i_smi,
-              uint8_t phy_address,
               const char (&?mac_address0)[6],
               otp_ports_t &?otp_ports,
               xtcp_ipconfig_t &ipconfig)
@@ -388,7 +385,7 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
       i_eth_rx.get_packet(desc, (char *) uip_buf, UIP_BUFSIZE);
       if (desc.type == ETH_DATA) {
         xtcp_process_incoming_packet(desc.len);
-      } else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
+      } else if (desc.type == ETH_IF_STATUS) {
         if (uip_buf[0] == ETHERNET_LINK_UP) {
           uip_linkup();
         }
@@ -589,25 +586,6 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
 
     case tmr when timerafter(timeout) :> timeout:
       timeout += 10000000;
-
-      /* Check for the link state */
-      if (!isnull(i_smi)) {
-        static int linkstate = 0;
-        ethernet_link_state_t status = smi_get_link_state(i_smi, phy_address);
-        if (!status && linkstate) {
-          if (!isnull(i_eth_cfg)) {
-            i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-          }
-          uip_linkdown();
-        }
-        if (status && !linkstate) {
-          if (!isnull(i_eth_cfg)) {
-            i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-          }
-          uip_linkup();
-        }
-        linkstate = status;
-      }
 
       if (++arp_timer == 100) {
         arp_timer=0;
