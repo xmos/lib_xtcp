@@ -248,7 +248,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         process_rx_packet(buffer, desc.len, netif);
       }
       else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
-        if (((unsigned char *)buffer)[0] == ETHERNET_LINK_UP) {
+        if (buffer[0] == ETHERNET_LINK_UP) {
           netif_set_link_up(netif);
         } else {
           netif_set_link_down(netif);
@@ -536,8 +536,7 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         }
 
         if (!get_if_state() && netif_is_link_up(netif)) {
-          if (dhcp_supplied_address(netif) ||
-              using_fixed_ip) {
+          if (dhcp_supplied_address(netif) || using_fixed_ip) {
             xtcp_if_up();
           }
         }
