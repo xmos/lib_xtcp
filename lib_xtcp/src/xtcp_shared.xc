@@ -93,7 +93,7 @@ xtcp_connection_t create_xtcp_state(int xtcp_num,
 client_queue_t dequeue_event(unsigned client_num)
 {
   client_num_events[client_num]--;
-  xassert(client_num_events[client_num] >= 0);
+  xassert(client_num_events[client_num] != UINT_MAX);
 
   unsigned position = client_heads[client_num];
   client_heads[client_num] = (client_heads[client_num] + 1) % CLIENT_QUEUE_SIZE;
