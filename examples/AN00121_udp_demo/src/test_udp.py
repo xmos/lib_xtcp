@@ -18,9 +18,12 @@ print("Connecting..")
 sock.connect((args.ip, 15533))
 print("Connected")
 
-msg = "hello world"
+msg = "hello, world"
 print("Sending message: " + msg)
 sock.send(bytes(msg, "ascii"))
+
+chunk = sock.recv( 20 )
+print("Revc'd message: " + str(chunk))
 
 print("Closing...")
 sock.close()
