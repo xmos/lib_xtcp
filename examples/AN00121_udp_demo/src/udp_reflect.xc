@@ -2,6 +2,7 @@
 
 #include <platform.h>
 #include <string.h>
+#include <ctype.h>
 #include <print.h>
 #include "xtcp.h"
 #include "xtcp_shared.h"
@@ -130,8 +131,9 @@ void udp_reflect(client xtcp_if i_xtcp)
             printstrln(" bytes");
 
             response_len = data_len;
-            for (int i=0;i<response_len;i++)
-              tx_buffer[i] = rx_buffer[i];
+            for (int i=0;i<response_len;i++) {
+              tx_buffer[i] = toupper( rx_buffer[i] );
+            }
 
             i_xtcp.send(conn, tx_buffer, response_len);
             printstrln("Responding");
