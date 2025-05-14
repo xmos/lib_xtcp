@@ -183,7 +183,7 @@ void udp_reflect(client xtcp_if i_xtcp)
       if (broadcast_connection.id != INIT_VAL)  {
         printstrln("Sending broadcast message");
         broadcast_len = strlen(broadcast_buffer);
-        i_xtcp.send(conn, broadcast_buffer, broadcast_len);
+        i_xtcp.send(broadcast_connection, broadcast_buffer, broadcast_len);
       }
       time += BROADCAST_INTERVAL;
       break;
