@@ -6,9 +6,7 @@
 #include <debug_print.h>
 #include "xtcp.h"
 #include "xtcp_shared.h"
-// #ifdef (XTCP_STACK_LWIP)
 #include "xtcp_lwip_includes.h"
-// #endif
 
 /* A 2D array of queue items */
 static client_queue_t client_queue[MAX_XTCP_CLIENTS][CLIENT_QUEUE_SIZE] = {{{0}}};
@@ -102,18 +100,14 @@ client_queue_t dequeue_event(unsigned client_num)
 
 void enqueue_event_and_notify(unsigned client_num,
                               xtcp_event_type_t xtcp_event,
-                              xtcp_connection_t * unsafe xtcp_conn
-// #ifdef (XTCP_STACK_LWIP)
-                              ,struct pbuf *unsafe pbuf
-// #endif
+                              xtcp_connection_t * unsafe xtcp_conn,
+                              struct pbuf *unsafe pbuf
                               )
 {
   unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
   client_queue[client_num][position].xtcp_event = xtcp_event;
   client_queue[client_num][position].xtcp_conn = xtcp_conn;
-// #ifdef (XTCP_STACK_LWIP)
   client_queue[client_num][position].pbuf = pbuf;
-// #endif
 
   client_num_events[client_num]++;
   xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
@@ -141,11 +135,9 @@ void rm_recv_events(unsigned conn_id, unsigned client_num)
 
         target_index++;
       } else {
-// #ifdef (XTCP_STACK_LWIP)
         if(current_queue_item.pbuf) {
           pbuf_free(current_queue_item.pbuf);
         }
-// #endif
       }
     }
 
@@ -166,13 +158,8 @@ void xtcp_if_up(void)
 {
   unsafe {
     ifstate = 1;
-    // memset(&if_up_dummy, 0, sizeof(if_up_dummy));
     for(unsigned i=0; i<n_xtcp; ++i) {
-// #ifdef (XTCP_STACK_LWIP)
       enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy, NULL);
-// #else /* uIP */
-//       enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy);
-// #endif
     }
   }
 }
@@ -182,11 +169,7 @@ void xtcp_if_down(void)
   unsafe {
     ifstate = 0;
     for(unsigned i=0; i<n_xtcp; ++i) {
-// #ifdef (XTCP_STACK_LWIP)
       enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy, NULL);
-// #else /* uIP */
-//       enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy);
-// #endif
     }
   }
 }
