@@ -7,6 +7,7 @@
 // Used to prevent conflict with uIP
 #include "xtcp_uip_includes.h"
 #include "xtcp_shared.h"
+#include "xtcp_uip/xcoredev.h"
 
 #include "debug_print.h"
 
@@ -56,9 +57,10 @@ unsafe {
 unsigned int rx_buffer[(UIP_BUFSIZE + 5) >> 2];
 
 // These pointers are used to store connections for sending in xcoredev.xc
-extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx_uip;
-extern client interface mii_if * unsafe xtcp_i_mii_uip;
+extern client interface ethernet_tx_if unsafe xtcp_i_eth_tx_uip;
+extern client interface mii_if unsafe xtcp_i_mii_uip;
 extern mii_info_t xtcp_mii_info_uip;
+extern enum xcoredev_eth_e xcoredev_eth;
 
 static unsigned uip_static_ip = 0; // Boolean whether we're using a static IP
 xtcp_ipconfig_t uip_static_ipconfig;
@@ -334,11 +336,13 @@ void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
     xtcp_mii_info_uip = mii_info;
-    xtcp_i_mii_uip = (client mii_if * unsafe) &i_mii;
+    xtcp_i_mii_uip = i_mii;
+    xcoredev_eth = XCORE_ETH_MII;
   }
 
   if (!isnull(i_eth_cfg)) {
-    xtcp_i_eth_tx_uip = (client ethernet_tx_if * unsafe) &i_eth_tx;
+    xtcp_i_eth_tx_uip = i_eth_tx;
+    xcoredev_eth = XCORE_ETH_TX;
     i_eth_cfg.set_macaddr(0, mac_address);
 
     size_t index = i_eth_rx.get_index();

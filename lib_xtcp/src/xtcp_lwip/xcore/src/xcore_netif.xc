@@ -6,10 +6,12 @@
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
 #include "xassert.h"
+#include "xcore_netif.h"
 
-client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx = NULL;
-client interface mii_if * unsafe xtcp_i_mii = NULL;
+client interface ethernet_tx_if unsafe xtcp_i_eth_tx;
+client interface mii_if unsafe xtcp_i_mii;
 mii_info_t xtcp_mii_info;
+enum xcore_netif_eth_e xcore_netif_eth = XCORE_NETIF_ETH_NONE;
 
 client interface xtcp_pbuf_if * unsafe xtcp_i_pbuf_data;
 
@@ -25,8 +27,7 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
       xtcp_i_pbuf_data->send_packet(p);
     }
     return ERR_OK;
-  } else if (xtcp_i_mii == NULL && 
-             xtcp_i_eth_tx == NULL) {
+  } else if (xcore_netif_eth == XCORE_NETIF_ETH_NONE) {
     // No data interface available
     fail("no packet interfaces available");
   }
@@ -60,11 +61,11 @@ err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p) {
       byte_cnt = 60;
     }
 
-    if (xtcp_i_mii) {
-      xtcp_i_mii->send_packet(txbuf, byte_cnt);
+    if (xcore_netif_eth == XCORE_NETIF_ETH_MII) {
+      xtcp_i_mii.send_packet(txbuf, byte_cnt);
       tx_buf_in_use = 1;
-    } else if (xtcp_i_eth_tx) {
-      xtcp_i_eth_tx->send_packet((char*)txbuf, byte_cnt, ETHERNET_ALL_INTERFACES);
+    } else if (xcore_netif_eth == XCORE_NETIF_ETH_TX) {
+      ((client interface ethernet_tx_if)xtcp_i_eth_tx).send_packet((char*)txbuf, byte_cnt, ETHERNET_ALL_INTERFACES);
     } else {
       fail("Not implemented");
     }
