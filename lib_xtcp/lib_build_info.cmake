@@ -1,6 +1,6 @@
 set(LIB_NAME                lib_xtcp)
 
-set(LIB_VERSION             7.1.0) # Should this be 7 or 8? 7.0.0 is also used on Jakes branch
+set(LIB_VERSION             7.1.0) # Should this be 6.1 or 7.1 or 8? 7.0.0 is also used on Jakes branch
 
 set(LIB_INCLUDES            api
                             src
