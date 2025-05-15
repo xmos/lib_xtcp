@@ -17,4 +17,6 @@ set(LIB_COMPILER_FLAGS      -g
                             -O3
                             -mno-dual-issue)
 
+set(LIB_OPTIONAL_HEADERS    xtcp_client_conf.h xtcp_conf.h)
+
 XMOS_REGISTER_MODULE()
