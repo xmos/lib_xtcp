@@ -7,11 +7,11 @@ set(LIB_INCLUDES            api
                             src/xtcp_lwip/include
                             src/xtcp_lwip/xcore/include)
              
-set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.0.0)"
+set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.0.1)"
                             "lib_logging(3.3.1)"
                             "lib_xassert(4.3.1)"
-                            "lib_random(1.0.0)"
-                            "lib_otpinfo(2.0.0)")
+                            "lib_random(1.2.0)"
+                            "lib_otpinfo(2.2.1)")
 
 set(LIB_COMPILER_FLAGS      -g
                             -O3
