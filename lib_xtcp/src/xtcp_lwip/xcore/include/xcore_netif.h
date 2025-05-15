@@ -4,6 +4,12 @@
 #include <xccompat.h>
 #include <xc2compat.h>
 
+enum xcore_netif_eth_e {
+    XCORE_NETIF_ETH_NONE,
+    XCORE_NETIF_ETH_MII,
+    XCORE_NETIF_ETH_TX,
+};
+
 unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
                                    const ip4_addr_t *unsafe group,
                                    u8_t action);
@@ -15,6 +21,6 @@ unsafe err_t xcore_igmp_mac_filter(struct netif *unsafe netif,
  * @param netif The netif which shall send a packet
  * @param p The packet to send (raw ethernet packet)
  */
-unsafe err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p);
+err_t xcore_linkoutput(struct netif *unsafe netif, struct pbuf *unsafe p);
 
 #endif

@@ -8,12 +8,14 @@
 /* Used to prevent conflict with lwIP */
 #include "xtcp_lwip_includes.h"
 #include "xtcp_shared.h"
+#include "xcore_netif.h"
 
 // These pointers are used to store connections for sending in
 // xcoredev.xc
-extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
-extern client interface mii_if * unsafe xtcp_i_mii;
+extern client interface ethernet_tx_if unsafe xtcp_i_eth_tx;
+extern client interface mii_if unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
+extern enum xcore_netif_eth_e xcore_netif_eth;
 
 static void
 xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6])
@@ -169,11 +171,13 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
     xtcp_mii_info = mii_info;
-    xtcp_i_mii = (client mii_if * unsafe) &i_mii;
+    xtcp_i_mii = i_mii;
+    xcore_netif_eth = XCORE_NETIF_ETH_MII;
   }
 
   if (!isnull(i_eth_cfg)) {
-    xtcp_i_eth_tx = (client ethernet_tx_if * unsafe) &i_eth_tx;
+    xtcp_i_eth_tx = i_eth_tx;
+    xcore_netif_eth = XCORE_NETIF_ETH_TX;
     i_eth_cfg.set_macaddr(0, mac_address);
 
     size_t index = i_eth_rx.get_index();
