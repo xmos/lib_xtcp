@@ -2,19 +2,6 @@
 
 @Library('xmos_jenkins_shared_library@v0.38.0') _
 
-def clone_test_deps() {
-  dir("${WORKSPACE}") {
-    sh "git clone git@github.com:xmos/test_support"
-    sh "git -C test_support checkout e62b73a1260069c188a7d8fb0d91e1ef80a3c4e1"
-
-    sh "git clone git@github.com:xmos/hardware_test_tools"
-    sh "git -C hardware_test_tools checkout 2f9919c956f0083cdcecb765b47129d846948ed4"
-
-    sh "git clone git@github0.xmos.com:xmos-int/xtagctl"
-    sh "git -C xtagctl checkout v3.0.0"
-  }
-}
-
 def archiveLib(String repoName) {
     sh "git -C ${repoName} clean -xdf"
     sh "zip ${repoName}_sw.zip -r ${repoName}"
@@ -52,7 +39,6 @@ pipeline {
   environment {
     REPO = 'lib_xtcp'
     REPO_NAME = 'lib_xtcp'
-    PIP_VERSION = "24.0"
     SEED = "12345"
   }
   stages {
@@ -62,8 +48,10 @@ pipeline {
       }
       stages {
         stage('Checkout') {
+          // will have a separate python 2 env for running xmostest
           environment {
             PYTHON_VERSION = "3.12.1"
+            PIP_VERSION = "24.0"
           }
           steps {
             println "Stage running on: ${env.NODE_NAME}"
@@ -71,6 +59,9 @@ pipeline {
               checkoutScmShallow()
               createVenv()
               installPipfile(false)
+            }
+            dir("${WORKSPACE}") {
+              sh "git clone https://github0.xmos.com/xmos-int/tools_xmostest.git"
             }
           }
         }  // Get sandbox
@@ -91,20 +82,26 @@ pipeline {
             }
           }
         }
-        stage('Build tests') {
+
+        stage('Tests') {
+          environment {
+            PYTHON_VERSION = "2.7.18"
+            PIP_VERSION = "20.3.4"
+          }
           steps {
             dir("${REPO}") {
-              withVenv {
-                withTools(params.TOOLS_VERSION) {
-                  dir("tests") {
-                    xcoreBuild()
-                    stash includes: '**/*.xe', name: 'test_bin', useDefaultExcludes: false
-                  }
-                } // withTools(params.TOOLS_VERSION)
-              } // withVenv
+              withTools(params.TOOLS_VERSION) {
+                dir("tests") {
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv{
+                    sh "./runtests.py --junit-output=${REPO}_tests.xml"
+                  } // withVenv
+                } // dir("tests")
+              } // withTools
             } // dir("${REPO}")
           } // steps
-        } // stage('Build tests')
+        } // stage('Tests')
+
         stage("Archive Lib") {
           steps {
             archiveLib(REPO)
@@ -115,6 +112,11 @@ pipeline {
         cleanup {
           xcoreCleanSandbox()
         } // cleanup
+        always {
+          dir("${WORKSPACE}/${REPO}/tests") {
+            junit "${REPO}_tests.xml"
+          }
+        }
       } // post
     } // stage('Build + Documentation')
   } // stages
