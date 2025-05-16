@@ -1,0 +1,4 @@
+# python_version 2.7
+# pip_version 20.3.*
+
+-e ../../tools_xmostest/
