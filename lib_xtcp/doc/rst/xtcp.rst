@@ -10,7 +10,7 @@ to use. The interfaces to the stack are the same, regardless of which
 implementation is being used.
 
 This task connects to either the MII component in the Ethernet library or one
-of the MAC components in the Ethernet library.
+of the RMII/RGMII MAC components in the Ethernet library.
 See the Ethernet library user guide for details on these components.
 
 .. figure:: images/xtcp_task_diag.*
@@ -195,7 +195,7 @@ Configuration Defines
 .....................
 
 Configuration defines can either be set by adding the a command line
-option to the build flags in your application Makefile
+option to the build flags in your application CMakelists file
 (i.e. ``-DDEFINE=VALUE``) or by adding the file
 ``xtcp_client_conf.h`` into your application and then putting
 ``#define`` directives into that header file (which will then be read
