@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
+// Copyright 2015-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef __XCORE_NETIF_H__
 #define __XCORE_NETIF_H__
 #include <xccompat.h>

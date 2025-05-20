@@ -1,7 +1,7 @@
 :orphan:
 
 ##############################
-TCP/IP Library
+lib_xtcp: TCP/IP Library
 ##############################
 
 :vendor: XMOS
@@ -12,37 +12,37 @@ TCP/IP Library
 :keywords: Ethernet, MAC, MII, RMII, RGMII, SMI, TCP, UDP
 :hardware: xcore.ai, xcore-200
 
-********
-Overview
-********
+*******
+Summary
+*******
 
 A library providing two alternative TCP/UDP/IP protocol stacks for XMOS devices.
-This library connects to the XMOS Ethernet library to provide layer-3 traffic
+This library connects to the XMOS Ethernet library to provide layer-4 traffic
 over Ethernet via MII or RGMII.
 
 Stacks
-......
+======
 
 This library provides two different TCP/IP stack implementations ported to the
 xCORE architecture.
 
 uIP stack
-+++++++++
+---------
 
 The first stack ported is the uIP (micro IP) stack. The uIP stack has been
 designed to have a minimal resource footprint. As a result, it has limited
 performance and does not provide support for TCP windowing.
 
 lwIP stack
-++++++++++
+----------
 
 The second stack ported is the lwIP (lightweight IP) stack. The lwIP stack
 requires more resources than uIP, but is designed to provide
 better throughput and also has support for TCP windowing.
 
-************
-Key features
-************
+********
+Features
+********
 
  * TCP and UDP connection handling
  * Common API to selectable TCP stack, uIP/LwIP
@@ -55,6 +55,13 @@ Known issues
 ************
 
  * psock.c does output ftpgroup warnings, this API is not used in this app note.
+
+
+****************
+Development repo
+****************
+
+  * `lib_xtcp <https://www.github.com/xmos/lib_xtcp>`_
 
 **************
 Required tools
@@ -69,9 +76,9 @@ Required libraries (dependencies)
  * `lib_ethernet <https://www.github.com/xmos/lib_ethernet>`_
  * `lib_board_support <https://www.github.com/xmos/lib_board_support>`_
 
-*************
-Related notes
-*************
+*************************
+Related application notes
+*************************
 
  * `AN00120: 100Mbps RMII ethernet application note <https://www.xmos.com/file/an00120>`_
  * `AN00199: XMOS Gigabit Ethernet application note (XK_EVK_XE216) <https://www.xmos.com/file/an00199-xmos-gigabit-ethernet-application-note>`_
@@ -84,4 +91,5 @@ The following application notes use this library:
 Support
 *******
 
-This package is supported by XMOS Ltd. Issues can be raised against the software at: http://www.xmos.com/support
+This package is supported by XMOS Ltd. Issues can be raised against the software at
+`http://www.xmos.com/support <http://www.xmos.com/support>`_

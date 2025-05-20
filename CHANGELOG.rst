@@ -1,5 +1,5 @@
-TCP/IP library change log
-=========================
+lib_xtcp change log
+====================
 
 UNRELEASED
 ----------

@@ -66,6 +66,16 @@ pipeline {
           }
         }  // Get sandbox
 
+        stage('Examples build') {
+          steps{
+            dir("${REPO}/examples") {
+              withVenv {
+                xcoreBuild()
+              }
+            }
+          }
+        } // Examples build
+
         stage('Library checks') {
           steps {
             warnError("lib checks") {
