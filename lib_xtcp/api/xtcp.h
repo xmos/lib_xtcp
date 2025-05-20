@@ -60,6 +60,21 @@
  */
 #define CONNECTIONS_PER_UDP_PORT 10
 
+#ifdef __XC__
+#define NULLABLE_CLIENT_INTERFACE(type, name) client interface type ?name
+#define SERVER_INTERFACE_ARRAY(type, name, size) server interface type name[size]
+#define CONST_NULLABLE_ARRAY_OF_SIZE(type, name, size) const type (&?name)[size]
+#else
+#define NULLABLE_CLIENT_INTERFACE(type, name) unsigned name
+#define SERVER_INTERFACE_ARRAY(type, name, size) unsigned *name
+#define CONST_NULLABLE_ARRAY_OF_SIZE(type, name, size) const type *name
+#endif
+
+#ifndef __DOXYGEN__
+#define static_const_unsigned static const unsigned
+#define slave_void slave void
+#endif
+
 typedef unsigned int xtcp_appstate_t;
 
 /** XTCP IP address.
@@ -180,8 +195,14 @@ typedef struct xtcp_connection_t {
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
-#ifdef __XC__
+#ifndef __DOXYGEN__
 typedef interface xtcp_if {
+#endif // __DOXYGEN__
+  /**
+   * \addtogroup xtcp_if
+   * @{
+   */
+
   /** \brief Recieve information/data from the XTCP server.
    *
    *  After the client is notified by packet_ready() it must call this function
@@ -199,14 +220,14 @@ typedef interface xtcp_if {
    * \param length      An integer where the server can indicate
    *                    the length of the sent packet.
    */
-  [[clears_notification]] void get_packet(xtcp_connection_t &conn, char data[n], unsigned n, unsigned &length);
+  [[clears_notification]] void get_packet(REFERENCE_PARAM(xtcp_connection_t, conn), char data[n], unsigned n, REFERENCE_PARAM(unsigned, length));
 
   /** \brief Notifies the client that there is data/information
    *         ready for them.
    *
    *  After this notification is raised a call to get_packet() is needed.
    */
-  [[notification]] slave void packet_ready();
+  [[notification]] slave_void packet_ready();
 
   /** \brief Listen to a particular incoming port.
    *
@@ -234,7 +255,7 @@ typedef interface xtcp_if {
    * \param conn        The connection structure to be passed in that will
    *                    contain all the connection information.
    */
-  void close(const xtcp_connection_t &conn);
+  void close(const REFERENCE_PARAM(xtcp_connection_t, conn));
 
   /** \brief Abort a connection.
    *
@@ -244,7 +265,7 @@ typedef interface xtcp_if {
    * \param conn        The connection structure to be passed in that will
    *                    contain all the connection information.
    */
-  void abort(const xtcp_connection_t &conn);
+  void abort(const REFERENCE_PARAM(xtcp_connection_t, conn));
 
   /** \brief Try to connect to a remote port.
    *
@@ -267,7 +288,7 @@ typedef interface xtcp_if {
    * \param len         The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    */
-  void send(const xtcp_connection_t &conn, char data[], unsigned len);
+  void send(const REFERENCE_PARAM(xtcp_connection_t, conn), char data[], unsigned len);
 
   /** \brief Subscribe to a particular IP multicast group address.
    *
@@ -294,7 +315,7 @@ typedef interface xtcp_if {
    *                    this is usually a pointer to some connection dependent
    *                    information.
    */
-  void set_appstate(const xtcp_connection_t &conn, xtcp_appstate_t appstate);
+  void set_appstate(const REFERENCE_PARAM(xtcp_connection_t, conn), xtcp_appstate_t appstate);
 
   /** \brief Bind the local end of a connection to a particular port (UDP).
    *
@@ -302,7 +323,7 @@ typedef interface xtcp_if {
    *                    contain all the connection information.
    * \param port_number The local port to set the connection to.
    */
-  void bind_local_udp(const xtcp_connection_t &conn, unsigned port_number);
+  void bind_local_udp(const REFERENCE_PARAM(xtcp_connection_t, conn), unsigned port_number);
 
   /** \brief Bind the remote end of a connection to a particular port and
    *         ip address (UDP).
@@ -315,7 +336,7 @@ typedef interface xtcp_if {
    * \param ipaddr      The intended remote address of the connection
    * \param port_number The intended remote port of the connection
    */
-  void bind_remote_udp(const xtcp_connection_t &conn, xtcp_ipaddr_t ipaddr, unsigned port_number);
+  void bind_remote_udp(const REFERENCE_PARAM(xtcp_connection_t, conn), xtcp_ipaddr_t ipaddr, unsigned port_number);
 
   /** \brief Request a hosts IP address from a URL.
    *
@@ -329,28 +350,45 @@ typedef interface xtcp_if {
    *
    * \param ipconfig    IPconfig to be filled.
    */
-  void get_ipconfig(xtcp_ipconfig_t &ipconfig);
+  void get_ipconfig(REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
+
+/**@}*/ // END: addtogroup xtcp_if
+
+#ifndef __DOXYGEN__
 } xtcp_if;
+#endif // __DOXYGEN__
 
 typedef struct pbuf * unsafe pbuf_p;
 
 /** WiFi/xtcp data interface - mii.h equivalent
  *  TODO: document
  */
+#ifndef __DOXYGEN__
 typedef interface xtcp_pbuf_if {
+#endif // __DOXYGEN__
+
+  /**
+   * \addtogroup xtcp_pbuf_if
+   * @{
+   */
 
   /** TODO: document */
   [[clears_notification]]
   pbuf_p receive_packet();
 
   [[notification]]
-  slave void packet_ready();
+  slave_void packet_ready();
 
   /** TODO: document */
   void send_packet(pbuf_p p);
 
   // TODO: Add function to notify clients of received packets
+
+/**@}*/ // END: addtogroup xtcp_pbuf_if
+
+#ifndef __DOXYGEN__
 } xtcp_pbuf_if;
+#endif // __DOXYGEN__
 
 typedef enum {
   ARP_TIMEOUT = 0,
@@ -390,19 +428,19 @@ typedef enum {
  *  \param otp_ports    If this port structure is non-null then the component
  *                      will obtain the MAC address from OTP ROM. See the OTP
  *                      reading library user guide for details.
- *  \param ipconfig     This :c:type:`xtcp_ipconfig_t` structure is used
+ *  \param ipconfig     This `xtcp_ipconfig_t` structure is used
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
-               static const unsigned n_xtcp,
-               client mii_if ?i_mii,
-               client ethernet_cfg_if ?i_eth_cfg,
-               client ethernet_rx_if ?i_eth_rx,
-               client ethernet_tx_if ?i_eth_tx,
-               const char (&?mac_address)[6],
-               otp_ports_t &?otp_ports,
-               xtcp_ipconfig_t &ipconfig);
+void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp)
+              ,static_const_unsigned n_xtcp
+              ,NULLABLE_CLIENT_INTERFACE(mii_if, i_mii)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx)
+              ,CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address, 6)
+              ,NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports)
+              ,REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 
 /** Function implementing the TCP/IP stack task using the uIP stack.
  *
@@ -432,20 +470,19 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
  *  \param otp_ports    If this port structure is non-null then the component
  *                      will obtain the MAC address from OTP ROM. See the OTP
  *                      reading library user guide for details.
- *  \param ipconfig     This :c:type:`xtcp_ipconfig_t` structure is used
+ *  \param ipconfig     This `xtcp_ipconfig_t` structure is used
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
-              static const unsigned n_xtcp,
-              client mii_if ?i_mii,
-              client ethernet_cfg_if ?i_eth_cfg,
-              client ethernet_rx_if ?i_eth_rx,
-              client ethernet_tx_if ?i_eth_tx,
-              const char (&?mac_address)[6],
-              otp_ports_t &?otp_ports,
-              xtcp_ipconfig_t &ipconfig);
-#endif /* __XC__ */
+void xtcp_uip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp)
+              ,static_const_unsigned n_xtcp
+              ,NULLABLE_CLIENT_INTERFACE(mii_if, i_mii)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx)
+              ,NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx)
+              ,CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address, 6)
+              ,NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports)
+              ,REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 
 /** Copy an IP address data structure.
  */

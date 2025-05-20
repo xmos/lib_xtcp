@@ -1,5 +1,3 @@
-.. include:: ../../../README.rst
-
 
 Usage
 -----
@@ -167,10 +165,10 @@ which case the next chunk of data can be sent. Or with an
 :c:member:`XTCP_RESEND_DATA` event in which case the client must
 re-transmit the previous chunk of data.
 
-  .. figure:: images/events.*
-     :width: 50%
+.. figure:: images/events.*
+   :width: 50%
 
-     Example send sequence
+   Example send sequence
 
 
 Link Status Events
@@ -254,6 +252,9 @@ Data Structures/Types
 
 .. _lib_xtcp_event_types:
 
+Event types
+...........
+
 .. doxygenenum:: xtcp_event_type_t
 
 .. doxygenstruct:: xtcp_connection_t
@@ -274,15 +275,4 @@ Server API
 Client API
 ..........
 
-.. doxygeninterface:: xtcp_if
-
-|newpage|
-
-|appendix|
-
-Known Issues
-------------
-
-The library does not support IPv6.
-
-.. include:: ../../../CHANGELOG.rst
+.. doxygengroup:: xtcp_if
