@@ -301,15 +301,15 @@ xtcp_process_periodic_timer(void)
   }
 }
 
-void xtcp_uip(server xtcp_if i_xtcp[n_xtcp],
-              static const unsigned n_xtcp,
-              client mii_if ?i_mii,
-              client ethernet_cfg_if ?i_eth_cfg,
-              client ethernet_rx_if ?i_eth_rx,
-              client ethernet_tx_if ?i_eth_tx,
-              const char (&?mac_address0)[6],
-              otp_ports_t &?otp_ports,
-              xtcp_ipconfig_t &ipconfig)
+void xtcp_uip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp)
+              ,static_const_unsigned n_xtcp
+              ,NULLABLE_CLIENT_INTERFACE_TYPE(mii_if, i_mii)
+              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_cfg_if, i_eth_cfg)
+              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_rx_if, i_eth_rx)
+              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_tx_if, i_eth_tx)
+              ,CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, 6)
+              ,NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports)
+              ,REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig))
 {
   // Entire function declared unsafe
   unsafe {

@@ -137,16 +137,15 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
   return 0;
 }
 
-void
-xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
-          static const unsigned n_xtcp,
-          client mii_if ?i_mii,
-          client ethernet_cfg_if ?i_eth_cfg,
-          client ethernet_rx_if ?i_eth_rx,
-          client ethernet_tx_if ?i_eth_tx,
-          const char (&?_mac_address)[6],
-          otp_ports_t &?otp_ports,
-          xtcp_ipconfig_t &ipconfig)
+void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
+               static_const_unsigned n_xtcp,
+               NULLABLE_CLIENT_INTERFACE_TYPE(mii_if, i_mii),
+               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_cfg_if, i_eth_cfg),
+               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_rx_if, i_eth_rx),
+               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_tx_if, i_eth_tx),
+               CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, 6),
+               NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
+               REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig))
 {
   unsafe {
 
@@ -159,8 +158,8 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   struct netif my_netif;
   struct netif *unsafe netif;
 
-  if (!isnull(_mac_address)) {
-    memcpy(mac_address, _mac_address, 6);
+  if (!isnull(mac_address0)) {
+    memcpy(mac_address, mac_address0, 6);
   } else if (!isnull(otp_ports)) {
     otp_board_info_get_mac(otp_ports, 0, mac_address);
   } else if (!isnull(i_eth_cfg)) {
