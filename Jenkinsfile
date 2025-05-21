@@ -30,7 +30,7 @@ pipeline {
     )
     string(
         name: 'INFR_APPS_VERSION',
-        defaultValue: 'v2.0.1',
+        defaultValue: 'v2.1.0',
         description: 'The infr_apps version'
     )
     choice(name: 'TEST_TYPE', choices: ['smoke', 'nightly'],
@@ -124,7 +124,8 @@ pipeline {
         } // cleanup
         always {
           dir("${WORKSPACE}/${REPO}/tests") {
-            junit "${REPO}_tests.xml"
+            // No tests run at this time, uncomment when tests are running.
+            // junit "${REPO}_tests.xml"
           }
         }
       } // post

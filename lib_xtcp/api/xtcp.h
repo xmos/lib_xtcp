@@ -208,14 +208,14 @@ typedef interface xtcp_if {
    * \param length      An integer where the server can indicate
    *                    the length of the sent packet.
    */
-  CLEARS_NOTIFICATION void get_packet(REFERENCE_PARAM(xtcp_connection_t, conn), char data[n], unsigned n, REFERENCE_PARAM(unsigned, length));
+  [[clears_notification]] void get_packet(REFERENCE_PARAM(xtcp_connection_t, conn), char data[n], unsigned n, REFERENCE_PARAM(unsigned, length));
 
   /** \brief Notifies the client that there is data/information
    *         ready for them.
    *
    *  After this notification is raised a call to get_packet() is needed.
    */
-  NOTIFICATION void packet_ready();
+  [[notification]] slave void packet_ready();
 
   /** \brief Listen to a particular incoming port.
    *
@@ -362,10 +362,10 @@ typedef interface xtcp_pbuf_if {
    */
 
   /** TODO: document */
-  CLEARS_NOTIFICATION
+  [[clears_notification]]
   pbuf_p receive_packet();
 
-  NOTIFICATION
+  [[notification]] slave
   void packet_ready();
 
   /** TODO: document */
@@ -425,11 +425,11 @@ typedef enum {
  */
 void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
                static_const_unsigned n_xtcp,
-               NULLABLE_CLIENT_INTERFACE_TYPE(mii_if, i_mii),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_cfg_if, i_eth_cfg),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_rx_if, i_eth_rx),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_tx_if, i_eth_tx),
-               CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, 6),
+               NULLABLE_CLIENT_INTERFACE(mii_if, i_mii),
+               NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg),
+               NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx),
+               NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx),
+               CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, MACADDR_NUM_BYTES),
                NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
                REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 
@@ -465,15 +465,15 @@ void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
  *                      to determine the IP address configuration of the
  *                      component.
  */
-void xtcp_uip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp)
-              ,static_const_unsigned n_xtcp
-              ,NULLABLE_CLIENT_INTERFACE_TYPE(mii_if, i_mii)
-              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_cfg_if, i_eth_cfg)
-              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_rx_if, i_eth_rx)
-              ,NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_tx_if, i_eth_tx)
-              ,CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, 6)
-              ,NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports)
-              ,REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
+void xtcp_uip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
+              static_const_unsigned n_xtcp,
+              NULLABLE_CLIENT_INTERFACE(mii_if, i_mii),
+              NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg),
+              NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx),
+              NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx),
+              CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, MACADDR_NUM_BYTES),
+              NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
+              REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 #endif /* __XC__ || __DOXYGEN__ */
 
 /** Copy an IP address data structure.

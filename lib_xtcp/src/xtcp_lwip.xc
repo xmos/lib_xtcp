@@ -137,15 +137,15 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
   return 0;
 }
 
-void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
-               static_const_unsigned n_xtcp,
-               NULLABLE_CLIENT_INTERFACE_TYPE(mii_if, i_mii),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_cfg_if, i_eth_cfg),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_rx_if, i_eth_rx),
-               NULLABLE_CLIENT_INTERFACE_TYPE(ethernet_tx_if, i_eth_tx),
-               CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, 6),
-               NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
-               REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig))
+void xtcp_lwip(server interface xtcp_if i_xtcp[n_xtcp],
+               static const unsigned n_xtcp,
+               client interface mii_if ?i_mii,
+               client interface ethernet_cfg_if ?i_eth_cfg,
+               client interface ethernet_rx_if ?i_eth_rx,
+               client interface ethernet_tx_if ?i_eth_tx,
+               const char (&?mac_address0)[MACADDR_NUM_BYTES],
+               otp_ports_t &?otp_ports,
+               xtcp_ipconfig_t &ipconfig)
 {
   unsafe {
 

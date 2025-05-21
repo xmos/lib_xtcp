@@ -54,7 +54,7 @@ Features
 Known issues
 ************
 
- * psock.c does output ftpgroup warnings, this API is not used in this app note.
+ * psock.c does output ftpgroup warnings.
 
 
 ****************

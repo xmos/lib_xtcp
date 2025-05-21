@@ -16,7 +16,7 @@ set(COMPILER_FLAGS_COMMON   -g
                             -DBOARD_SUPPORT_BOARD=XK_EVK_XE216)
 
 # In the compiler flags define either XTCP_STACK_UIP or XTCP_STACK_LWIP
-# according to the TCP stack you wish to use for the app note
+# according to which TCP stack is preferred to run the app note
 set(APP_COMPILER_FLAGS      ${COMPILER_FLAGS_COMMON} -DXTCP_STACK_LWIP)
 
 set(APP_XSCOPE_SRCS         src/config.xscope)

@@ -15,10 +15,12 @@
 #define alias
 #endif
 
+#ifndef NULLABLE_CLIENT_INTERFACE
 #ifdef __XC__
-#define NULLABLE_CLIENT_INTERFACE_TYPE(type, name) client interface type ?name
+#define NULLABLE_CLIENT_INTERFACE(type, name) client interface type ?name
 #else
-#define NULLABLE_CLIENT_INTERFACE_TYPE(type, name) unsigned name
+#define NULLABLE_CLIENT_INTERFACE(type, name) unsigned name
+#endif
 #endif
 
 #ifdef __XC__
@@ -31,18 +33,6 @@
 #define CONST_NULLABLE_ARRAY_OF_SIZE(type, name, size) const type (&?name)[size]
 #else
 #define CONST_NULLABLE_ARRAY_OF_SIZE(type, name, size) const type *name
-#endif
-
-#ifdef __XC__
-#define CLEARS_NOTIFICATION [[clears_notification]]
-#else
-#define CLEARS_NOTIFICATION
-#endif
-
-#ifdef __XC__
-#define NOTIFICATION [[notification]] slave 
-#else
-#define NOTIFICATION
 #endif
 
 #ifdef __XC__
