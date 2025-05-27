@@ -1,12 +1,14 @@
-.. include:: ../../README.rst
+:orphan:
+
+##########################
+an00121: UDP Demo Overview
+##########################
 
 |newpage|
 
-Overview
---------
-
+************
 Introduction
-............
+************
 
 *Transmission Control Protocol/Internet Protocol* (TCP/IP) is an
 internetworking protocol that allows cross-platform or heterogeneous
@@ -20,7 +22,7 @@ does not support flow control and acknowledgment.
 
 
 XMOS TCP/IP (XTCP)
-..................
+==================
 
 The XMOS TCP/IP component provides a IP/UDP/TCP stack that connects to
 the XMOS ethernet component. It enables several clients to connect to
@@ -35,9 +37,11 @@ note is based on the uIP stack provided in the library.
 
 
 Block diagram
-.............
+=============
 
-The application firmware organization is shown in Figure 1.
+The application firmware organization is shown in Figure 1, see :ref:`networking_xmos_section`.
+
+.. _networking_xmos_section:
 
 .. figure:: images/blk_diag_general.*
    :scale: 75%
@@ -45,9 +49,9 @@ The application firmware organization is shown in Figure 1.
 
    Networking with an XMOS device
 
-
+***************
 The UDP example
----------------
+***************
 
 The example in this note uses the XMOS TCP/IP library and shows a simple program
 that creates connections for data communication
@@ -64,7 +68,7 @@ You can then access the XTCP functions in your source code via the xtcp.h header
 
 
 Allocating hardware resources
-.............................
+=============================
 
 The TCP/IP stack connects to the MII task from the Ethernet library
 which requires several ports to communicate with the
@@ -72,9 +76,9 @@ Ethernet PHY. These ports are declared in the main program file
 (``main.xc``). In this demo the ports are set up for the Ethernet
 slice connected to the  CIRCLE slot of the sliceKIT:
 
-.. literalinclude:: main.xc
-   :start-on: // Here are the port
-   :end-on: clock eth_txclk
+.. literalinclude:: ../../src/main.xc
+   :start-at: port p_phy_rxd
+   :end-at: clock phy_txclk
 
 Note that the port ``p_eth_dummy`` does not need to be connected to
 external hardware - it is just used internally by the Ethernet
@@ -84,24 +88,14 @@ The MDIO Serial Management Interface (SMI) is used to transfer
 management information between MAC and PHY. This interface consists of
 two signals which are connected to two ports:
 
-.. literalinclude:: main.xc
-   :start-on: p_smi_mdio
-   :end-on: p_smi_mdc
-
-The final ports used in the application
-are the ones to access the internal OTP
-memory on the xCORE. These ports are fixed and can be intialized with
-the ``OTP_PORTS_INITIALIZER`` macro supplied by the ``lib_otpinfo``
-OTP reading library.
-
-.. literalinclude:: main.xc
-   :start-on: // These ports are for accessing the OTP memory
-   :end-on: otp_ports
+.. literalinclude:: ../../src/main.xc
+   :start-at: port p_smi_mdio
+   :end-at: port p_smi_mdc
 
 |newpage|
 
 IP configuration
-................
+================
 
 The IP is configured via a structure passed to the ``xtcp`` task
 to suit the network where the XMOS device is
@@ -109,12 +103,13 @@ used.
 
 It is initialized to all zeros when DHCP/AutoIP is used.
 
-.. literalinclude:: main.xc
-   :start-on: // IP Config
-   :end-on: };
+.. literalinclude:: ../../src/main.xc
+   :start-at: static xtcp_ipconfig_t
+   :end-at: };
 
+*************************
 Application configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~
+*************************
 
 The final part of the application setup in ``main.xc`` is a set of defines that
 assigns port numbers
@@ -122,14 +117,14 @@ to the broadcast and incoming ports and also assigns the broadcast
 address.  The size of data buffer is also set. These defines are used
 by the application.
 
-.. literalinclude:: main.xc
-   :start-on: // Defines
-   :end-on: BROADCAST_MSG
+.. literalinclude:: ../../src/udp_reflect.xc
+   :start-at: // Defines
+   :end-at: BROADCAST_MSG
 
 |newpage|
 
 The application main() function
-...............................
+===============================
 
 For the UDP-based application example, the system comprises four tasks running
 on three separate logical cores of a xCORE General-Purpose
@@ -153,8 +148,8 @@ application code running on separate logical cores.
 Below is the source code for the main function of this application,
 which is taken from the source file ``main.xc``
 
-.. literalinclude:: main.xc
-   :start-on: int main
+.. literalinclude:: ../../src/main.xc
+   :start-at: int main
 
 Looking at this in more detail you can see the following:
 
@@ -177,12 +172,12 @@ Looking at this in more detail you can see the following:
     reading the OTP memory of the device.
 
 The UDP reflector
-.................
+=================
 
 The application code for receiving UDP packets of data from a network machine and reflecting it back to the same machine is implemented in the file ``main.xc``. Further, a fixed packet is sent periodically to a broadcast IP address. The code performing these tasks is contained within the function ``udp_reflect()`` which is shown in the following pages:
 
-.. literalinclude:: main.xc
-   :start-on: void udp_reflect
+.. literalinclude:: ../../src/udp_reflect.xc
+   :start-at: void udp_reflect
    :end-before: while (1)
 
 In this segment of the code you can see the following.
@@ -251,10 +246,12 @@ You can see the following in the rest of the code.
 
 
 |newpage|
-|appendix|
 
-Demo Hardware Setup
--------------------
+.. _appendix:
+
+*****************************
+Appendix: Demo Hardware Setup
+*****************************
 
 	#. Connect the xTAG-2 to XP-SKC-L2 sliceKIT through the xTAG-2 adaptor XA-SK-XTAG2.
 	#. Connect the xTAG-2 USB connector to the USB connector on your development PC using a USB cable.
@@ -264,6 +261,9 @@ Demo Hardware Setup
 	#. Switch on the power supply.
 
 The demo code can be modified to run on any development board with an xCORE device and an ethernet connector.
+See :ref:`hardware_udp_setup_section`.
+
+.. _hardware_udp_setup_section:
 
 .. figure:: images/marked_hw_setup.*
 
@@ -271,8 +271,9 @@ The demo code can be modified to run on any development board with an xCORE devi
 
 |newpage|
 
+*************************
 Launching the demo device
--------------------------
+*************************
 
 Once the application source code is imported into the tools you can then build the project
 which will generate the binary file required to run the demo application.
@@ -295,11 +296,12 @@ The IP address assigned to the XMOS device through DHCP is displayed. The broadc
 
 |newpage|
 
+****************
 Host Application
-----------------
+****************
 
 Windows Host
-............
+============
 
 On the host machine connected to the same network of the XMOS device,
 
@@ -313,7 +315,7 @@ On the host machine connected to the same network of the XMOS device,
 The broadcast message ``XMOS Broadcast`` set in ``main.xc`` is displayed on the ``Received data`` space at regular intervals.
 
 Testing data reception
-......................
+======================
 
 On the Hercules terminal, type ``Hello World`` under ``Send`` and click on the ``Send`` button. You will see the following text in the xTIMEcomposer console window::
 
@@ -327,40 +329,44 @@ Since the demo code reflects the received data back to the sending machine, you 
 
 The data reception can also be tested by running the python script ``test_udp.py`` instead of the Hercules terminal on the host machine. The python script is given below.
 
-.. literalinclude:: test_udp.py
-   :largelisting:
+.. literalinclude:: ../../src/test_udp.py
+   :language: python
+   :linenos:
 
 .. [#] http://www.hw-group.com/products/hercules/index_en.html
 
 |newpage|
 
+**********
 References
-----------
+**********
 
-.. nopoints::
+* XMOS Tools User Guide: http://www.xmos.com/published/xtimecomposer-user-guide
 
-  * XMOS Tools User Guide
+* XMOS xCORE Programming Guide: http://www.xmos.com/published/xmos-programming-guide
 
-    http://www.xmos.com/published/xtimecomposer-user-guide
-
-  * XMOS xCORE Programming Guide
-
-    http://www.xmos.com/published/xmos-programming-guide
-
-  * XMOS TCP/IP stack design guide:
-
-    https://www.xmos.com/published/xmos-tcpip-stack-design-guide
+* XMOS TCP/IP stack design guide: https://www.xmos.com/published/xmos-tcpip-stack-design-guide
 
 |newpage|
 
+************************
 Full source code listing
-------------------------
+************************
 
 Source code for main.xc
-.......................
+=======================
 
-.. literalinclude:: main.xc
-   :largelisting:
+.. literalinclude:: ../../src/main.xc
+  :language: c
+  :linenos:
 
 |newpage|
 
+Copyright & Disclaimer
+======================
+
+|XMOS copyright|
+
+|XMOS disclaimer|
+
+|XMOS trademarks|

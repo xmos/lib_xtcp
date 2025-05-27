@@ -1,9 +1,9 @@
 VERSION = 6.1.0
 
-DEPENDENT_MODULES = lib_ethernet(>=3.2.0) lib_otpinfo(>=2.0.0) lib_random(>=1.0.0)
+DEPENDENT_MODULES = lib_ethernet(>=4.0.0) lib_otpinfo(>=2.0.0) lib_random(>=1.0.0)
 
 # Build flags
-MODULE_XCC_FLAGS = $(XCC_FLAGS) -DLWIP=1 -DUIP=2 -g -O3
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3
 
 # Source directories
 # Note: only includes IPv4 of lwIP
@@ -17,39 +17,21 @@ LWIP_INCLUDE_DIRS = src src/xtcp_lwip/include src/xtcp_lwip/xcore/include
 UIP_EXCLUDE_FILES  += uip-fw.c uip-neighbor.c xtcp_lwip.xc xtcp_lwip_includes.h
 LWIP_EXCLUDE_FILES += xtcp_uip.xc xtcp_uip_includes.h
 
-# Leftover from previous incarnation.
-XCC_FLAGS_xcoredev.xc = $(XCC_XC_FLAGS) -fsubword-select
-
 # Provide the conditional defines needed for optional includes
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 
-ifndef XTCP_STACK
-
-# Have a different default depending on the target so that the documentation can
-# do resource estimation for each stack by setting a target
-ifeq ($(TARGET),XCORE-200-EXPLORER)
-XTCP_STACK = LWIP
-else
-XTCP_STACK = UIP
-endif
-
-endif
-
-ifeq ($(XTCP_STACK), UIP)
-SOURCE_DIRS   += $(UIP_SOURCE_DIRS)
-INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api
-EXCLUDE_FILES += $(UIP_EXCLUDE_FILES)
-# Defined in program
-MODULE_XCC_FLAGS += -DXTCP_STACK=UIP
-
-else ifeq ($(XTCP_STACK), LWIP)
+ifneq (,$(findstring XTCP_STACK_LWIP,$(XCC_FLAGS)))
 SOURCE_DIRS   += $(LWIP_SOURCE_DIRS)
 INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api
 EXCLUDE_FILES += $(LWIP_EXCLUDE_FILES)
-# Defined in program
-MODULE_XCC_FLAGS += -DXTCP_STACK=LWIP
+
+else ifneq (,$(findstring XTCP_STACK_UIP,$(XCC_FLAGS)))
+# LWIP files added to build pbuf.c to support common xtcp_shared.xc 
+SOURCE_DIRS   += $(UIP_SOURCE_DIRS) src/xtcp_lwip/core src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
+INCLUDE_DIRS  += $(UIP_SOURCE_DIRS) api src/xtcp_lwip/include src/xtcp_lwip/xcore/include
+EXCLUDE_FILES += $(UIP_EXCLUDE_FILES)
 
 else
-$(error XTCP_STACK must be either UIP or LWIP (or undefined, which defaults to UIP))
+$(error Must define either XTCP_STACK_UIP or XTCP_STACK_LWIP in XCC_FLAGS
 
 endif

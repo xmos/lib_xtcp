@@ -1,19 +1,21 @@
-// Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
+// Copyright 2011-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <print.h>
 #include <xs1.h>
 #include <ethernet.h>
 #include <mii.h>
 #include <string.h>
+#include "xcoredev.h"
 
 extern unsigned short uip_len;
-extern unsigned int uip_buf32[];
 extern unsigned char * unsafe uip_buf;
 extern void * unsafe uip_sappdata;
 
-client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx = NULL;
-client interface mii_if * unsafe xtcp_i_mii = NULL;
-mii_info_t xtcp_mii_info;
+client interface ethernet_tx_if unsafe xtcp_i_eth_tx_uip;
+client interface mii_if unsafe xtcp_i_mii_uip;
+mii_info_t xtcp_mii_info_uip;
+enum xcoredev_eth_e xcoredev_eth = XCORE_ETH_NONE;
 
 #ifndef UIP_MAX_TRANSMIT_SIZE
 #define UIP_MAX_TRANSMIT_SIZE 1520 /* bytes */
@@ -28,20 +30,20 @@ mii_send(void)
   
   if (first_packet_sent) {
     select {
-    case mii_packet_sent(xtcp_mii_info):
+    case mii_packet_sent(xtcp_mii_info_uip):
       break;
     }
   }
   
   if (len < 60) {
     for (int i=len; i < 60; i++) {
-      (uip_buf32, unsigned char[])[i] = 0;
+      uip_buf[i] = 0;
     }
     len=60;
   }
 
-  memcpy(txbuf, uip_buf32, len);
-  xtcp_i_mii->send_packet(txbuf, len);
+  memcpy(txbuf, uip_buf, len);
+  xtcp_i_mii_uip.send_packet(txbuf, len);
   first_packet_sent=1;
 }
 
@@ -51,15 +53,15 @@ xcoredev_send(void)
   unsafe {
     int len = uip_len;
     if (len != 0) {
-      if (xtcp_i_eth_tx != NULL) {
+      if (xcoredev_eth == XCORE_ETH_TX) {
         if (len < 60) {
           for (int i=len; i<60; i++) {
-            (uip_buf32, unsigned char[])[i] = 0;
+            uip_buf[i] = 0;
           }
           len=60;
         }
-        xtcp_i_eth_tx->send_packet((char *) uip_buf32, len, ETHERNET_ALL_INTERFACES);
-      } else {
+        ((client interface ethernet_tx_if)xtcp_i_eth_tx_uip).send_packet((char *) uip_buf, len, ETHERNET_ALL_INTERFACES);
+      } else if (xcoredev_eth == XCORE_ETH_MII) {
         mii_send();
       }
     }

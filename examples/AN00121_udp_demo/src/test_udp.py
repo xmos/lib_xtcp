@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# Copyright 2015-2025 XMOS LIMITED.
+# This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 import argparse
 import socket
@@ -14,14 +16,17 @@ args = parser.parse_args()
 # This is to test the simple UDP example XC program
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-print ("Connecting..")
+print("Connecting..")
 sock.connect((args.ip, 15533))
-print ("Connected")
+print("Connected")
 
-msg = "hello world"
-print ("Sending message: " + msg)
-sock.send(bytes(msg))
+msg = "hello, world"
+print("Sending message: " + msg)
+sock.send(bytes(msg, "ascii"))
 
-print ("Closing...")
+chunk = sock.recv( 20 )
+print("Revc'd message: " + str(chunk))
+
+print("Closing...")
 sock.close()
-print ("Closed")
+print("Closed")

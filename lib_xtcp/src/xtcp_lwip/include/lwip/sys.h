@@ -40,6 +40,8 @@ extern "C" {
 
 #if NO_SYS
 
+#include "arch/sys_arch.h"
+
 /* For a totally minimal and standalone system, we provide null
    definitions of the sys_ functions. */
 typedef u8_t sys_sem_t;
@@ -270,7 +272,6 @@ u32_t sys_now(void);
  * allocation and deallocation.
  */
 #if SYS_LIGHTWEIGHT_PROT
-typedef u32_t sys_prot_t;
 
 /** SYS_ARCH_DECL_PROTECT
  * declare a protection variable. This macro will default to defining a variable of

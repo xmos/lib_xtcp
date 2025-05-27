@@ -1,4 +1,5 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright 2016-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef __xtcp_shared_includes_h__
 #define __xtcp_shared_includes_h__
 
@@ -8,11 +9,10 @@ typedef struct client_queue_t {
   xtcp_event_type_t xtcp_event;
   /* Pointer to connection in uIP or LWIP */
   xtcp_connection_t *unsafe xtcp_conn;
-
-#if (XTCP_STACK == LWIP)
   struct pbuf *unsafe pbuf;
-#endif
 } client_queue_t;
+
+inline void printip(xtcp_ipaddr_t ipaddr);
 
 unsigned get_if_state(void);
 void renotify(unsigned client_num);
@@ -25,10 +25,8 @@ xtcp_connection_t create_xtcp_state(int xtcp_num, xtcp_protocol_t protocol,
 client_queue_t dequeue_event(unsigned client_num);
 void enqueue_event_and_notify(unsigned client_num,
                                      xtcp_event_type_t xtcp_event,
-                                     xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                                     ,struct pbuf *unsafe pbuf
-#endif
+                                     xtcp_connection_t * unsafe xtcp_conn,
+                                     struct pbuf *unsafe pbuf
                                      );
 
 void rm_recv_events(unsigned conn_id, unsigned client_num);

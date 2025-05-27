@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
+// Copyright 2015-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "xc2compat.h"
 #include <string.h>
 #include <smi.h>
@@ -8,12 +9,14 @@
 /* Used to prevent conflict with lwIP */
 #include "xtcp_lwip_includes.h"
 #include "xtcp_shared.h"
+#include "xcore_netif.h"
 
 // These pointers are used to store connections for sending in
 // xcoredev.xc
-extern client interface ethernet_tx_if  * unsafe xtcp_i_eth_tx;
-extern client interface mii_if * unsafe xtcp_i_mii;
+extern client interface ethernet_tx_if unsafe xtcp_i_eth_tx;
+extern client interface mii_if unsafe xtcp_i_mii;
 extern mii_info_t xtcp_mii_info;
+extern enum xcore_netif_eth_e xcore_netif_eth;
 
 static void
 xtcp_lwip_low_level_init(struct netif &netif, char mac_address[6])
@@ -134,18 +137,15 @@ add_udp_connection(struct udp_pcb * unsafe pcb,
   return 0;
 }
 
-void
-xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
-          static const unsigned n_xtcp,
-          client mii_if ?i_mii,
-          client ethernet_cfg_if ?i_eth_cfg,
-          client ethernet_rx_if ?i_eth_rx,
-          client ethernet_tx_if ?i_eth_tx,
-          client smi_if ?i_smi,
-          uint8_t phy_address,
-          const char (&?_mac_address)[6],
-          otp_ports_t &?otp_ports,
-          xtcp_ipconfig_t &ipconfig)
+void xtcp_lwip(server interface xtcp_if i_xtcp[n_xtcp],
+               static const unsigned n_xtcp,
+               client interface mii_if ?i_mii,
+               client interface ethernet_cfg_if ?i_eth_cfg,
+               client interface ethernet_rx_if ?i_eth_rx,
+               client interface ethernet_tx_if ?i_eth_tx,
+               const char (&?mac_address0)[MACADDR_NUM_BYTES],
+               otp_ports_t &?otp_ports,
+               xtcp_ipconfig_t &ipconfig)
 {
   unsafe {
 
@@ -158,8 +158,8 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   struct netif my_netif;
   struct netif *unsafe netif;
 
-  if (!isnull(_mac_address)) {
-    memcpy(mac_address, _mac_address, 6);
+  if (!isnull(mac_address0)) {
+    memcpy(mac_address, mac_address0, 6);
   } else if (!isnull(otp_ports)) {
     otp_board_info_get_mac(otp_ports, 0, mac_address);
   } else if (!isnull(i_eth_cfg)) {
@@ -171,11 +171,13 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
   if (!isnull(i_mii)) {
     mii_info = i_mii.init();
     xtcp_mii_info = mii_info;
-    xtcp_i_mii = (client mii_if * unsafe) &i_mii;
+    xtcp_i_mii = i_mii;
+    xcore_netif_eth = XCORE_NETIF_ETH_MII;
   }
 
   if (!isnull(i_eth_cfg)) {
-    xtcp_i_eth_tx = (client ethernet_tx_if * unsafe) &i_eth_tx;
+    xtcp_i_eth_tx = i_eth_tx;
+    xcore_netif_eth = XCORE_NETIF_ETH_TX;
     i_eth_cfg.set_macaddr(0, mac_address);
 
     size_t index = i_eth_rx.get_index();
@@ -247,8 +249,8 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       if (desc.type == ETH_DATA) {
         process_rx_packet(buffer, desc.len, netif);
       }
-      else if (isnull(i_smi) && desc.type == ETH_IF_STATUS) {
-        if (((unsigned char *)buffer)[0] == ETHERNET_LINK_UP) {
+      else if (desc.type == ETH_IF_STATUS) {
+        if (buffer[0] == ETHERNET_LINK_UP) {
           netif_set_link_up(netif);
         } else {
           netif_set_link_down(netif);
@@ -332,14 +334,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       if (conn.protocol == XTCP_PROTOCOL_TCP) break;
       struct udp_pcb *unsafe u_pcb = (struct udp_pcb * unsafe) conn.stack_conn;
 
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(xtcp_ipaddr_t));
       unsigned port_n = port_number;
 
-      err_t e = udp_connect(u_pcb, (struct ip_addr * unsafe) ip, port_n);
+      err_t e = udp_connect(u_pcb, &ip, port_n);
       if(e != ERR_OK)
         debug_printf("udp_connect() failed\n");
-      add_udp_connection(u_pcb, ip, port_n);
+      add_udp_connection(u_pcb, (unsigned char *)&ip, port_n);
       break;
 
     case i_xtcp[unsigned i].unlisten(unsigned port_number):
@@ -424,14 +426,14 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       blank_conn.client_num = i;
 
       /* Make local copies */
-      xtcp_ipaddr_t ip;
-      memcpy(ip, ipaddr, sizeof(xtcp_ipaddr_t));
+      ip_addr_t ip;
+      memcpy(&ip, ipaddr, sizeof(ip_addr_t));
       unsigned port_n = port_number;
 
       if (protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe pcb = tcp_new();
         if (pcb) {
-          tcp_connect(pcb, (struct ip_addr * unsafe) ip, port_n, NULL);
+          tcp_connect(pcb, &ip, port_n, NULL);
           pcb->xtcp_conn = blank_conn;
         }
       } else {
@@ -442,9 +444,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         memset(pcb->connection_ports, 0, sizeof(unsigned) * CONNECTIONS_PER_UDP_PORT);
         memset(pcb->connection_addrs, 0, sizeof(unsigned char) * CONNECTIONS_PER_UDP_PORT * 4);
         pcb->xtcp_conn = create_xtcp_state(i, XTCP_PROTOCOL_UDP,
-                                           blank_ip,
+                                           (unsigned char *)&ip,
                                            port_n, 0, pcb);
-        if (add_udp_connection(pcb, ip, port_n)) {
+        if (add_udp_connection(pcb, (unsigned char *)&ip, port_n)) {
           enqueue_event_and_notify(i, XTCP_NEW_CONNECTION, &(pcb->xtcp_conn), NULL);
         }
       }
@@ -474,7 +476,12 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
         if (u_pcb->flags & UDP_FLAGS_CONNECTED) {
           e = udp_send(u_pcb, new_pbuf);
         } else {
-          e = udp_sendto(u_pcb, new_pbuf, (ip_addr_t * unsafe) u_pcb->xtcp_conn.remote_addr, u_pcb->xtcp_conn.remote_port);
+          ip_addr_t ip_remote;
+          memcpy(&ip_remote, u_pcb->xtcp_conn.remote_addr, sizeof(ip_remote));
+          e = udp_sendto(u_pcb, new_pbuf, &ip_remote, u_pcb->xtcp_conn.remote_port);
+        
+          struct udp_pcb *unsafe u_pcb = (struct udp_pcb *unsafe) conn.stack_conn;
+          enqueue_event_and_notify(conn.client_num, XTCP_SENT_DATA, &(u_pcb->xtcp_conn), NULL);
         }
         pbuf_free(new_pbuf);
         if (e != ERR_OK) {
@@ -517,25 +524,9 @@ xtcp_lwip(server xtcp_if i_xtcp[n_xtcp],
       switch (i) {
       case ARP_TIMEOUT: {
         etharp_tmr();
-        if (!isnull(i_smi)) {
-          static int linkstate = 0;
-          ethernet_link_state_t status = smi_get_link_state(i_smi, phy_address);
-          if (!status && linkstate) {
-            if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-            xtcp_if_down();
-            netif_set_link_down(netif);
-          } else if (status && !linkstate) {
-            if (!isnull(i_eth_cfg))
-              i_eth_cfg.set_link_state(0, status, LINK_100_MBPS_FULL_DUPLEX);
-            netif_set_link_up(netif);
-          }
-          linkstate = status;
-        }
 
         if (!get_if_state() && netif_is_link_up(netif)) {
-          if (dhcp_supplied_address(netif) ||
-              using_fixed_ip) {
+          if (dhcp_supplied_address(netif) || using_fixed_ip) {
             xtcp_if_up();
           }
         }

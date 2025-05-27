@@ -1,4 +1,5 @@
-// Copyright (c) 2017, XMOS Ltd, All rights reserved
+// Copyright 2017-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
@@ -6,7 +7,6 @@
 #include <string.h>
 #include "debug_print.h"
 #include <xtcp.h>
-#include "xtcp_stack.h"
 #include <stdlib.h>
 #include <xassert.h>
 

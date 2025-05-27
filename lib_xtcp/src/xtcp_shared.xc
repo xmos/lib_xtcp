@@ -1,4 +1,5 @@
-// Copyright (c) 2016-2017, XMOS Ltd, All rights reserved
+// Copyright 2016-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "xc2compat.h"
 #include <string.h>
 #include <xassert.h>
@@ -6,9 +7,7 @@
 #include <debug_print.h>
 #include "xtcp.h"
 #include "xtcp_shared.h"
-#if (XTCP_STACK == LWIP)
 #include "xtcp_lwip_includes.h"
-#endif
 
 /* A 2D array of queue items */
 static client_queue_t client_queue[MAX_XTCP_CLIENTS][CLIENT_QUEUE_SIZE] = {{{0}}};
@@ -18,6 +17,17 @@ static unsigned client_num_events[MAX_XTCP_CLIENTS] = {0};
 static server xtcp_if * unsafe i_xtcp; /* Used for notifying */
 static unsigned ifstate = 0;           /* Connection state */
 static unsigned n_xtcp;                /* Number of clients */
+
+void printip(xtcp_ipaddr_t ipaddr)
+{
+  printint(ipaddr[0]);
+  printstr(".");
+  printint(ipaddr[1]);
+  printstr(".");
+  printint(ipaddr[2]);
+  printstr(".");
+  printint(ipaddr[3]);
+}
 
 void xtcp_init_queue(static const unsigned n_xtcp_init,
                      server xtcp_if i_xtcp_init[n_xtcp_init])
@@ -82,7 +92,7 @@ xtcp_connection_t create_xtcp_state(int xtcp_num,
 client_queue_t dequeue_event(unsigned client_num)
 {
   client_num_events[client_num]--;
-  xassert(client_num_events[client_num] >= 0);
+  xassert(client_num_events[client_num] != UINT_MAX);
 
   unsigned position = client_heads[client_num];
   client_heads[client_num] = (client_heads[client_num] + 1) % CLIENT_QUEUE_SIZE;
@@ -91,18 +101,14 @@ client_queue_t dequeue_event(unsigned client_num)
 
 void enqueue_event_and_notify(unsigned client_num,
                               xtcp_event_type_t xtcp_event,
-                              xtcp_connection_t * unsafe xtcp_conn
-#if (XTCP_STACK == LWIP)
-                              , struct pbuf *unsafe pbuf
-#endif
+                              xtcp_connection_t * unsafe xtcp_conn,
+                              struct pbuf *unsafe pbuf
                               )
 {
   unsigned position = (client_heads[client_num] + client_num_events[client_num]) % CLIENT_QUEUE_SIZE;
   client_queue[client_num][position].xtcp_event = xtcp_event;
   client_queue[client_num][position].xtcp_conn = xtcp_conn;
-#if (XTCP_STACK == LWIP)
   client_queue[client_num][position].pbuf = pbuf;
-#endif
 
   client_num_events[client_num]++;
   xassert(client_num_events[client_num] <= CLIENT_QUEUE_SIZE);
@@ -130,11 +136,9 @@ void rm_recv_events(unsigned conn_id, unsigned client_num)
 
         target_index++;
       } else {
-#if (XTCP_STACK == LWIP)
         if(current_queue_item.pbuf) {
           pbuf_free(current_queue_item.pbuf);
         }
-#endif
       }
     }
 
@@ -155,13 +159,8 @@ void xtcp_if_up(void)
 {
   unsafe {
     ifstate = 1;
-    // memset(&if_up_dummy, 0, sizeof(if_up_dummy));
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
       enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy, NULL);
-#else /* uIP */
-      enqueue_event_and_notify(i, XTCP_IFUP, &if_up_dummy);
-#endif
     }
   }
 }
@@ -171,11 +170,7 @@ void xtcp_if_down(void)
   unsafe {
     ifstate = 0;
     for(unsigned i=0; i<n_xtcp; ++i) {
-#if (XTCP_STACK == LWIP)
       enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy, NULL);
-#else /* uIP */
-      enqueue_event_and_notify(i, XTCP_IFDOWN, &if_down_dummy);
-#endif
     }
   }
 }

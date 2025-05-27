@@ -68,7 +68,7 @@
 #include <debug_print.h>
 
 #if UIP_USE_AUTOIP
-#include "autoip.h"
+#include "autoip/autoip.h"
 #endif
 
 struct arp_hdr {

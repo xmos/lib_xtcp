@@ -1,10 +1,20 @@
-Using XMOS TCP/IP Library for UDP-based Networking
-==================================================
+:orphan:
 
-.. version:: 6.0.0
+################################################
+AN00121: A UDP loopback demo running on lib_xtcp
+################################################
 
-Summary
--------
+:vendor: XMOS
+:version: 1.0.0
+:scope: Example
+:description: TCP/IP UDP loopback example
+:category: Networking
+:keywords: Ethernet, MAC, RMII, SMI, TCP, UDP
+:hardware: xk_eth_xu316_dual_100m board
+
+********
+Overview
+********
 
 This application note demonstrates the use of XMOS TCP/IP stack on
 an XMOS multicore micro controller to communicate on an ethernet-based network.
@@ -17,44 +27,57 @@ network using the UDP stack of XTCP library. The XTCP library features
 low memory footprint but provides a complete stack of various
 protocols.
 
-On an XMOS xCORE, all the endpoint activities are implemented as
-concurrent real-time processes allowing the network data to be placed
-on the wire or received from the wire with negligible
-latency. Moreover, unlike conventional interrupt-driven processors,
-the deterministic nature of event-driven XMOS processors meets the
-precise timing requirements of the real-time data transmission over
-networks.
+Ethernet connectivity is an essential part of the explosion of connected 
+devices known collectively as the Internet of Things (IoT). XMOS technology is
+perfectly suited to these applications - offering future proof and reliable 
+ethernet connectivity whilst offering the flexibility to interface to a huge 
+variety of "Things".
+
+The code associated with this application note provides an example of using
+the TCP and Ethernet Libraries to provide a UDP loopback using a Reduced
+Media Independent Interface (RMII) and MAC interface for 100Mbps.
 
 Note: This application note requires an application to be run on the
 host machine to test the communication with the XMOS device.
 
-Required tools and libraries
-............................
+************
+Key features
+************
 
-.. appdeps::
+ * RMII L2 MAC interface
+ * SMI serial interface
+ * Selectable TCP stack, uIP/LwIP
+ * UDP loopback
 
-Required hardware
-.................
+************
+Known issues
+************
 
-This application note is designed to run on an XMOS xCORE
-General-Purpose
-device.
+ * psock.c does output ftpgroup warnings, this API is not used in this app note.
 
-The example code provided with the application has been implemented and tested
-on the xCORE General-Purpose sliceKIT (XP-SKC-L2) with an ethernet sliceCARD (XA-SK-E100) but there is no dependancy on this board and it can be
-modified to run on any development board which uses an xCORE device.
+**************
+Required tools
+**************
 
-Prerequisites
-.............
+ * XMOS XTC Tools: 15.3.1
 
-  - This document assumes familiarity with the XMOS xCORE architecture, the XMOS tool chain and the xC language. Documentation related to these aspects which are not specific to this application note are linked to in the references appendix.
+*********************************
+Required libraries (dependencies)
+*********************************
 
-  - For descriptions of XMOS related terms found in this document please see the *XMOS glossary* [#]_.
+ * `lib_xtcp <https://www.github.com/xmos/lib_xtcp>`_
+ * `lib_board_support <https://www.github.com/xmos/lib_board_support>`_
 
-  - For an overview of XTCP TCP/IP stack please see the *XMOS TCP/IP stack design guide* [#]_ for reference.
+*************
+Related notes
+*************
 
-.. [#] http://www.xmos.com/published/glossary
+ * `AN00120: 100Mbps RMII ethernet application note <https://www.xmos.com/file/an00120>`_
+ * `AN00199: XMOS Gigabit Ethernet application note (XK_EVK_XE216) <https://www.xmos.com/file/an00199-xmos-gigabit-ethernet-application-note>`_
 
-.. [#] https://www.xmos.com/published/xmos-tcpip-stack-design-guide
+*******
+Support
+*******
 
+This package is supported by XMOS Ltd. Issues can be raised against the software at: http://www.xmos.com/support
 

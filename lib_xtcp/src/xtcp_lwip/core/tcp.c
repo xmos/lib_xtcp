@@ -1820,7 +1820,7 @@ struct tcp_pcb *xtcp_lookup_tcp_pcb_state_from_port(int port_number) {
   for (int i = 0; i < max_pcb_list; i++) {
     for (cpcb = *tcp_pcb_lists[i]; cpcb != NULL; cpcb = cpcb->next) {
       xtcp_connection_t conn = cpcb->xtcp_conn;
-      if (conn.local_port == port_number) return cpcb;
+      if (conn.local_port == (unsigned)port_number) return cpcb;
     }
   }
   return NULL;

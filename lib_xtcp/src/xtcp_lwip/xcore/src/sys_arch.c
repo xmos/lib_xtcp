@@ -1,10 +1,13 @@
-// Copyright (c) 2015-2016, XMOS Ltd, All rights reserved
+// Copyright 2015-2025 XMOS LIMITED.
+// This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "lwip/sys.h"
 #include "lwip/opt.h"
 #include "arch/sys_arch.h"
 #include "hwlock.h"
 
 #if SYS_LIGHTWEIGHT_PROT
+random_generator_t rng;
+
 hwlock_t lwip_lock;
 
 /** sys_prot_t sys_arch_protect(void)
