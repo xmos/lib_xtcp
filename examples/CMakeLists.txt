@@ -3,5 +3,4 @@ include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 
 project(lib_xtcp_examples)
 
-add_subdirectory(AN00121_udp_demo)
 add_subdirectory(app_simple_webserver)
