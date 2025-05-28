@@ -9,6 +9,7 @@ UNRELEASED
   * CHANGE: Removed 'smi_if i_smi' and 'phy_address' parameters from both
     xtcp_uip and xtcp_lwip functions. The smi_if now only links the smi 
     component with the PHY driver.
+  * CHANGED: Documentation updated
 
 6.1.0
 -----
