@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project(app_simple_webserver)
 
-set(APP_HW_TARGET           XCORE-200-EXPLORER)
+set(APP_HW_TARGET          xk-eth-xu316-dual-100m.xn)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 
@@ -12,8 +12,7 @@ set(COMPILER_FLAGS_COMMON   -g
                             -O3
                             -report
                             -DDEBUG_PRINT_ENABLE
-                            -DRGMII=1
-                            -DBOARD_SUPPORT_BOARD=XK_EVK_XE216)
+                            -DBOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M)
 
 # In the compiler flags define either XTCP_STACK_UIP or XTCP_STACK_LWIP
 # according to which TCP stack is preferred to run the app note

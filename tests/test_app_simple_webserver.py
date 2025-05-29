@@ -1,115 +1,57 @@
 # Copyright 2016-2025 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
-import xmostest
-import re
 
-# This tester is a mashup of the built in ComparisonTester and
-# the AnalogueInputTester from USB Audio. It checks for errors on
-# the XMOS device and checks the output from a python program
-# running on a PC
-class webTester(xmostest.Tester):
-    def __init__(self, expected_response, ip, product, group,
-                 test, config = {}, env = {}):
-        super(webTester, self).__init__()
-        self.register_test(product, group, test, config)
-        self._expected_response = expected_response
-        self._ip = ip
-        self._test = (product, group, test, config, env)
+import time
+import pathlib
+import subprocess
+from hardware_test_tools import XcoreApp
 
-    def record_failure(self, failure_reason):
-        # Append a newline if there isn't one already
-        if not failure_reason.endswith('\n'):
-            failure_reason += '\n'
-        self.failures.append(failure_reason)
-        print 'Failure reason: {}'.format(failure_reason) # Print without newline
-        self.result = False
 
-    def run(self, xc_output, python_output):
-        self.result = True
-        self.failures = []
-        expected_response = self._expected_response
-        ip = self._ip
-        (product, group, test, config, env) = self._test
+def test_app_simple_webserver(request):
+    adapter_id = request.config.getoption("--adapter-id")
+    assert adapter_id is not None, "Error: Specify a valid adapter-id"
 
-        if isinstance(python_output, str):
-            python_output = python_output.split('\n')
+    phy = request.config.getoption("--phy")
+    assert phy is not None, "Error: Specify a valid phy"
 
-        while(python_output[-1] == ''):
-            del python_output[-1]
+    expected_response = '<!DOCTYPE html>\n' \
+        '<html><head><title>Hello world</title></head>\n' \
+        '<body>Hello World!</body></html>\n'
 
-        # Check for any xC device errors
-        for line in (xc_output + python_output):
-            if re.match('.*ERROR|.*error|.*Error|.*Problem', line):
-                self.record_failure('Error: ' + line)
+    web_response = run_test('192.168.200.178', adapter_id)
 
-        if python_output[0] != expected_response:
-            self.record_failure('Response from device did not match expected response\n' +
-                                '  Expected:\n{}'.format(expected_response) +
-                                '  Actual:\n{}'.format(python_output))
+    assert expected_response in web_response.stdout
 
-        for line in xc_output:
-            if re.match('IP Address: [0-9].[0-9].[0-9].[0-9]', line):
-                found_ip = line.strip('IP Address: ').strip('\n')
-                if(found_ip != ip):
-                    self.record_failure('Differing IP address used by device than expected\n' +
-                                        '  Expected: {}\n'.format(ip) +
-                                        '  Found:    {}'.format(found_ip))
 
-        output = {'python_output':''.join(python_output),
-                  'device_output':''.join(xc_output)}
+def run_test(ip, adapter_id):
+    binary = pathlib.Path(
+        '../examples/app_simple_webserver/bin/app_simple_webserver.xe')
 
-        if not self.result:
-            output['failures'] = ''.join(self.failures)
+    if binary.exists():
+        print(f'Found test binary, {binary}')
+        assert 1
+    else:
+        print('No test binary found')
+        assert 0
 
-        xmostest.set_test_result(product,
-                                 group,
-                                 test,
-                                 config,
-                                 self.result,
-                                 env={},
-                                 output=output)
+    print(f'Target IP address: {ip}')
 
-def test(device, ip, expected_response):
-    binary = '../examples/app_simple_webserver/bin/app_simple_webserver.xe'
+    test_stdout = ""
+    web_response = ""
 
-    tester = xmostest.CombinedTester(2, webTester(expected_response, ip,
-                                    'lib_xtcp', device + '_configuration_tests', 'webserver', {}))
+    with XcoreApp.XcoreApp(binary, adapter_id, attach='xscope') as xcoreapp:
+        time.sleep(15)  # Wait for IFUP
 
-    resources = xmostest.request_resource('xtcp_resources', tester)
+        web_response = subprocess.run(
+            ['python', 'xtcp_ping_pong.py', '--ip', ip,
+                '--start-port', '80', '--test', 'webserver'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
-    if not resources[device]:
-        # Abort the test
-        print 'Resource \'{}\' not avaliable'.format(device)
-        return
+        xcoreapp.terminate()
+        test_stdout = xcoreapp.proc_stdout
 
-    if not resources['host']:
-        # Abort the test
-        print 'Resource \'host\' not avaliable'
-        return
+    print(test_stdout)
+    print(web_response)
 
-    run_job = xmostest.run_on_xcore(resources[device], binary,
-                                    tester=tester[0],
-                                    enable_xscope=True,
-                                    timeout=30)
-
-    server_job = xmostest.run_on_pc(resources['host'],
-                                    ['python', 'xtcp_ping_pong.py',
-                                    '--ip', '{}'.format(ip),
-                                    '--start-port', '80',
-                                    '--test', 'webserver'],
-                                    timeout=30,
-                                    tester=tester[1],
-                                    initial_delay=15)
-
-def runtest():
-    # Check if the test is running in an environment where
-    # it can access the machine with the devices attached
-    args = xmostest.getargs()
-    if not args.remote_resourcer:
-        # Abort the test
-        print 'Remote resourcer not avaliable'
-        return
-
-    test('explorer', '192.168.1.199', '<!DOCTYPE html>' +
-                                    '<html><head><title>Hello world</title></head>' +
-                                    '<body>Hello World!</body></html>\n')
+    return web_response

@@ -2,7 +2,24 @@
 
 @Library('xmos_jenkins_shared_library@v0.38.0') _
 
-def archiveLib(String repoName) {
+def clone_test_deps() 
+{
+  dir("${WORKSPACE}")
+  {
+    // Check whether we need test_support....
+    sh "git clone git@github.com:xmos/test_support"
+    sh "git -C test_support checkout e62b73a1260069c188a7d8fb0d91e1ef80a3c4e1"
+
+    sh "git clone git@github.com:xmos/hardware_test_tools"
+    sh "git -C hardware_test_tools checkout 2f9919c956f0083cdcecb765b47129d846948ed4"
+
+    sh "git clone git@github0.xmos.com:xmos-int/xtagctl"
+    sh "git -C xtagctl checkout v3.0.0"
+  }
+}
+
+def archiveLib(String repoName) 
+{
     sh "git -C ${repoName} clean -xdf"
     sh "zip ${repoName}_sw.zip -r ${repoName}"
     archiveArtifacts artifacts: "${repoName}_sw.zip", allowEmptyArchive: false
@@ -10,14 +27,17 @@ def archiveLib(String repoName) {
 
 getApproval()
 
-pipeline {
+pipeline 
+{
   agent none
-  options {
+  options 
+  {
     buildDiscarder(xmosDiscardBuildSettings())
     skipDefaultCheckout()
     timestamps()
   }
-  parameters {
+  parameters 
+  {
     string(
       name: 'TOOLS_VERSION',
       defaultValue: '15.3.1',
@@ -36,99 +56,150 @@ pipeline {
     choice(name: 'TEST_TYPE', choices: ['smoke', 'nightly'],
           description: 'Run tests with either a fixed seed or a randomly generated seed')
   }
-  environment {
+  environment 
+  {
     REPO = 'lib_xtcp'
     REPO_NAME = 'lib_xtcp'
     SEED = "12345"
   }
-  stages {
-    stage('Build + Documentation') {
-      agent {
+  stages 
+  {
+    stage('Build + Documentation') 
+    {
+      agent 
+      {
         label 'documentation&&linux&&x86_64'
       }
-      stages {
-        stage('Checkout') {
-          // will have a separate python 2 env for running xmostest
-          environment {
-            PYTHON_VERSION = "3.12.1"
-            PIP_VERSION = "24.0"
-          }
-          steps {
+      stages
+      {
+        stage('Checkout + Build') 
+        {
+          steps 
+          {
             println "Stage running on: ${env.NODE_NAME}"
-            dir("${REPO}") {
+            dir("${REPO}") 
+            {
               checkoutScmShallow()
-              createVenv()
-              installPipfile(false)
-            }
-            dir("${WORKSPACE}") {
-              sh "git clone https://github0.xmos.com/xmos-int/tools_xmostest.git"
+              
+              dir("examples") 
+              {
+                withTools(params.TOOLS_VERSION) 
+                {
+                  xcoreBuild()
+                  stash includes: '**/*.xe', name: 'webserver_test_bin', useDefaultExcludes: false
+                }
+              }
+
+              dir("tests")
+              {
+                withTools(params.TOOLS_VERSION) 
+                {
+                  xcoreBuild()
+                  stash includes: '**/*.xe', name: 'xtcp_test_bin', useDefaultExcludes: false
+                }
+              }
             }
           }
         }  // Get sandbox
 
-        stage('Examples build') {
-          steps{
-            dir("${REPO}/examples") {
-              withVenv {
-                xcoreBuild()
-              }
-            }
-          }
-        } // Examples build
-
-        stage('Library checks') {
-          steps {
-            warnError("lib checks") {
+        stage('Library checks') 
+        {
+          steps
+          {
+            warnError("lib checks") 
+            {
               runLibraryChecks("${WORKSPACE}/${REPO}", "${params.INFR_APPS_VERSION}")
             }
           }
-        }
-        stage('Documentation') {
-          steps {
-            dir("${REPO}") {
-              warnError("Docs") {
+        } // Library checks
+
+        stage('Documentation')
+        {
+          steps 
+          {
+            dir("${REPO}")
+            {
+              warnError("Docs")
+              {
                 buildDocs()
               }
             }
           }
-        }
+        } // Documentation
 
-        stage('Tests') {
-          environment {
-            PYTHON_VERSION = "2.7.18"
-            PIP_VERSION = "20.3.4"
-          }
-          steps {
-            dir("${REPO}") {
-              withTools(params.TOOLS_VERSION) {
-                dir("tests") {
-                  createVenv(reqFile: "requirements.txt")
-                  withVenv{
-                    sh "./runtests.py --junit-output=${REPO}_tests.xml"
-                  } // withVenv
-                } // dir("tests")
-              } // withTools
-            } // dir("${REPO}")
-          } // steps
-        } // stage('Tests')
-
-        stage("Archive Lib") {
-          steps {
+        stage("Archive Lib") 
+        {
+          steps 
+          {
             archiveLib(REPO)
           }
-        } //stage("Archive Lib")
-      } // stages
-      post {
-        cleanup {
-          xcoreCleanSandbox()
-        } // cleanup
-        always {
-          dir("${WORKSPACE}/${REPO}/tests") {
-            // No tests run at this time, uncomment when tests are running.
-            // junit "${REPO}_tests.xml"
-          }
         }
-      } // post
+      } // stages
+      post 
+      {
+        cleanup 
+        {
+          xcoreCleanSandbox()
+        }
+      }
     } // stage('Build + Documentation')
+
+    stage('Tests: HW tests - PHY0') 
+    {
+      agent 
+      {
+        label 'sw-hw-eth-ubu0'
+      }
+
+      steps 
+      {
+        clone_test_deps()
+
+        dir("${REPO}") 
+        {
+          checkoutScmShallow()
+
+          dir("examples")
+          {
+            unstash 'webserver_test_bin'
+          }
+
+          withTools(params.TOOLS_VERSION)
+          {
+            dir("tests")
+            {
+              unstash 'xtcp_test_bin'
+
+              createVenv(reqFile: "requirements.txt")
+              withVenv
+              {
+                script
+                {
+                  def junit_file = 'pytest_lib_checks.xml'
+                  withXTAG(["xk-eth-xu316-dual-100m"])
+                  { 
+                    xtagIds ->
+                      def status = sh(script: "python -m pytest -v --junitxml=${junit_file} --adapter-id ${xtagIds[0]}", returnStatus: true)
+                    echo "pytest return code = ${status}"
+                  }
+                  if (fileExists(junit_file))
+                  {
+                    junit junit_file
+                  }
+                }
+              }
+            }
+          }
+        } // dir("${REPO}")
+      } // steps
+      
+      post
+      {
+        cleanup 
+        {
+          xcoreCleanSandbox()
+        }
+      }
+    }
   } // stages
 } // pipeline

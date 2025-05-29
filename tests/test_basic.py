@@ -1,186 +1,185 @@
 # Copyright 2016-2025 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
-import xmostest
-import re
 
-# This tester is a mashup of the built in ComparisonTester and
-# the AnalogueInputTester from USB Audio. It checks for errors on
-# the XMOS device and checks the output from a python program
-# running on a PC
-class xTCPTester(xmostest.Tester):
-    def __init__(self, total_connections, packets, protocol, product, group,
-                 test, config = {}, env = {}):
-        super(xTCPTester, self).__init__()
-        self.register_test(product, group, test, config)
-        self._total_connections = total_connections
-        self._packets = packets
-        self._protocol = protocol
-        self._test = (product, group, test, config, env)
+import pytest
+import re
+import math
+import time
+import pathlib
+import subprocess
+from hardware_test_tools import XcoreApp
+
+
+@pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
+@pytest.mark.parametrize('library', ['UIP', 'LWIP'])
+@pytest.mark.parametrize('processes', [1, 2])
+def test_basic(request, protocol, library, processes):
+    dut_ip = '192.168.200.198'
+    dut_ports_per_proc = processes  # TODO parameterise this independently???
+
+    tester = RunXtcp(processes, dut_ports_per_proc, protocol)
+    tester.setup(request)
+
+    tester.run_test(0.002, 'EXPLORER', dut_ip, 'ETH', library)
+
+    tester.check_xrun()
+    tester.check_python()
+
+    assert len(tester.failures()) == 0
+
+
+class CollectFailures():
+    def __init__(self):
+        self._failures = []
 
     def record_failure(self, failure_reason):
         # Append a newline if there isn't one already
         if not failure_reason.endswith('\n'):
             failure_reason += '\n'
-        self.failures.append(failure_reason)
-        print "Failure reason: {}".format(failure_reason) # Print without newline
+        self._failures.append(failure_reason)
+        print("Failure reason: {}".format(failure_reason))
         self.result = False
 
-    def run(self, xc_output, python_output):
-        self.result = True
-        self.failures = []
-        total_connections = self._total_connections
-        packets = self._packets
-        protocol = self._protocol
-        (product, group, test, config, env) = self._test
+    def failures(self):
+        return self._failures
 
-        if isinstance(python_output, str):
-            python_output = python_output.split('\n')
 
-        while(python_output[-1] == ''):
-            del python_output[-1]
+class RunXtcp(CollectFailures):
+    def __init__(self, processes, ports, protocol):
+        super(RunXtcp, self).__init__()
+        self._adapter_id = None
+        self.processes = processes
+        self.ports = ports
+        self.protocol = protocol
 
-        # Check for any xC device errors
-        for line in (xc_output + python_output):
-            if re.match('.*ERROR|.*error|.*Error|.*Problem', line):
+        self.python_output = ""
+        self.xrun_stdout = ""
+
+    def setup(self, request):
+        self.adapter_id = request.config.getoption("--adapter-id")
+        assert self.adapter_id is not None, "Error: Specify a valid adapter-id"
+
+        self.multi_phy = request.config.getoption("--multi-phy")
+        assert self.multi_phy is not None, "Error: Specify a valid multi-phy"
+
+        level = request.config.getoption("--level")
+        if level == 'quick':
+            self.packets = 10
+        elif level == 'smoke':
+            self.packets = 1000
+        elif level == 'nightly':
+            self.packets = 10000
+        else:  # weekend
+            self.packets = 100000
+
+    def run_test(self, delay, device, ip, interface, library):
+        setup = f'{self.processes}_{self.ports}_{self.protocol}_{device}_{interface}'
+        binary = pathlib.Path(f'xtcp_bombard_{library.lower()}/bin/{setup}/xtcp_bombard_{library.lower()}_{setup}.xe')
+
+        assert binary.exists(), 'Found test binary'
+
+        START_PORT = "15533"
+
+        with XcoreApp.XcoreApp(binary, self.adapter_id, attach='xscope') as xcoreapp:
+            time.sleep(15)  # Wait for IFUP
+
+            self.python_output = subprocess.run(
+                [
+                    'python', 'xtcp_ping_pong.py', '--ip', ip,
+                    '--start-port', START_PORT,
+                    '--remote-processes', f'{self.processes}',
+                    '--remote-ports', f'{self.ports}',
+                    '--protocol', self.protocol,
+                    '--packets', f'{self.packets}',
+                    '--delay-between-packets', f'{delay}',
+                    '--halt-sequential-errors', f'{11}',
+                    '--num-timeouts-reconnect', f'{3}'
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+
+            xcoreapp.terminate()
+            self.xrun_stdout = xcoreapp.proc_stdout
+
+        print("XRUN output:")
+        print(self.xrun_stdout)
+
+        assert self.python_output.returncode == 0, "python script xtcp_ping_pong.py did not run"
+
+    def check_python(self):
+        if isinstance(self.python_output, subprocess.CompletedProcess):
+            output = self.python_output.stdout
+        else:
+            output = self.python_output
+
+        total_errors = 0
+        total_losses = 0
+        python_valid = False
+        total_runs = self.packets * self.processes * self.ports
+        achieved_runs = self.packets * self.processes * self.ports
+
+        # Check for any test output errors
+        for line in output.splitlines():
+            if re.match('.*ERROR:|.*error:|.*Error:|.*Problem:|.*FAIL:', line):
+                total_errors += 1
                 self.record_failure(line)
 
-        # Check the board is listening on every port
-        found_connections = 0
-        for i in range(len(xc_output)):
-            if(re.match('Listening on port: [0-9]+$', xc_output[i])):
-                found_connections += 1
+            elif re.match('.*Loss:|.*LOSS:', line):
+                total_losses += 1
+                print(line)
 
-        if found_connections < total_connections:
-            self.record_failure("Incorrect amount of listening ports created on device\n" +
-                                "  Expected ports: {}".format(total_connections) +
-                                "  Actual ports:   {}".format(found_connections))
+            elif re.match('.*Info:|.*INFO:', line):
+                print(line)
+                split = line.split('\t')
+                if len(split) > 1 and 'runs' in split[1]:
+                    achieved_runs -= self.packets
+                    achieved_runs += int(split[-1])
 
-        udp_max_error = int(packets * total_connections * 0.01)
-        total_errors = -1
-        for i in range(len(python_output)):
-            if(re.match('Lost_packets: [0-9]+.*$', python_output[i])):
-                total_errors = int(python_output[i].split(' ')[1])
-                break
+            elif (re.match('Lost_packets: [0-9]+.*$', line)):
+                python_valid = True
 
-        if total_errors == -1:
+        if python_valid is not True:
             self.record_failure("Could not find the python script's error output")
 
         # Accept a 1% error rate for UDP?
-        if protocol == "UDP":
-            if total_errors > udp_max_error:
-                self.record_failure("Packet error rate too high \n" +
-                                    "  Allowable loss rate: {} packets\n".format(udp_max_error) +
-                                    "  Actual loss rate:    {} packets\n".format(total_errors))
+        if self.protocol == "UDP":
+            test_threshold = math.ceil(self.packets * self.processes * self.ports * 0.01)
 
-        # Accept no errors for TCP
-        else:
-            if total_errors > 0:
-                self.record_failure("Packet error rate too high \n" +
-                                    "  Allowable loss rate: 0 packets\n" +
-                                    "  Actual loss rate:    {} packets\n".format(total_errors))
+        else:  # Accept no errors for TCP
+            test_threshold = 0
 
-        output = {'python_output':''.join(python_output),
-                  'device_output':''.join(xc_output)}
+        if total_losses > test_threshold:
+            self.record_failure(
+                f"Packet error rate too high for {self.protocol}\n" +
+                f"  Allowable losses: {test_threshold} packets\n" +
+                f"  Actual losses:    {total_losses} packets\n" +
+                "  Loss rate:        {0:.2f} %\n".format(total_losses * 100.0 / achieved_runs) +
+                f"  Runs:             {achieved_runs}/{total_runs} packets (achieved/requested)\n"
+            )
 
-        if not self.result:
-            output['failures'] = ''.join(self.failures)
+    def check_xrun(self):
+        # Check the board is listening on every port
+        num_connections = self.processes * self.ports
+        found_connections = 0
+        num_interfaces = 0
 
-        xmostest.set_test_result(product,
-                                 group,
-                                 test,
-                                 config,
-                                 self.result,
-                                 env={},
-                                 output=output)
+        for line in self.xrun_stdout.splitlines():
+            if (re.match('Listening on port: [0-9]+$', line)):
+                found_connections += 1
 
+            elif 'IFUP' in line:
+                num_interfaces += 1
 
-def test(packets, delay, device, ip, remote_processes, connections, interface, protocol, library):
-    setup = '{}_{}_{}_{}_{}'.format(remote_processes, connections, protocol, device, interface)
-    binary = 'xtcp_bombard_{}/bin/{}/xtcp_bombard_{}_{}.xe'.format(library.lower(), setup, library.lower(), setup)
+        if found_connections != num_connections:
+            self.record_failure(
+                "Incorrect number of listening ports created on device\n" +
+                "  Expected ports: {}".format(num_connections) +
+                "  Actual ports:   {}".format(found_connections)
+            )
 
-    tester = xmostest.CombinedTester(2, xTCPTester(remote_processes*connections,
-                                     packets, protocol,
-                                    'lib_xtcp', device.lower() + '_configuration_tests', '{}_{}'.format(setup, library), {}))
-
-    resources = xmostest.request_resource('xtcp_resources', tester)
-
-    run_job = xmostest.run_on_xcore(resources[device.lower()], binary,
-                                    tester=tester[0],
-                                    enable_xscope=True,
-                                    timeout=30)
-
-    START_PORT = 15533
-
-    server_job = xmostest.run_on_pc(resources['host'],
-                                    ['python', 'xtcp_ping_pong.py',
-                                    '--ip', '{}'.format(ip),
-                                    '--start-port', '{}'.format(START_PORT),
-                                    '--remote-processes', '{}'.format(remote_processes),
-                                    '--remote-ports', '{}'.format(connections),
-                                    '--protocol', '{}'.format(protocol),
-                                    '--packets', '{}'.format(packets),
-                                    '--delay-between-packets', '{}'.format(delay)],
-                                    timeout=60*2,
-                                    tester=tester[1],
-                                    initial_delay=20)
-
-def runtest():
-    # Check if the test is running in an environment where
-    # it can access the machine with the slice kit attached
-    args = xmostest.getargs()
-    if not args.remote_resourcer:
-        # Abort the test
-        print 'Remote resourcer not avaliable'
-        return
-
-    if xmostest.testlevel_is_at_least(xmostest.get_testlevel(), 'smoke'):
-        packets = 1000
-    elif xmostest.testlevel_is_at_least(xmostest.get_testlevel(), 'nightly'):
-        packets = 10000
-    else: # weekend
-        packets = 100000
-
-    tests = [# device     ip               processes ports mii    protocol
-             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'UDP', 'UIP'],
-             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'TCP', 'UIP'],
-             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'UDP', 'UIP'],
-             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'TCP', 'UIP'],
-
-             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'UDP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'TCP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'UDP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'TCP', 'UIP'],
-
-             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'UDP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'TCP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'UDP', 'UIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'TCP', 'UIP'],
-
-             ['SLICEKIT', '192.168.1.196', 1,        1,    'RAW', 'UDP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 1,        1,    'RAW', 'TCP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 2,        2,    'RAW', 'UDP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 2,        2,    'RAW', 'TCP', 'UIP'],
-
-             ['SLICEKIT', '192.168.1.196', 1,        1,    'ETH', 'UDP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 1,        1,    'ETH', 'TCP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 2,        2,    'ETH', 'UDP', 'UIP'],
-             ['SLICEKIT', '192.168.1.196', 2,        2,    'ETH', 'TCP', 'UIP'],
-
-             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'UDP', 'LWIP'],
-             ['EXPLORER', '192.168.1.198', 1,        1,    'ETH', 'TCP', 'LWIP'],
-             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'UDP', 'LWIP'],
-             ['EXPLORER', '192.168.1.198', 2,        2,    'ETH', 'TCP', 'LWIP'],
-
-             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'UDP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 1,        1,    'RAW', 'TCP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'UDP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'RAW', 'TCP', 'LWIP'],
-
-             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'UDP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 1,        1,    'ETH', 'TCP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'UDP', 'LWIP'],
-             ['MICARRAY', '192.168.1.197', 2,        2,    'ETH', 'TCP', 'LWIP'],
-            ]
-
-    for conf in tests:
-        test(packets, 0.002, *conf)
+        if num_interfaces != self.processes:
+            self.record_failure(
+                "Incorrect number of interfaces up" +
+                f"  Expected: {self.processes}" +
+                f"  Actual: {num_interfaces}"
+            )

@@ -1,6 +1,6 @@
 VERSION = 6.1.0
 
-DEPENDENT_MODULES = lib_ethernet(>=4.0.0) lib_otpinfo(>=2.0.0) lib_random(>=1.0.0)
+DEPENDENT_MODULES = lib_ethernet(>=4.0.0) lib_otpinfo(>=2.2.0) lib_random(>=1.2.0)
 
 # Build flags
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3

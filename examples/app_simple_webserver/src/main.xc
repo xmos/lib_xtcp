@@ -2,19 +2,30 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <platform.h>
+#include "xk_eth_xu316_dual_100m/board.h"
 #include "debug_print.h"
 #include "xtcp.h"
 #include "httpd.h"
 #include "smi.h"
 #include "otp_board_info.h"
-#include "xk_evk_xe216/board.h"
 
-otp_ports_t otp_ports = on tile[0]: OTP_PORTS_INITIALIZER;
+port p_smi_mdio = MDIO;
+port p_smi_mdc = MDC;
 
-rgmii_ports_t rgmii_ports = on tile[1]: RGMII_PORTS_INITIALIZER;
+port p_phy_rxd = PHY_0_RXD_4BIT;
+port p_phy_txd = PHY_0_TXD_4BIT;
+port p_phy_rxdv = PHY_0_RXDV;
+port p_phy_txen = PHY_0_TX_EN;
+// Set to PHY_0_CLK_50M when single PHY present and PHY_1_CLK_50M when dual PHY present
+// For single PHY operation, check that R23 is fitted and R3 not fitted.
+#ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
+port p_phy_clk = PHY_0_CLK_50M;
+#else
+port p_phy_clk = PHY_1_CLK_50M;
+#endif
 
-port p_smi_mdio   = on tile[1]: XS1_PORT_1C;
-port p_smi_mdc    = on tile[1]: XS1_PORT_1D;
+clock phy_rxclk = on tile[0]: XS1_CLKBLK_1;
+clock phy_txclk = on tile[0]: XS1_CLKBLK_2;
 
 enum xtcp_clients {
   XTCP_TO_HTTP,
@@ -38,34 +49,43 @@ static unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x0
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP
 xtcp_ipconfig_t ipconfig = {
-  { 192, 168,  10, 178 }, // ip address (eg 192,168,0,2)
+  { 192, 168, 200, 178 }, // ip address (eg 192,168,1,178)
   { 255, 255, 255,   0 }, // netmask (eg 255,255,255,0)
   {   0,   0,   0,   0 }  // gateway (eg 192,168,0,1)
 };
 
-#define NUM_HTTP_CONNECTIONS (10)
-#define XTCP_MII_BUFSIZE (4096)
+#define ETH_RX_BUFFER_SIZE_WORDS 1600
+
 #define ETHERNET_SMI_PHY_ADDRESS (0)
 
 int main(void) {
-  xtcp_if i_xtcp[NUM_XTCP_CLIENTS];
-  smi_if i_smi;
+  xtcp_if         i_xtcp[NUM_XTCP_CLIENTS];
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
-  ethernet_rx_if i_rx[NUM_ETH_CLIENTS];
-  ethernet_tx_if i_tx[NUM_ETH_CLIENTS];
-  streaming chan c_rgmii_cfg;
+  ethernet_rx_if  i_rx[NUM_ETH_CLIENTS];
+  ethernet_tx_if  i_tx[NUM_ETH_CLIENTS];
+  smi_if          i_smi;
 
   par {
-    // RGMII ethernet driver
-    on tile[1]: rgmii_ethernet_mac(i_rx, NUM_ETH_CLIENTS,
-                                   i_tx, NUM_ETH_CLIENTS,
-                                   null, null,
-                                   c_rgmii_cfg,
-                                   rgmii_ports,
-                                   ETHERNET_DISABLE_SHAPER);
+    on tile[0]: rmii_ethernet_rt_mac( i_cfg, NUM_CFG_CLIENTS,
+                                      i_rx, NUM_ETH_CLIENTS,
+                                      i_tx, NUM_ETH_CLIENTS,
+                                      null, null,
+                                      p_phy_clk,
+                                      p_phy_rxd,
+                                      null,
+                                      USE_UPPER_2B,
+                                      p_phy_rxdv,
+                                      p_phy_txen,
+                                      p_phy_txd,
+                                      null,
+                                      USE_UPPER_2B,
+                                      phy_rxclk,
+                                      phy_txclk,
+                                      get_port_timings(0),
+                                      ETH_RX_BUFFER_SIZE_WORDS, ETH_RX_BUFFER_SIZE_WORDS,
+                                      ETHERNET_DISABLE_SHAPER);
 
-    on tile[1].core[0]: rgmii_ethernet_mac_config(i_cfg, NUM_CFG_CLIENTS, c_rgmii_cfg);
-    on tile[1].core[0]: ar8035_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER]);
+    on tile[1]: dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
 
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
