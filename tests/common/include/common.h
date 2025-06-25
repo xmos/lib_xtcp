@@ -44,7 +44,7 @@ enum cfg_clients { CFG_TO_XTCP, CFG_TO_PHY_DRIVER, NUM_CFG_CLIENTS };
 typedef struct reflect_state_t {
   int active;   //< Whether this state structure is being used for a connection
   int conn_id;  //< The connection id
-  int l_port;   //< Local port, for UDP reconnect events
+  xtcp_ipaddr_t remote_addr;  //< Host addrress, for UDP reconnect events
 } reflect_state_t;
 
 void udp_reflect(client xtcp_if i_xtcp, int start_port);

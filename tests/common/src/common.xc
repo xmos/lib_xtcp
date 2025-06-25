@@ -3,6 +3,30 @@
 
 #include "common.h"
 
+void copy_ipaddr(xtcp_ipaddr_t to, xtcp_ipaddr_t from)
+{
+  for (int i = 0; i < 4; ++i) {
+    to[i] = from[i];
+  }
+}
+
+void clear_ipaddr(xtcp_ipaddr_t ip)
+{
+  xtcp_ipaddr_t clear = {0};
+  copy_ipaddr(ip, clear);
+}
+
+int compare_ipaddr(xtcp_ipaddr_t a, xtcp_ipaddr_t b)
+{
+  int status = 4;
+  for (int i = 0; i < 4; ++i) {
+    if (a[i] == b[i]) {
+      status -= 1;
+    }
+  }
+  return status;
+}
+
 /** Simple UDP reflection thread.
  *
  * This thread does two things:
@@ -60,6 +84,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
               if (connection_states[i].active) {
                 connection_states[i].active = 0;
                 connection_states[i].conn_id = INIT_VAL;
+                clear_ipaddr(connection_states[i].remote_addr);
               }
             }
             break;
@@ -69,6 +94,10 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
             // Try and find an empty connection slot
             for (k = 0; k < OPEN_PORTS_PER_PROCESS; k++) {
               if (!connection_states[k].active) {
+                break;
+              } else if (conn.protocol == XTCP_PROTOCOL_UDP && compare_ipaddr(connection_states[k].remote_addr, conn.remote_addr) == 0) {
+                // If UDP and remote/host address matches, reconnect
+                debug_printf("UDP reconnect\n");
                 break;
               }
             }
@@ -82,6 +111,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
               // Otherwise, assign the connection to a slot
               connection_states[k].active = 1;
               connection_states[k].conn_id = conn.id;
+              copy_ipaddr(connection_states[k].remote_addr, conn.remote_addr);
               i_xtcp.set_appstate(conn, (xtcp_appstate_t)&connection_states[k]);
             }
             break;
@@ -128,6 +158,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
               if (connection_states[t].conn_id == conn.id) {
                 connection_states[t].active = 0;
                 connection_states[t].conn_id = INIT_VAL;
+                clear_ipaddr(connection_states[t].remote_addr);
                 response_lens[t] = INIT_VAL;
                 break;
               }
