@@ -381,7 +381,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     check_and_set_args(args)
-    # connect_test()
+
     # udp_bind_test()
     # multicast_test()
     if args.test == 'webserver':
