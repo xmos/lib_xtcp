@@ -2,7 +2,17 @@ cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project(xtcp_bombard_lwip)
 
-set(APP_HW_TARGET          xk-eth-xu316-dual-100m.xn)
+set(APP_HW_TARGET           xk-eth-xu316-dual-100m.xn)
+
+set(APP_INCLUDES            ../common/include)
+
+file(GLOB XC_SOURCES        RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.xc")
+file(GLOB COMMON_SOURCES    RELATIVE ${CMAKE_CURRENT_LIST_DIR}
+                                    "${CMAKE_CURRENT_LIST_DIR}/../common/src/*.xc")
+
+list(APPEND XC_SOURCES ${COMMON_SOURCES})
+
+set(APP_XC_SRCS ${XC_SOURCES})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 

@@ -4,14 +4,14 @@
 #define _COMMON_H_
 
 #include <platform.h>
-#include <string.h>
-#include "debug_print.h"
-#include <xtcp.h>
 #include <stdlib.h>
+#include <string.h>
 #include <xassert.h>
+#include <xtcp.h>
 
-#include "otp_board_info.h"
+#include "debug_print.h"
 #include "ethernet.h"
+#include "otp_board_info.h"
 #include "smi.h"
 
 // Defines
@@ -34,24 +34,17 @@
 #define XTCP_MII_BUFSIZE (4096)
 #define ETHERNET_SMI_PHY_ADDRESS (0)
 
-// An enum to manage the array of connections from the ethernet component
-// to its clients.
-enum eth_clients {
-  ETH_TO_XTCP,
-  NUM_ETH_CLIENTS
-};
+// An enum to manage the array of connections from the ethernet component to its
+// clients.
+enum eth_clients { ETH_TO_XTCP, NUM_ETH_CLIENTS };
 
-enum cfg_clients {
-  CFG_TO_XTCP,
-  CFG_TO_PHY_DRIVER,
-  NUM_CFG_CLIENTS
-};
+enum cfg_clients { CFG_TO_XTCP, CFG_TO_PHY_DRIVER, NUM_CFG_CLIENTS };
 
 // Structure to hold connection state
 typedef struct reflect_state_t {
-  int active;      //< Whether this state structure is being used
-                   //  for a connection
-  int conn_id;     //< The connection id
+  int active;   //< Whether this state structure is being used for a connection
+  int conn_id;  //< The connection id
+  int l_port;   //< Local port, for UDP reconnect events
 } reflect_state_t;
 
 void udp_reflect(client xtcp_if i_xtcp, int start_port);

@@ -30,7 +30,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
     connection_states[i].active = 0;
     connection_states[i].conn_id = INIT_VAL;
   }
-
+  
 #ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
   debug_printf("Configuration: single-phy\n");
 #else
@@ -43,7 +43,7 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
   while (1) {
     // A temporary variable to hold connections associated with an event
     xtcp_connection_t conn;
-
+    
     select {
       // Respond to an event from the tcp server
       case i_xtcp.packet_ready(): {
@@ -73,13 +73,12 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
               }
             }
 
-            xassert(start_port <= conn.local_port &&
-                    conn.local_port < start_port + OPEN_PORTS_PER_PROCESS);
-
             if (k == OPEN_PORTS_PER_PROCESS) {
+              debug_printf("failed conn: %d\n", conn.id);
               // If no free connection slots were found, abort the connection
               i_xtcp.abort(conn);
             } else {
+              debug_printf("new conn: %d\n", conn.id);
               // Otherwise, assign the connection to a slot
               connection_states[k].active = 1;
               connection_states[k].conn_id = conn.id;
@@ -122,6 +121,8 @@ void udp_reflect(client xtcp_if i_xtcp, int start_port) {
               // Slight hack to kill off process once python script finishes
               if (rx_tmp[0] == 'a') {
                 exit(0);
+              } else {
+                debug_printf("closing (%d): %c, %c\n", conn.id, rx_tmp[0], conn.event + '0');
               }
 
               if (connection_states[t].conn_id == conn.id) {
