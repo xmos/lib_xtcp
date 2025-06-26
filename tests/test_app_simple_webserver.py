@@ -11,9 +11,6 @@ def test_app_simple_webserver(request):
     adapter_id = request.config.getoption("--adapter-id")
     assert adapter_id is not None, "Error: Specify a valid adapter-id"
 
-    phy = request.config.getoption("--phy")
-    assert phy is not None, "Error: Specify a valid phy"
-
     expected_response = '<!DOCTYPE html>\n' \
         '<html><head><title>Hello world</title></head>\n' \
         '<body>Hello World!</body></html>\n'

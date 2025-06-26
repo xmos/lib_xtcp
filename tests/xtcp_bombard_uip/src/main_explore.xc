@@ -8,9 +8,6 @@
 #include "smi.h"
 #include <xscope.h>
 
-
-#if EXPLORER_KIT
-
 port p_smi_mdio = MDIO;
 port p_smi_mdc = MDC;
 
@@ -78,5 +75,3 @@ int main(void) {
   }
   return 0;
 }
-
-#endif

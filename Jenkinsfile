@@ -18,13 +18,6 @@ def clone_test_deps()
   }
 }
 
-def archiveLib(String repoName) 
-{
-    sh "git -C ${repoName} clean -xdf"
-    sh "zip ${repoName}_sw.zip -r ${repoName}"
-    archiveArtifacts artifacts: "${repoName}_sw.zip", allowEmptyArchive: false
-}
-
 getApproval()
 
 pipeline 
@@ -45,7 +38,7 @@ pipeline
     )
     string(
       name: 'XMOSDOC_VERSION',
-      defaultValue: 'v7.0.0',
+      defaultValue: 'v7.2.0',
       description: 'The xmosdoc version'
     )
     string(
@@ -96,6 +89,12 @@ pipeline
                 {
                   xcoreBuild()
                   stash includes: '**/*.xe', name: 'xtcp_test_bin', useDefaultExcludes: false
+
+                  // xcommon
+                  dir("xtcp_xcommon_build")
+                  {
+                    sh "xmake -j"
+                  }
                 }
               }
             }
@@ -131,7 +130,7 @@ pipeline
         {
           steps 
           {
-            archiveLib(REPO)
+            archiveSandbox(REPO)
           }
         }
       } // stages
@@ -173,20 +172,15 @@ pipeline
               createVenv(reqFile: "requirements.txt")
               withVenv
               {
-                script
+                warnError("Pytest failed or test asserted")
                 {
-                  def junit_file = 'pytest_lib_checks.xml'
                   withXTAG(["xk-eth-xu316-dual-100m"])
                   { 
                     xtagIds ->
-                      def status = sh(script: "python -m pytest -v --junitxml=${junit_file} --adapter-id ${xtagIds[0]}", returnStatus: true)
-                    echo "pytest return code = ${status}"
-                  }
-                  if (fileExists(junit_file))
-                  {
-                    junit junit_file
+                      sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]}")
                   }
                 }
+                junit 'pytest_checks.xml'
               }
             }
           }

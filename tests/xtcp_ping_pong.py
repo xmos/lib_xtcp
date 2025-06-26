@@ -14,6 +14,39 @@ import urllib.error
 from multiprocessing import Pool
 import copy
 
+# This test script can run a webserver test, a reflect test (sending and receiving), a connection test.
+#
+# Simple webserver test, opens an HTTP connection on port 80 and returns the text supplied by the DUT.
+# Typical usage, python xtcp_ping_pong.py --ip 192.168.200.178 --start-port 80 --test webserver
+#
+# Reflect test sends data to the DUT and expects the same data but bytes reversed in the array to be returned from
+# the DUT.
+# --start-port should be 15533, defined in tests/common/include/common.h
+# --remote-processes and --remote-ports define the number of reflect process run on the DUT, and the number of ports each process handles.
+# --protocol TCP or UDP.
+# --packets, number of packets to attempt to send.
+# --delay-between-packets, in seconds
+# --num-timeouts-reconnect is the number of sequential timeouts seen before a reconnection is attempted, for UDP sockets.
+# --halt-sequential-errors is the number of sequential issues seen before an error is reported and the test is halted.
+#       Must be greater than '--num-timeouts-reconnect'. This may be for timeouts seen on UDP, packets refused by the
+#       DUT, or 'misses', where the returned data does not match the sent data.
+# Note: for TCP connections, 3 repeated connection timeouts are flagged as an error.
+#
+# Typical usage,
+#   python xtcp_ping_pong.py --ip 192.168.200.198 --start-port 15533 --remote-processes 1 --remote-ports 1 \
+#   --protocol TCP --packets 100 --delay-between-packets 0.002 --halt-sequential-errors 11 --num-timeouts-reconnect 3
+#
+# Connection test runs the reflect test repeatedly with a small number of packets, say 10, so it tests the DUTs
+# ability to handle connection/disconnection in the case of TCP, and the ability of the DUT to handle the same host
+# with changing host ports for UDP.
+# Typical usage,
+#   python xtcp_ping_pong.py --test connection --ip 192.168.200.199 --start-port 15533 --remote-processes 1 \
+#   --remote-ports 1 --protocol TCP --packets 10 --delay-between-packets 0.002 --halt-sequential-errors 5 --num-timeouts-reconnect 3
+#
+# This scripts stores issues in the list variables 'failures', these are then printed out at teh end of the test for
+# the pytest script running this one to pick up and parse.
+#   Issues are reported prefixed with 'Info:', 'LOSS:' or 'ERROR:'.
+
 
 def print_errors(failure_list):
     # Flatten list
@@ -31,7 +64,7 @@ def build_base_string(short_name, args, socket, length=0):
     error = (
         f'\t{short_name}' +
         f'\t{args.start_port - 15533}' +
-        '\t_{0:.2f}'.format(time.time() - args.start_time) +
+        '\t{0:.2f}'.format(time.time() - args.start_time) +
         f'\t{socket.getsockname()[1]}' +
         f'\t{args.start_port}'
     )
