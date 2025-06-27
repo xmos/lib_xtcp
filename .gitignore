@@ -1,8 +1,11 @@
 **/.build*/*
 bin/
 _build/
+build/
 __gen/
 _README/
+.venv*/
+
 *.o
 *.xe
 *.vcd
@@ -28,3 +31,4 @@ Doxyfile-e
 examples/AN01032_100Mbit_avb_i2s_demo/.settings/
 *.pptx
 examples/AN01032_100Mbit_avb_i2s_demo/doc/pdf/
+pytest_result.xml

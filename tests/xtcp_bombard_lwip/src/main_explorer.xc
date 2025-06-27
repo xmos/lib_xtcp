@@ -1,61 +1,45 @@
 // Copyright 2017-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+#include <xk_eth_xu316_dual_100m/board.h>
+
 #include "common.h"
+#include "ethernet.h"
+#include "smi.h"
+#include <xscope.h>
 
-#if EXPLORER_KIT
+port p_smi_mdio = MDIO;
+port p_smi_mdc = MDC;
 
-// eXplorerKIT RGMII port map
-otp_ports_t otp_ports = on tile[0]: OTP_PORTS_INITIALIZER;
+port p_phy_rxd = PHY_0_RXD_4BIT;
+port p_phy_txd = PHY_0_TXD_4BIT;
+port p_phy_rxdv = PHY_0_RXDV;
+port p_phy_txen = PHY_0_TX_EN;
+// Set to PHY_0_CLK_50M when single PHY present and PHY_1_CLK_50M when dual PHY present
+// For single PHY operation, check that R23 is fitted and R3 not fitted.
+#ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
+port p_phy_clk = PHY_0_CLK_50M;
+#else
+port p_phy_clk = PHY_1_CLK_50M;
+#endif
 
-rgmii_ports_t rgmii_ports = on tile[1]: RGMII_PORTS_INITIALIZER;
-
-port p_smi_mdio   = on tile[1]: XS1_PORT_1C;
-port p_smi_mdc    = on tile[1]: XS1_PORT_1D;
-port p_eth_reset  = on tile[1]: XS1_PORT_1N;
+clock phy_rxclk = on tile[0] : XS1_CLKBLK_1;
+clock phy_txclk = on tile[0] : XS1_CLKBLK_2;
 
 xtcp_ipconfig_t ipconfig = {
-        { 192, 168,   1, 198 }, // ip address (eg 192,168,0,2)
-        { 255, 255, 255,   0 }, // netmask    (eg 255,255,255,0)
-        {   0,   0,   0,   0 }  // gateway    (eg 192,168,0,1)
+    {192, 168, 200, 198},  // ip address (eg 192,168,0,2)
+    {255, 255, 255,   0},  // netmask    (eg 255,255,255,0)
+    {0, 0, 0, 0}           // gateway    (eg 192,168,0,1)
 };
+// MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your
+// desired address.
+static unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97,
+                                                           0x01, 0x02, 0x03};
 
-[[combinable]]
-void ar8035_phy_driver(client interface smi_if smi,
-                client interface ethernet_cfg_if eth) {
-  ethernet_link_state_t link_state = ETHERNET_LINK_DOWN;
-  //ethernet_speed_t link_speed = LINK_1000_MBPS_FULL_DUPLEX;
-  ethernet_speed_t link_speed = LINK_100_MBPS_FULL_DUPLEX;
-  const int phy_reset_delay_ms = 1;
-  const int link_poll_period_ms = 1000;
-  const int phy_address = 0x4;
-  timer tmr;
-  int t;
-  tmr :> t;
-  p_eth_reset <: 0;
-  delay_milliseconds(phy_reset_delay_ms);
-  p_eth_reset <: 1;
+#define ETH_RX_BUFFER_SIZE_WORDS 1600
 
-  while (smi_phy_is_powered_down(smi, phy_address));
-  //smi_configure(smi, phy_address, LINK_1000_MBPS_FULL_DUPLEX, SMI_ENABLE_AUTONEG);
-  smi_configure(smi, phy_address, LINK_100_MBPS_FULL_DUPLEX, SMI_ENABLE_AUTONEG);
-
-  while (1) {
-    select {
-    case tmr when timerafter(t) :> t:
-      ethernet_link_state_t new_state = smi_get_link_state(smi, phy_address);
-      // Read AR8035 status register bits 15:14 to get the current link speed
-      if (new_state == ETHERNET_LINK_UP) {
-        link_speed = (ethernet_speed_t)(smi.read_reg(phy_address, 0x11) >> 14) & 3;
-      }
-      if (new_state != link_state) {
-        link_state = new_state;
-        eth.set_link_state(0, new_state, link_speed);
-      }
-      t += link_poll_period_ms * XS1_TIMER_KHZ;
-      break;
-    }
-  }
+void xscope_user_init(void) {
+  xscope_mode_lossless();
 }
 
 int main(void) {
@@ -63,36 +47,32 @@ int main(void) {
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
   ethernet_rx_if i_rx[NUM_ETH_CLIENTS];
   ethernet_tx_if i_tx[NUM_ETH_CLIENTS];
-  streaming chan c_rgmii_cfg;
   smi_if i_smi;
 
   par {
+    on tile[0] : rmii_ethernet_rt_mac(
+                     i_cfg, NUM_CFG_CLIENTS, i_rx, NUM_ETH_CLIENTS, i_tx, NUM_ETH_CLIENTS,
+                     null, null,
+                     p_phy_clk, p_phy_rxd, null, USE_UPPER_2B,
+                     p_phy_rxdv, p_phy_txen, p_phy_txd, null, USE_UPPER_2B,
+                     phy_rxclk, phy_txclk, get_port_timings(0),
+                     ETH_RX_BUFFER_SIZE_WORDS, ETH_RX_BUFFER_SIZE_WORDS,
+                     ETHERNET_DISABLE_SHAPER);
 
-    on tile[1]: rgmii_ethernet_mac(i_rx, NUM_ETH_CLIENTS,
-                                         i_tx, NUM_ETH_CLIENTS,
-                                         null, null,
-                                         c_rgmii_cfg,
-                                         rgmii_ports,
-                                         ETHERNET_DISABLE_SHAPER);
+    on tile[1]
+        : dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
 
-    on tile[1].core[0]: rgmii_ethernet_mac_config(i_cfg, NUM_CFG_CLIENTS, c_rgmii_cfg);
+    on tile[1] : smi(i_smi, p_smi_mdio, p_smi_mdc);
 
-    on tile[1].core[0]: ar8035_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER]);
-
-    on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
-
-    on tile[0]: xtcp_lwip(i_xtcp, REFLECT_PROCESSES, null,
-                      i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                      null, ETHERNET_SMI_PHY_ADDRESS,
-                      null, otp_ports, ipconfig);
+    on tile[0] : xtcp_lwip(i_xtcp, REFLECT_PROCESSES,
+                           null,
+                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
+                           mac_address_phy, null, ipconfig);
 
     // The simple udp reflector thread
-    par (int i=0; i<REFLECT_PROCESSES; i++) {
-      on tile[0]: udp_reflect(i_xtcp[i], INCOMING_PORT+(i*10));
+    par(int i = 0; i < REFLECT_PROCESSES; i++) {
+      on tile[0] : udp_reflect(i_xtcp[i], INCOMING_PORT + (i * 10));
     }
   }
-
   return 0;
 }
-
-#endif

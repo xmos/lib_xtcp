@@ -572,6 +572,8 @@ lwip_tcp_event(void *unsafe arg,
     case LWIP_EVENT_RECV:
       if(p != NULL) {
         enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_RECV_DATA, &(pcb->xtcp_conn), p);
+      } else {
+        enqueue_event_and_notify(pcb->xtcp_conn.client_num, XTCP_CLOSED, &(pcb->xtcp_conn), NULL);
       }
       break;
 

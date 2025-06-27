@@ -43,8 +43,8 @@ enum cfg_clients {
 
 // Set to your desired IP address
 static xtcp_ipconfig_t ipconfig = {
-  {192, 168, 10, 178},  /* IP address, 0 for DHCP */
-  {255, 255, 255, 0},   /* submask, 0 for DHCP */
+  {192, 168, 200, 178},  /* IP address, 0 for DHCP */
+  {255, 255, 255,   0},  /* submask, 0 for DHCP */
   {0, 0, 0, 0},         /* Gateway */
 };
 // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.

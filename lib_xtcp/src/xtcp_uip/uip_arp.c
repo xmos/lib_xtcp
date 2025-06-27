@@ -378,8 +378,8 @@ uip_arp_out(struct uip_udp_conn *conn)
     IPBUF->ethhdr.dest.addr[0] = 0x01;
     IPBUF->ethhdr.dest.addr[1] = 0x00;
     IPBUF->ethhdr.dest.addr[2] = 0x5e;
-    IPBUF->ethhdr.dest.addr[3] = IPBUF->destipaddr[0] >> 8;
-    IPBUF->ethhdr.dest.addr[4] = IPBUF->destipaddr[1] & 0xf;
+    IPBUF->ethhdr.dest.addr[3] = (IPBUF->destipaddr[0] >> 8) & 0b01111111;
+    IPBUF->ethhdr.dest.addr[4] = IPBUF->destipaddr[1] & 0xff;
     IPBUF->ethhdr.dest.addr[5] = IPBUF->destipaddr[1] >> 8;
   }
   else  {

@@ -10,7 +10,7 @@ set(LIB_INCLUDES            api
 set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.0.1)"
                             "lib_logging(3.3.1)"
                             "lib_xassert(4.3.1)"
-                            "lib_random(1.2.0)"
+                            "lib_random(1.3.0)"
                             "lib_otpinfo(2.2.1)")
 
 set(LIB_COMPILER_FLAGS      -g
