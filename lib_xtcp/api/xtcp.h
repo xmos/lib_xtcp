@@ -188,6 +188,8 @@ typedef interface xtcp_if {
 #endif /* __DOXYGEN__ */
   /**
    * \addtogroup xtcp_if
+   * \brief      This interface API is for use by application clients that wish 
+   *             to leverage lib_xtcp for host-to-host data exchange.
    * @{
    */
 
@@ -391,10 +393,8 @@ typedef enum {
 } xtcp_lwip_timeout_type;
 
 #if defined __XC__ || defined __DOXYGEN__
-/** Function implementing the TCP/IP stack using the lwIP stack.
- *
- *  This functions implements a TCP/IP stack that clients can access via
- *  interfaces.
+/** This functions implements a TCP/IP stack that clients can access via
+ *  interfaces. This stack will be the lwIP stack.
  *
  *  \param i_xtcp       The interface array to connect to the clients.
  *  \param n_xtcp       The number of clients to the task.
@@ -433,10 +433,8 @@ void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
                NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
                REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 
-/** Function implementing the TCP/IP stack task using the uIP stack.
- *
- *  This functions implements a TCP/IP stack that clients can access via
- *  interfaces.
+/** This functions implements a TCP/IP stack that clients can access via
+ *  interfaces. This stack will be the uIP stack.
  *
  *  \param i_xtcp       The interface array to connect to the clients.
  *  \param n_xtcp       The number of clients to the task.

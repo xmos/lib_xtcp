@@ -3,7 +3,7 @@
 **CHANGELOG*
 **LICENSE*
 
-test/*
+tests/*
 
 # Do not build .md files
 *.md
