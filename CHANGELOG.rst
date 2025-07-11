@@ -1,15 +1,31 @@
 lib_xtcp change log
 ===================
 
-UNRELEASED
-----------
+6.2.0
+-----
 
   * ADDED: CMake support
   * FIXED: Many compiler warnings.
   * CHANGE: Removed 'smi_if i_smi' and 'phy_address' parameters from both
-    xtcp_uip and xtcp_lwip functions. The smi_if now only links the smi 
+    xtcp_uip and xtcp_lwip functions. The smi_if now only links the smi
     component with the PHY driver.
   * CHANGED: Documentation updated
+
+  * Changes to dependencies:
+
+    - lib_ethernet: 3.0.0 -> 4.0.1
+
+    - lib_gpio: Removed dependency
+
+    - lib_locks: 2.0.0 -> 2.3.1
+
+    - lib_logging: 2.0.0 -> 3.3.1
+
+    - lib_otpinfo: 2.0.0 -> 2.2.1
+
+    - lib_random: 1.0.0 -> 1.3.0
+
+    - lib_xassert: 2.0.0 -> 4.3.1
 
 6.1.0
 -----
