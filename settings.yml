@@ -3,7 +3,7 @@
 lib_name: lib_xtcp
 project: '{{lib_name}}'
 title: '{{lib_name}}: TCP/IP library'
-version: 6.1.0
+version: 6.2.0
 
 
 documentation:

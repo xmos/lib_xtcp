@@ -1,6 +1,6 @@
 set(LIB_NAME                lib_xtcp)
 
-set(LIB_VERSION             6.1.0)
+set(LIB_VERSION             6.2.0)
 
 set(LIB_INCLUDES            api
                             src
