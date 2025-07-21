@@ -80,8 +80,11 @@ Required tools
 Required libraries (dependencies)
 *********************************
 
-* `lib_ethernet <https://www.github.com/xmos/lib_ethernet>`_
-* `lib_board_support <https://www.github.com/xmos/lib_board_support>`_
+* `lib_ethernet <https://www.xmos.com/libraries/lib_ethernet>`_
+* `lib_otpinfo <https://www.xmos.com/libraries/lib_otpinfo>`_
+* `lib_logging <https://www.xmos.com/libraries/lib_logging>`_
+* `lib_random <https://www.xmos.com/libraries/lib_random>`_
+* `lib_xassert <https://www.xmos.com/libraries/lib_xassert>`_
 
 *************************
 Related application notes
