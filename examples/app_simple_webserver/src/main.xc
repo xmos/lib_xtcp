@@ -2,7 +2,7 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <platform.h>
-#include "xk_eth_xu316_dual_100m/board.h"
+#include "xk_eth_316_dual/board.h"
 #include "debug_print.h"
 #include "xtcp.h"
 #include "httpd.h"
@@ -12,17 +12,13 @@
 port p_smi_mdio = MDIO;
 port p_smi_mdc = MDC;
 
-port p_phy_rxd = PHY_0_RXD_4BIT;
-port p_phy_txd = PHY_0_TXD_4BIT;
-port p_phy_rxdv = PHY_0_RXDV;
-port p_phy_txen = PHY_0_TX_EN;
-// Set to PHY_0_CLK_50M when single PHY present and PHY_1_CLK_50M when dual PHY present
-// For single PHY operation, check that R23 is fitted and R3 not fitted.
-#ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
-port p_phy_clk = PHY_0_CLK_50M;
-#else
-port p_phy_clk = PHY_1_CLK_50M;
-#endif
+port p_phy_rxd = RMII_PHY_0_RXD_4BIT;
+port p_phy_txd = RMII_PHY_0_TXD_4BIT;
+port p_phy_rxdv = RMII_PHY_0_RXDV;
+port p_phy_txen = RMII_PHY_0_TX_EN;
+
+port p_phy_clk = RMII_PHY_CLK_50M;
+
 
 clock phy_rxclk = on tile[0]: XS1_CLKBLK_1;
 clock phy_txclk = on tile[0]: XS1_CLKBLK_2;
@@ -79,11 +75,11 @@ int main(void) {
                                       USE_UPPER_2B,
                                       phy_rxclk,
                                       phy_txclk,
-                                      get_port_timings(0),
+                                      get_port_timings(PHY0_PORT_TIMINGS),
                                       ETH_RX_BUFFER_SIZE_WORDS, ETH_RX_BUFFER_SIZE_WORDS,
                                       ETHERNET_DISABLE_SHAPER);
 
-    on tile[1]: dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
+    on tile[1]: dual_ethernet_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
 
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);

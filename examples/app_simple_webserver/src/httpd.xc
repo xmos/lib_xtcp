@@ -166,12 +166,6 @@ void xhttpd(client xtcp_if i_xtcp)
   // Initiate the HTTP state
   httpd_init(i_xtcp);
 
-#ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
-  printstr("Configuration: single-phy\n");
-#else
-  printstr("Configuration: dual-phy\n");
-#endif
-
   // Loop forever processing TCP events
   while(1) {
     xtcp_connection_t conn;
