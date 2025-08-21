@@ -8,7 +8,7 @@ set(LIB_INCLUDES            api
                             src/xtcp_lwip/xcore/include)
              
 set(LIB_DEPENDENT_MODULES   "lib_ethernet(develop)" # Planning for 4.0.2
-                            "lib_logging(3.3.2)"
+                            "lib_logging(3.4.0)"
                             "lib_xassert(4.3.2)"
                             "lib_random(1.3.0)"
                             "lib_otpinfo(2.2.1)")

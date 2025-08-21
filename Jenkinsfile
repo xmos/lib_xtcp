@@ -87,7 +87,7 @@ pipeline {
 
         stage('Repo checks') {
           steps {
-            warnError("Repo checks failed")
+            warnError("Repo checks failed") {
               runRepoChecks("${WORKSPACE}/${REPO_NAME}")
             }
           }
