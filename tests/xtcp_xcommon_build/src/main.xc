@@ -61,7 +61,7 @@ int main(void) {
                                    rgmii_ports, 
                                    ETHERNET_DISABLE_SHAPER);
     on tile[1].core[0]: rgmii_ethernet_mac_config(i_cfg, NUM_CFG_CLIENTS, c_rgmii_cfg);
-    on tile[1].core[0]: ar8035_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER]);
+    on tile[1].core[0]: xk_eth_xe216_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER]);
   
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
