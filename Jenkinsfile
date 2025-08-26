@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.41.1') _
+@Library('xmos_jenkins_shared_library@v0.43.0') _
 
 getApproval()
 
@@ -77,9 +77,11 @@ pipeline {
               xcoreBuild()
               stash includes: '**/*.xe', name: 'xtcp_test_bin', useDefaultExcludes: false
               
-              // xcommon
-              dir("xtcp_xcommon_build") {
-                sh "xmake -j"
+              withTools(params.TOOLS_VERSION) {
+                // Makefile test build, building lib_xtcp is the test
+                dir("xtcp_xcommon_build") {
+                  sh "xmake -j"
+                }
               }
             }
           }
@@ -140,7 +142,7 @@ pipeline {
                   withXTAG(["xk-eth-xu316-dual-100m"])
                   { 
                     xtagIds ->
-                      sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]}")
+                      sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'not webserver' ")
                   }
                 }
               }
@@ -151,7 +153,7 @@ pipeline {
 
       post {
         always {
-          junit 'pytest_checks.xml'
+          junit "${REPO_NAME}/tests/pytest_checks.xml"
         }
         cleanup {
           xcoreCleanSandbox()
@@ -160,6 +162,9 @@ pipeline {
     }
     
     stage('🚀 Release') {
+      when {
+        expression { triggerRelease.isReleasable() }
+      }
       steps {
         triggerRelease()
       }

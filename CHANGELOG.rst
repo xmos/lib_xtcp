@@ -1,6 +1,13 @@
 lib_xtcp change log
 ===================
 
+UNRELEASED
+----------
+
+  * CHANGED: Ported example to xcore.ai Ethernet development board
+    xk-eth-316-dual
+  * CHANGED: Support for hardware test platform moved into library.
+
 6.2.0
 -----
 
