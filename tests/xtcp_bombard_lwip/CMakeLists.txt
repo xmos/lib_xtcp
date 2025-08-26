@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.21)
 include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project(xtcp_bombard_lwip)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../board_support/board_support.cmake)
+
 set(APP_HW_TARGET           xk-eth-xu316-dual-100m.xn)
 
-set(APP_INCLUDES            ../common/include)
+set(APP_INCLUDES            ../common/include ${test_board_support_INC})
 
 file(GLOB XC_SOURCES        RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.xc")
 file(GLOB COMMON_SOURCES    RELATIVE ${CMAKE_CURRENT_LIST_DIR}
@@ -12,7 +14,7 @@ file(GLOB COMMON_SOURCES    RELATIVE ${CMAKE_CURRENT_LIST_DIR}
 
 list(APPEND XC_SOURCES ${COMMON_SOURCES})
 
-set(APP_XC_SRCS ${XC_SOURCES})
+set(APP_XC_SRCS ${XC_SOURCES} ${test_board_support_SRCS})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 
@@ -32,7 +34,7 @@ set(COMPILER_FLAGS_COMMON   -g
                             -DUIP_CONF_MAX_CONNECTIONS=20 
                             -DUIP_CONF_MAX_LISTENPORTS=20  
                             -DUIP_USE_AUTOIP=0
-                            -DBOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
+                            -DTEST_BOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
                             -DXTCP_STACK_LWIP
                             ${PHY_FLAGS})
 
