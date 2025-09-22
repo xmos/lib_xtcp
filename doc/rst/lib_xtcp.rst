@@ -460,6 +460,7 @@ build with,
 .. code-block:: shell
 
   cd lib_xtcp
+  cd examples
 
   cmake -B build -G "Unix Makefiles"
   
@@ -469,7 +470,7 @@ Once built run with,
 
 .. code-block:: shell
 
-  xrun --xscope bin/app_simple_webserver
+  xrun --xscope app_simple_webserver/bin/app_simple_webserver.xe
 
 When running and with the dev-kit connected to the same network has the computer,
 open a browser window and enter the address printed on the xrun 
