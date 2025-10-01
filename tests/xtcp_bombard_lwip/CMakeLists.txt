@@ -29,6 +29,7 @@ endif()
 
 set(COMPILER_FLAGS_COMMON   -g
                             -O3
+                            -mno-dual-issue
                             -report
                             -DDEBUG_PRINT_ENABLE
                             -DUIP_CONF_MAX_CONNECTIONS=20 

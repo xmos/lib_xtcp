@@ -11,7 +11,7 @@ from hardware_test_tools import XcoreApp
 
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
-@pytest.mark.parametrize('library', ['UIP', 'LWIP'])
+@pytest.mark.parametrize('library', ['LWIP'])
 @pytest.mark.parametrize('processes', [1, 2])
 def test_basic(request, protocol, library, processes):
     dut_ip = '192.168.200.198'

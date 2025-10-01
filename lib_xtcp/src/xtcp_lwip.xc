@@ -242,9 +242,9 @@ void xtcp_lwip(server interface xtcp_if i_xtcp[n_xtcp],
       break;
 
     case !isnull(i_eth_rx) => i_eth_rx.packet_ready():
-      char buffer[MAX_PACKET_BYTES];
+      char buffer[ETHERNET_MAX_PACKET_SIZE];
       ethernet_packet_info_t desc;
-      i_eth_rx.get_packet(desc, (char *) buffer, MAX_PACKET_BYTES);
+      i_eth_rx.get_packet(desc, (char *) buffer, ETHERNET_MAX_PACKET_SIZE);
 
       if (desc.type == ETH_DATA) {
         process_rx_packet(buffer, desc.len, netif);
@@ -460,7 +460,7 @@ void xtcp_lwip(server interface xtcp_if i_xtcp[n_xtcp],
       if (conn.protocol == XTCP_PROTOCOL_TCP) {
         struct tcp_pcb *unsafe t_pcb = (struct tcp_pcb *unsafe) conn.stack_conn;
         if(tcp_sndbuf(t_pcb) >= tcp_mss(t_pcb)) {
-          char buffer[XTCP_MAX_RECEIVE_SIZE];
+          char buffer[ETHERNET_MAX_PACKET_SIZE];
           memcpy(buffer, data, len);
           e = tcp_write(t_pcb, buffer, len, TCP_WRITE_FLAG_COPY);
           if (e != ERR_OK) {

@@ -32,9 +32,6 @@ enum cfg_clients {
   NUM_CFG_CLIENTS
 };
 
-// MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
-static unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x03};
-
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP
 xtcp_ipconfig_t ipconfig = {
@@ -66,19 +63,10 @@ int main(void) {
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
-#if XTCP_STACK_UIP
-    // TCP component
-    on tile[0]: xtcp_uip(i_xtcp, NUM_XTCP_CLIENTS, null,
-                         i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                         mac_address_phy, null, ipconfig);
-#elif XTCP_STACK_LWIP
     // TCP component
     on tile[0]: xtcp_lwip(i_xtcp, NUM_XTCP_CLIENTS, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                          mac_address_phy, null, ipconfig);
-#else
-#error "Must define XTCP_STACK_LWIP or XTCP_STACK_UIP"
-#endif
+                          null, otp_ports, ipconfig);
 
     // HTTP server application
     on tile[0]: xhttpd(i_xtcp[XTCP_TO_HTTP]);

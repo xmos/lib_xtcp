@@ -16,7 +16,7 @@ pipeline {
     )
     string(
       name: 'XMOSDOC_VERSION',
-      defaultValue: 'v7.4.0',
+      defaultValue: 'v8.0.0',
       description: 'The xmosdoc version'
     )
     string(
@@ -135,12 +135,10 @@ pipeline {
               unstash 'xtcp_test_bin'
 
               createVenv(reqFile: "requirements.txt")
-              withVenv
-              {
-                warnError("Pytest failed or test asserted")
-                {
-                  withXTAG(["xk-eth-xu316-dual-100m"])
-                  { 
+              withVenv {
+                warnError("Pytest failed or test asserted") {
+
+                  withXTAG(["xk-eth-xu316-dual-100m"]) {
                     xtagIds ->
                       sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'not webserver' ")
                   }

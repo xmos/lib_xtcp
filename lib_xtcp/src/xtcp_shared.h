@@ -7,7 +7,7 @@
 
 typedef struct client_queue_t {
   xtcp_event_type_t xtcp_event;
-  /* Pointer to connection in uIP or LWIP */
+  /* Pointer to connection in LWIP */
   xtcp_connection_t *unsafe xtcp_conn;
   struct pbuf *unsafe pbuf;
 } client_queue_t;
