@@ -1,4 +1,1 @@
-xtcp_lwip/api
-xtcp_lwip/core
-xtcp_lwip/include
-xtcp_lwip/netif
+lib_xtcp/lwip
