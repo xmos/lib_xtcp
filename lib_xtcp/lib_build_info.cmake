@@ -14,7 +14,8 @@ set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.1.0)"
                             "lib_otpinfo(2.2.1)")
 
 set(LIB_COMPILER_FLAGS      -g
-                            -O3)
+                            -O3
+                            -mno-dual-issue)
 
 set(LIB_OPTIONAL_HEADERS    xtcp_client_conf.h xtcp_conf.h)
 

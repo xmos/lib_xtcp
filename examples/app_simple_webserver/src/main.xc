@@ -84,19 +84,9 @@ int main(void) {
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
-#if XTCP_STACK_UIP
-    // TCP component
-    on tile[1]: xtcp_uip(i_xtcp, NUM_XTCP_CLIENTS, null,
-                         i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                         mac_address_phy, null, ipconfig);
-#elif XTCP_STACK_LWIP
-    // TCP component
     on tile[0]: xtcp_lwip(i_xtcp, NUM_XTCP_CLIENTS, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                           mac_address_phy, null, ipconfig);
-#else
-#error "Must define XTCP_STACK_LWIP or XTCP_STACK_UIP"
-#endif
 
     // HTTP server application
     on tile[0]: xhttpd(i_xtcp[XTCP_TO_HTTP]);

@@ -10,6 +10,7 @@ set(APP_PCA_ENABLE          ON)
 
 set(COMPILER_FLAGS_COMMON   -g
                             -O3
+                            -mno-dual-issue
                             -report
                             -DBOARD_SUPPORT_BOARD=XK_ETH_316_DUAL
                             -DDEBUG_PRINT_ENABLE=1

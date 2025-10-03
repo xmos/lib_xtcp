@@ -27,32 +27,18 @@ rates.
 The library provides two alternative TCP/UDP/IP protocol stacks for XMOS devices.
 See the following section for further details.
 
-Stacks
-======
+TCP/IP Stack
+============
 
-This library provides two different TCP/IP stack implementations ported to the
-xCORE architecture.
-
-uIP stack
----------
-
-The first stack ported is the uIP (micro IP) stack. The uIP stack has been
-designed to have a minimal resource footprint. As a result, it has limited
-performance and does not provide support for TCP windowing.
-
-lwIP stack
-----------
-
-The second stack ported is the lwIP (lightweight IP) stack. The lwIP stack
-requires more resources than uIP, but is designed to provide
-better throughput and also has support for TCP windowing.
+The TCP/IP stack used is the third-party lwIP (lightweight IP) stack ported to the
+xCORE architecture.. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
 
 ********
 Features
 ********
 
 * TCP and UDP connection handling
-* Common API to selectable TCP stack, uIP/LwIP
+* Common API to TCP/IP stack, LwIP
 * TCP, UDP, DHCP, IP4LL, ICMP, IGMP
 * Low level, event based interface for efficient memory usage
 * Supports IPv4 only, not IPv6

@@ -18,30 +18,11 @@
 #include "xtcp_client_conf.h"
 #endif
 
-#ifndef XTCP_CLIENT_BUF_SIZE
-#define XTCP_CLIENT_BUF_SIZE (1472)
-#endif
-#ifndef XTCP_MAX_RECEIVE_SIZE
-#ifdef UIP_CONF_RECEIVE_WINDOW
-#define XTCP_MAX_RECEIVE_SIZE (UIP_CONF_RECEIVE_WINDOW)
-#else
-#define XTCP_MAX_RECEIVE_SIZE (1472)
-#endif
-#endif
-
-/** Used by the LWIP and uIP callback functions to
+/** Used by the LWIP callback functions to
  *  correctly pass packets to the DHCP functions
  */
 #define DHCPC_SERVER_PORT 67
 #define DHCPC_CLIENT_PORT 68
-
-/** Maximum number of listening ports for XTCP */
-#ifndef NUM_TCP_LISTENERS
-#define NUM_TCP_LISTENERS 20
-#endif
-#ifndef NUM_UDP_LISTENERS
-#define NUM_UDP_LISTENERS 20
-#endif
 
 /** Maximum number of connected XTCP clients */
 #ifndef MAX_XTCP_CLIENTS
@@ -178,7 +159,7 @@ typedef struct xtcp_connection_t {
   unsigned int mss;           /**< The maximum size in bytes that can be send using
                                    xtcp_send() after a send event */
   unsigned packet_length;     /**< Length of packet recieved */
-  int stack_conn;             /**< Pointer to the associated uIP/LWIP connection.
+  int stack_conn;             /**< Pointer to the associated LWIP connection.
                                    Only to be used by XTCP. */
 } xtcp_connection_t;
 
@@ -432,46 +413,6 @@ void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
                CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, MACADDR_NUM_BYTES),
                NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
                REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
-
-/** This functions implements a TCP/IP stack that clients can access via
- *  interfaces. This stack will be the uIP stack.
- *
- *  \param i_xtcp       The interface array to connect to the clients.
- *  \param n_xtcp       The number of clients to the task.
- *  \param i_mii        If this component is connected to the mii() component
- *                      in the Ethernet library then this interface should be
- *                      used to connect to it. Otherwise it should be set to
- *                      null
- *  \param i_eth_cfg    If this component is connected to an MAC component
- *                      in the Ethernet library then this interface should be
- *                      used to connect to it. Otherwise it should be set to
- *                      null.
- *  \param i_eth_rx     If this component is connected to an MAC component
- *                      in the Ethernet library then this interface should be
- *                      used to connect to it. Otherwise it should be set to
- *                      null.
- *  \param i_eth_tx     If this component is connected to an MAC component
- *                      in the Ethernet library then this interface should be
- *                      used to connect to it. Otherwise it should be set to
- *                      null.
- *  \param mac_address  If this array is non-null then it will be used to set
- *                      the MAC address of the component.
- *  \param otp_ports    If this port structure is non-null then the component
- *                      will obtain the MAC address from OTP ROM. See the OTP
- *                      reading library user guide for details.
- *  \param ipconfig     This `xtcp_ipconfig_t` structure is used
- *                      to determine the IP address configuration of the
- *                      component.
- */
-void xtcp_uip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
-              static_const_unsigned n_xtcp,
-              NULLABLE_CLIENT_INTERFACE(mii_if, i_mii),
-              NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg),
-              NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx),
-              NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx),
-              CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, MACADDR_NUM_BYTES),
-              NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
-              REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 #endif /* __XC__ || __DOXYGEN__ */
 
 /** Copy an IP address data structure.
