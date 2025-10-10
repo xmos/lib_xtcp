@@ -47,7 +47,7 @@ void reset_eth_phys()
 }
 
 rmii_port_timing_t get_port_timings(port_timing_index_t phy_idx){
-    rmii_port_timing_t port_timing = {0};
+    rmii_port_timing_t port_timing = {0, 0, 0, 0, 0};
     if(phy_idx == DUAL_PHY_MOUNTED_PHY0){
         port_timing.clk_delay_tx_rising = 1;
         port_timing.clk_delay_tx_falling = 1;

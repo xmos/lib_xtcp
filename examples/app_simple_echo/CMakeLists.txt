@@ -20,7 +20,6 @@ set(APP_COMPILER_FLAGS      -O3
                             -Wdiv-by-zero
                             -Wfloat-equal
                             -Wsign-compare
-                            -Wm,--map,app_simple_echo.map
                             -report
                             -DDEBUG_PRINT_ENABLE=1
                             -DDEBUG_PRINT_ENABLE_LIB_XTCP=1

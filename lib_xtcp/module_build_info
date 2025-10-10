@@ -1,6 +1,6 @@
 VERSION = 6.2.0
 
-DEPENDENT_MODULES = lib_ethernet(>=4.1.0) lib_otpinfo(>=2.2.1) lib_random(>=1.3.0) lib_xassert(>=4.3.2) lib_logging(>=3.4.0)
+DEPENDENT_MODULES = lib_ethernet(>=4.1.0) lib_otpinfo(>=2.2.1) lib_random(>=1.3.1) lib_xassert(>=4.3.2) lib_logging(>=3.4.0)
 
 # Build flags
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3 -mno-dual-issue -DSSIZE_MAX=2147483647
@@ -10,7 +10,7 @@ MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3 -mno-dual-issue -DSSIZE_MAX=2147483647
 LWIP_SOURCE_DIRS = lwip/api lwip/src/api lwip/src/core lwip/src/core/ipv4 lwip/src/netif lwip/contrib/ports/xmos/port
 
 # Include directories
-LWIP_INCLUDE_DIRS = lwip/src/include lwip/contrib lwip/contrib/ports/xmos/include lwip/contrib/ports/xmos/lib
+LWIP_INCLUDE_DIRS = lwip/src/include lwip/contrib lwip/contrib/ports/xmos/include lwip/contrib/ports/xmos/lib/standard
 
 # Exclude files
 LWIP_EXCLUDE_FILES += slipif.c

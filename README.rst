@@ -31,7 +31,7 @@ TCP/IP Stack
 ============
 
 The TCP/IP stack used is the third-party lwIP (lightweight IP) stack ported to the
-xCORE architecture.. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
+xCORE architecture. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
 
 ********
 Features
@@ -39,7 +39,7 @@ Features
 
 * TCP and UDP connection handling
 * Common API to TCP/IP stack, LwIP
-* TCP, UDP, DHCP, IP4LL, ICMP, IGMP
+* TCP, UDP, DHCP, ICMP, IGMP
 * Low level, event based interface for efficient memory usage
 * Supports IPv4 only, not IPv6
 
@@ -47,8 +47,8 @@ Features
 Known issues
 ************
 
-* psock.c does output ftpgroup warnings. This does not affect operation.
-  This is due to the stack not being calculable on code paths with a function pointer.
+* Only one network interface supported at a time. This needs support from the underlying ``lib_ethernet`` library.
+* Support for IP4LL have been disabled.
 
 ****************
 Development repo

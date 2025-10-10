@@ -43,7 +43,8 @@ set(APP_COMPILER_FLAGS      -O3
                             -DDEBUG_PRINT_ENABLE=1
                             -DDEBUG_PRINT_ENABLE_LIB_XTCP=1
                             -DXASSERT_ENABLE_DEBUG=1
-                            -DTEST_BOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M)
+                            -DTEST_BOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
+                            ${PHY_FLAGS})
 
 set(APP_XSCOPE_SRCS         src/config.xscope)
 

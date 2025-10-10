@@ -16,6 +16,10 @@ set(APP_COMPILER_FLAGS      -g
                             -mno-dual-issue
                             -Wall
                             -Wextra
+                            -Wconversion
+                            -Wdiv-by-zero
+                            -Wfloat-equal
+                            -Wsign-compare
                             -report
                             -DBOARD_SUPPORT_BOARD=XK_ETH_316_DUAL
                             -DDEBUG_PRINT_ENABLE=1

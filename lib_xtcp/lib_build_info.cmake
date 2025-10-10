@@ -2,13 +2,14 @@ set(LIB_NAME                lib_xtcp)
 
 set(LIB_VERSION             6.2.0)
 
-# Please note: LWIP_OPTS_PATH must be set in the application's CMakeLists.txt file
+# Please note: LWIP_OPTS_PATH may be overridden in the application's CMakeLists.txt file
 if(NOT DEFINED LWIP_OPTS_PATH)
-    message(FATAL_ERROR "LWIP_OPTS_PATH must be defined in the application's CMakeLists.txt file")
+    message(STATUS "LWIP_OPTS_PATH not defined, setting to 'standard', may be overridden in the application's CMakeLists.txt file")
+    set(LWIP_OPTS_PATH      "lwip/contrib/ports/xmos/lib/standard")
 endif()
 
 # LWIP
-set(LWIP_DIR                ${XMOS_SANDBOX_DIR}lib_xtcp/lib_xtcp/lwip)
+set(LWIP_DIR                ${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip)
 set(LWIP_CONTRIB_DIR        ${LWIP_DIR}/contrib)
 
 include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/src/Filelists.cmake")
@@ -16,7 +17,7 @@ include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/contrib/Filelists.cmake")
 include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/contrib/ports/xmos/Filelists.cmake")
 
 # Map LwIP source files to relative paths for module build
-set(MODULE_DIR              ${XMOS_SANDBOX_DIR}lib_xtcp/lib_xtcp/)
+set(MODULE_DIR              ${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/)
 
 if (LWIP_VERSION_STRING)
     message(STATUS "Capturing LwIP")
@@ -65,7 +66,7 @@ set(LIB_INCLUDES            api
 set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.1.0)"
                             "lib_logging(3.4.0)"
                             "lib_xassert(4.3.2)"
-                            "lib_random(1.3.0)"
+                            "lib_random(1.3.1)"
                             "lib_otpinfo(2.2.1)")
 
 set(LIB_COMPILER_FLAGS      -g

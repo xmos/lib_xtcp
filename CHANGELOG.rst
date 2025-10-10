@@ -4,9 +4,12 @@ lib_xtcp change log
 UNRELEASED
 ----------
 
+  * CHANGED: Updated LwIP stack to version 2.2.1
+  * CHANGED: Updated lib_xtcp API to be closer to posix sockets API.
   * CHANGED: Ported example to xcore.ai Ethernet development board
     xk-eth-316-dual
   * CHANGED: Support for hardware test platform moved into library.
+  * REMOVED: uIP TCP/IP stack support.
 
 6.2.0
 -----

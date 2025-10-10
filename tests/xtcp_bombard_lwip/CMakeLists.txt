@@ -30,11 +30,19 @@ else()
 set(PHY_FLAGS               -DXCORE_AI_MULTI_PHY_DUAL_PHY=1)
 endif()
 
-set(COMPILER_FLAGS_COMMON   -g
-                            -O3
+set(COMPILER_FLAGS_COMMON   -O3
+                            -g
+                            -mno-dual-issue
+                            -Wall
+                            -Wextra
+                            -Wconversion
+                            -Wdiv-by-zero
+                            -Wfloat-equal
+                            -Wsign-compare
                             -report
                             -DDEBUG_PRINT_ENABLE=1
-                            -DDEBUG_PRINT_ENABLE_LIB_XTCP=0
+                            -DDEBUG_PRINT_ENABLE_LIB_XTCP=1
+                            -DXASSERT_ENABLE_DEBUG=1
                             -DTEST_BOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
                             ${PHY_FLAGS})
 

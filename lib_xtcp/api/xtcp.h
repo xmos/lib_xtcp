@@ -27,6 +27,11 @@
 #define DHCPC_SERVER_PORT 67
 #define DHCPC_CLIENT_PORT 68
 
+/** Ethernet network interface hostname. Option LWIP_NETIF_HOSTNAME=1 required in lwipopts.h. */
+#ifndef XTCP_HOSTNAME
+#define XTCP_HOSTNAME "lwip-xcore"
+#endif
+
 /** Maximum number of connected XTCP clients */
 #ifndef MAX_XTCP_CLIENTS
 #define MAX_XTCP_CLIENTS 5
