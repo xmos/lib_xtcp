@@ -12,11 +12,11 @@ from hardware_test_tools import XcoreApp
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
 @pytest.mark.parametrize('processes', [1, 2])
-@pytest.mark.parametrize('message_length', [10, 100])  # TODO test what happens over TCP MSS of 536 and up to MTU for UDP
-def test_basic(request, protocol, processes, message_length):
+def test_burst(request, protocol, processes):
     dut_ip = '192.168.200.198'
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
     library = 'LWIP'
+    message_length = 100
 
     tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
     tester.setup(request)
@@ -68,15 +68,15 @@ class RunXtcp(CollectFailures):
         if level == 'quick':
             self.packets = 10
         elif level == 'smoke':
-            self.packets = 1000
+            self.packets = 100
         elif level == 'nightly':
-            self.packets = 10000
+            self.packets = 1000
         else:  # weekend
-            self.packets = 100000
+            self.packets = 1000
 
     def run_test(self, delay, device, ip, interface, library):
         setup = f'{self.processes}_{self.ports}_{self.protocol}_{device}_{interface}'
-        binary = pathlib.Path(f'xtcp_bombard_{library.lower()}/bin/{setup}/xtcp_bombard_{library.lower()}_{setup}.xe')
+        binary = pathlib.Path(f'xtcp_burst/bin/{setup}/xtcp_burst_{setup}.xe')
 
         assert binary.exists(), 'Found test binary'
 
@@ -87,7 +87,7 @@ class RunXtcp(CollectFailures):
 
             self.python_output = subprocess.run(
                 [
-                    'python', 'xtcp_ping_pong.py', '--ip', ip,
+                    'python', 'xtcp_burst.py', '--ip', ip,
                     '--start-port', START_PORT,
                     '--remote-processes', f'{self.processes}',
                     '--remote-ports', f'{self.ports}',

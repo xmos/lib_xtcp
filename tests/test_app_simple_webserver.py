@@ -24,12 +24,7 @@ def run_test(ip, adapter_id):
     binary = pathlib.Path(
         '../examples/app_simple_webserver/bin/app_simple_webserver.xe')
 
-    if binary.exists():
-        print(f'Found test binary, {binary}')
-        assert 1
-    else:
-        print('No test binary found')
-        assert 0
+    assert binary.exists(), f'Error: Binary not found: {binary}'
 
     print(f'Target IP address: {ip}')
 

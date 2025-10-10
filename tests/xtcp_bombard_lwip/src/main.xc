@@ -55,12 +55,11 @@ int main(void) {
                      null, null,
                      p_phy_clk, p_phy_rxd, null, USE_UPPER_2B,
                      p_phy_rxdv, p_phy_txen, p_phy_txd, null, USE_UPPER_2B,
-                     phy_rxclk, phy_txclk, get_port_timings(0),
+                     phy_rxclk, phy_txclk, get_port_timings(DUAL_PHY_MOUNTED_PHY0),
                      ETH_RX_BUFFER_SIZE_WORDS, ETH_RX_BUFFER_SIZE_WORDS,
                      ETHERNET_DISABLE_SHAPER);
 
-    on tile[1]
-        : dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
+    on tile[1] : dual_dp83826e_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
 
     on tile[1] : smi(i_smi, p_smi_mdio, p_smi_mdc);
 
@@ -71,7 +70,7 @@ int main(void) {
 
     // The simple udp reflector thread
     par(int i = 0; i < REFLECT_PROCESSES; i++) {
-      on tile[0] : udp_reflect(i_xtcp[i], INCOMING_PORT + (i * 10));
+      on tile[0] : reflect(i_xtcp[i], INCOMING_PORT + (i * 10));
     }
   }
   return 0;

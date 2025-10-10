@@ -8,16 +8,13 @@ import time
 import argparse
 import sys
 import subprocess
-import struct
-import urllib.request
-import urllib.error
+# import struct
+# import urllib.request
+# import urllib.error
 from multiprocessing import Pool
 import copy
 
-# This test script can run a webserver test, a reflect test (sending and receiving), a connection test.
-#
-# Simple webserver test, opens an HTTP connection on port 80 and returns the text supplied by the DUT.
-# Typical usage, python xtcp_ping_pong.py --ip 192.168.200.178 --start-port 80 --test webserver
+# This test script can run a flood reflect test (sending and receiving), this is to test TCP throughput throttling.
 #
 # Reflect test sends data to the DUT and expects the same data but bytes reversed in the array to be returned from
 # the DUT.
@@ -33,15 +30,8 @@ import copy
 # Note: for TCP connections, 3 repeated connection timeouts are flagged as an error.
 #
 # Typical usage,
-#   python xtcp_ping_pong.py --ip 192.168.200.198 --start-port 15533 --remote-processes 1 --remote-ports 1 \
-#   --protocol TCP --packets 100 --delay-between-packets 0.002 --halt-sequential-errors 11 --num-timeouts-reconnect 3
-#
-# Connection test runs the reflect test repeatedly with a small number of packets, say 10, so it tests the DUTs
-# ability to handle connection/disconnection in the case of TCP, and the ability of the DUT to handle the same host
-# with changing host ports for UDP.
-# Typical usage,
-#   python xtcp_ping_pong.py --test connection --ip 192.168.200.199 --start-port 15533 --remote-processes 1 \
-#   --remote-ports 1 --protocol TCP --packets 10 --delay-between-packets 0.002 --halt-sequential-errors 5 --num-timeouts-reconnect 3
+#   python xtcp_flood.py --ip 192.168.200.198 --start-port 15533 --remote-processes 1 --remote-ports 1 \
+#   --protocol TCP --packets 10 --delay-between-packets 0.002 --halt-sequential-errors 11 --num-timeouts-reconnect 3
 #
 # This scripts stores issues in the list variables 'failures', these are then printed out at teh end of the test for
 # the pytest script running this one to pick up and parse.
@@ -56,8 +46,9 @@ def print_errors(failure_list):
         print('    \ttype\tid\ttime\tlocal\tremote\tsent_l\t?ret_l\t?err\t?mess\t?recv')
         print(''.join(failure_list))
 
+    # "10 * x" because each run floods 10 packets at a time
     print('Lost_packets: {} of {}'.format(len(failure_list),
-                                          args.packets * args.remote_processes * args.remote_ports))
+                                          10 * args.packets * args.remote_processes * args.remote_ports))
 
 
 def build_base_string(short_name, args, socket, length=0):
@@ -113,7 +104,7 @@ def attempt_connect(failures, args, sock=None):
                 sock_proto = socket.SOCK_STREAM
 
             sock = socket.socket(socket.AF_INET, sock_proto)
-            sock.settimeout(1)  # seconds
+            sock.settimeout(2)  # seconds
             sock.connect((args.ip, args.start_port))
             return (failures, sock)
 
@@ -151,22 +142,64 @@ def process_test(args):
         sys.stdout.write('.')  # show progress
         sys.stdout.flush()
         length_of_message = args.packet_size_limit
-        # Don't allow an 'a' char to be sent, as this kills the remote device
-        message = ''.join(random.choice(
-            string.ascii_lowercase[1:]) for c in range(length_of_message))
-        # message = 'bbccdd'
 
-        message = message.encode('ascii')
+        # Don't allow an 'a' char to be sent, as this kills the remote device
+        message1 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message2 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message3 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message4 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message5 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message6 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message7 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message8 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message9 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
+        message10 = ''.join(random.choice(string.ascii_lowercase[1:]) for c in range(length_of_message)).encode('ascii')
 
         try:
-            sock.send(message)
-            # Receive up to one MTU of data
-            returned_message = sock.recv(1500)
+            send_len = sock.send(message1)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message2)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message3)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message4)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message5)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message6)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message7)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message8)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message9)
+            time.sleep(0.01)  # Small delay to try and get packets to arrive separately
+            send_len += sock.send(message10)
+
+            failures.append(
+                'Info:' + build_basic_report('sent', args, sock, args.packets - tests_to_perform)
+            )
+            recv_len = 0
+            returned_message = b''
+            while recv_len < send_len:
+                # Receive up to one MTU of data
+                returned_message += sock.recv(1500)
+                recv_len = len(returned_message)
 
             # if returned_message != message:
-            if returned_message != message[::-1]:  # Reverse string
+            if message1[::-1] not in returned_message:  # Reverse string
                 failures.append(
-                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message, returned_message)
+                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message1, returned_message)
+                )
+
+            if message2[::-1] not in returned_message:  # Reverse string
+                failures.append(
+                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message2, returned_message)
+                )
+
+            if message3[::-1] not in returned_message:  # Reverse string
+                failures.append(
+                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message3, returned_message)
                 )
 
             # timeout checks, force action to be 'n' sequential timeouts
@@ -267,66 +300,6 @@ def reflect_test(args):
     pool.terminate()
 
 
-def connect_test(args):
-    tests_to_perform = args.packets
-
-    while tests_to_perform:
-        print(f"test {tests_to_perform}")
-        tests_to_perform -= 1
-
-        failures = reflect_test(args)
-        if failures is not None:
-            print_errors(failures)
-
-        if tests_to_perform:
-            time.sleep(3)
-
-
-def multicast_test():
-    MCAST_GRP = '224.1.1.1'
-    MCAST_PORT = 5007
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((MCAST_GRP, MCAST_PORT))
-    mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF,
-                    socket.inet_aton('192.168.2.1'))
-
-    while True:
-        print(sock.recv(10240))
-
-
-def udp_bind_test():
-    print("UDP BIND")
-    tests_to_perform = args.packets
-
-    try:
-        # Test only performed for UDP
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(('', args.local_port))
-        # sock.listen(5)
-        # conn, addr = sock.accept()
-        # if(addr[1] != args.start_port):
-        #     print 'ERROR: Bound to wrong address'
-
-        while tests_to_perform:
-            message, addr = sock.recvfrom(1460)
-            if (addr[1] != args.start_port):
-                print('ERROR: Bound to wrong port')
-            if message:
-                sock.sendto(message, addr)
-            tests_to_perform -= 1
-
-        sock.close()
-
-    except socket.error as err:
-        print(err)
-        print('ERROR: Could not connect to device')
-
-
 def check_and_set_args(args):
     if args.ip is None:
         parser.error('Need IP address')
@@ -356,27 +329,10 @@ def check_and_set_args(args):
     args.seed_base = int(git_rev.stdout[0].strip(), 16)
 
 
-def webserver_test(args):
-    try:
-        response = urllib.request.urlopen(
-            'http://' + args.ip + ':' + str(args.start_port), timeout=10)
-        html = response.read().decode('utf-8')
-        print(html)
-
-    except urllib.error.URLError as e:
-        if isinstance(e.reason, socket.timeout):
-            print('ERROR: Could not connect to device: {}'.format(e))
-        else:
-            print('ERROR: URL error: {}'.format(e))
-
-    except socket.timeout as e:
-        print('ERROR: Could not connect to device: {}'.format(e))
-
-
 if __name__ == '__main__':
     # Defaults
     packets = 10000
-    packet_size_limit = 100
+    packet_size_limit = 536
     delay_between_packets = 0
     remote_processes = 1
     remote_ports = 1
@@ -397,7 +353,7 @@ if __name__ == '__main__':
                         help="Remote processes to connect to (default='%s')" % remote_processes)
     parser.add_argument('--remote-ports', default=remote_ports, type=int,
                         help="Remote ports to connect to (default='%s')" % remote_ports)
-    parser.add_argument('--protocol', default=protocol, type=str, choices=['UDP', 'TCP'],
+    parser.add_argument('--protocol', default=protocol, type=str, choices=['TCP'],
                         help="TCP/UDP protocol (default='%s')" % protocol)
     parser.add_argument('--packets', default=packets, type=int,
                         help="Number of packets to send (defaults='%s')" % packets)
@@ -415,17 +371,10 @@ if __name__ == '__main__':
 
     check_and_set_args(args)
 
-    # udp_bind_test()
-    # multicast_test()
-    if args.test == 'webserver':
-        webserver_test(args)
-    elif args.test == 'connection':
-        connect_test(args)
+    if args.protocol == 'TCP':
+        reflect_test(args)
     else:
-        if args.protocol == 'UDP' or args.protocol == 'TCP':
-            reflect_test(args)
-        else:
-            print("Unknown protocol")
+        print("Unknown protocol")
 
     print("Kill target")
     kill_remote_device(args)

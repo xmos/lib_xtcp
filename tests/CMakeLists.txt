@@ -4,3 +4,6 @@ include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project(lib_xtcp_tests)
 
 add_subdirectory(xtcp_bombard_lwip)
+add_subdirectory(xtcp_burst)
+add_subdirectory(xtcp_tcp_connect)
+add_subdirectory(xtcp_udp_connect)

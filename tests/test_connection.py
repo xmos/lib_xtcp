@@ -11,14 +11,13 @@ from hardware_test_tools import XcoreApp
 
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
+@pytest.mark.parametrize('library', ['LWIP'])
 @pytest.mark.parametrize('processes', [1, 2])
-@pytest.mark.parametrize('message_length', [10, 100])  # TODO test what happens over TCP MSS of 536 and up to MTU for UDP
-def test_basic(request, protocol, processes, message_length):
+def test_connection(request, protocol, library, processes):
     dut_ip = '192.168.200.198'
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
-    library = 'LWIP'
 
-    tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
+    tester = RunXtcp(processes, dut_ports_per_proc, protocol)
     tester.setup(request)
 
     tester.run_test(0.002, 'EXPLORER', dut_ip, 'ETH', library)
@@ -46,13 +45,12 @@ class CollectFailures():
 
 
 class RunXtcp(CollectFailures):
-    def __init__(self, processes, ports, protocol, message_length):
+    def __init__(self, processes, ports, protocol):
         super(RunXtcp, self).__init__()
         self._adapter_id = None
         self.processes = processes
         self.ports = ports
         self.protocol = protocol
-        self.message_length = message_length
 
         self.python_output = ""
         self.xrun_stdout = ""
@@ -66,13 +64,13 @@ class RunXtcp(CollectFailures):
 
         level = request.config.getoption("--level")
         if level == 'quick':
-            self.packets = 10
+            self.packets = 2
         elif level == 'smoke':
-            self.packets = 1000
+            self.packets = 10
         elif level == 'nightly':
-            self.packets = 10000
+            self.packets = 100
         else:  # weekend
-            self.packets = 100000
+            self.packets = 100
 
     def run_test(self, delay, device, ip, interface, library):
         setup = f'{self.processes}_{self.ports}_{self.protocol}_{device}_{interface}'
@@ -87,16 +85,17 @@ class RunXtcp(CollectFailures):
 
             self.python_output = subprocess.run(
                 [
-                    'python', 'xtcp_ping_pong.py', '--ip', ip,
+                    'python', 'xtcp_ping_pong.py',
+                    '--test', 'connection',
+                    '--ip', ip,
                     '--start-port', START_PORT,
                     '--remote-processes', f'{self.processes}',
                     '--remote-ports', f'{self.ports}',
                     '--protocol', self.protocol,
                     '--packets', f'{self.packets}',
                     '--delay-between-packets', f'{delay}',
-                    '--halt-sequential-errors', f'{11}',
-                    '--num-timeouts-reconnect', f'{3}',
-                    '--packet-size-limit', f'{self.message_length}'
+                    '--halt-sequential-errors', f'{5}',
+                    '--num-timeouts-reconnect', f'{3}'
                 ],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
@@ -118,8 +117,8 @@ class RunXtcp(CollectFailures):
         total_errors = 0
         total_losses = 0
         python_valid = False
-        total_runs = self.packets * self.processes * self.ports
-        achieved_runs = self.packets * self.processes * self.ports
+        total_runs = self.packets * self.packets * self.processes * self.ports
+        achieved_runs = self.packets * self.packets * self.processes * self.ports
 
         # Check for any test output errors
         for line in output.splitlines():
@@ -157,7 +156,8 @@ class RunXtcp(CollectFailures):
                 f"  Allowable losses: {test_threshold} packets\n" +
                 f"  Actual losses:    {total_losses} packets\n" +
                 "  Loss rate:        {0:.2f} %\n".format(total_losses * 100.0 / achieved_runs) +
-                f"  Runs:             {achieved_runs}/{total_runs} packets (achieved/requested)\n"
+                f"  Runs:             {self.packets} reconnect attempts\n"
+                f"  Packets:          {achieved_runs}/{total_runs} packets (achieved/requested)\n"
             )
 
     def check_xrun(self):

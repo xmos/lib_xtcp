@@ -6,6 +6,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/../board_support/board_support.cmake)
 
 set(APP_HW_TARGET           xk-eth-xu316-dual-100m.xn)
 
+# LwIP options needed for library build
+set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
+
 set(APP_INCLUDES            ../common/include ${test_board_support_INC})
 
 file(GLOB XC_SOURCES        RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.xc")
@@ -29,14 +32,10 @@ endif()
 
 set(COMPILER_FLAGS_COMMON   -g
                             -O3
-                            -mno-dual-issue
                             -report
-                            -DDEBUG_PRINT_ENABLE
-                            -DUIP_CONF_MAX_CONNECTIONS=20 
-                            -DUIP_CONF_MAX_LISTENPORTS=20  
-                            -DUIP_USE_AUTOIP=0
+                            -DDEBUG_PRINT_ENABLE=1
+                            -DDEBUG_PRINT_ENABLE_LIB_XTCP=0
                             -DTEST_BOARD_SUPPORT_BOARD=XK_ETH_XU316_DUAL_100M
-                            -DXTCP_STACK_LWIP
                             ${PHY_FLAGS})
 
 set(EXPLORER_FLAGS          -DEXPLORER_KIT=1)
