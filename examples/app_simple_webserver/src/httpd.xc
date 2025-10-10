@@ -2,7 +2,8 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <string.h>
-#include <print.h>
+
+#include "debug_print.h"
 #include "xtcp.h"
 #include "httpd.h"
 
@@ -12,6 +13,7 @@
 // Maximum number of bytes to receive at once
 #define RX_BUFFER_SIZE 1518
 
+static const xtcp_ipaddr_t any_addr = {0, 0, 0, 0};
 
 // Structure to hold HTTP state
 typedef struct httpd_state_t {
@@ -29,10 +31,17 @@ httpd_state_t connection_states[NUM_HTTPD_CONNECTIONS];
 void httpd_init(client xtcp_if i_xtcp)
 {
   // Listen on the http port
-  i_xtcp.listen(80, XTCP_PROTOCOL_TCP);
+  int32_t listening_connection = i_xtcp.socket(XTCP_PROTOCOL_TCP);
+  int32_t listen_result = i_xtcp.listen(listening_connection, 80, any_addr);  
+  if (listen_result < 0) {
+    debug_printf("Failed to listen on port %d, %i\n", 80, listen_result);
+  } else {
+    debug_printf("Listening on port %d, id %d\n", 80, listening_connection);
+  }
 
   for (int i = 0; i < NUM_HTTPD_CONNECTIONS; i++ ) {
     connection_states[i].active = 0;
+    connection_states[i].conn_id = -1;
     unsafe {
       connection_states[i].dptr = NULL;
     }
@@ -42,9 +51,15 @@ void httpd_init(client xtcp_if i_xtcp)
 // Parses a HTTP request for a GET
 void parse_http_request(httpd_state_t *hs, char *data, int len)
 {
+  (void) len;
+
   // Default HTTP page with HTTP headers included
   static char page[] =
-    "HTTP/1.0 200 OK\nServer: xc2/pre-1.0 (http://xmos.com)\nContent-type: text/html\n\n"
+    "HTTP/1.1 200 OK\n"
+    "Server: xc2/pre-1.0 (http://xmos.com)\n"
+    "Connection: close\n"
+    "Content-Length: 94\n"
+    "Content-type: text/html\n\n"
     "<!DOCTYPE html>\n"
     "<html><head><title>Hello world</title></head>\n"
     "<body>Hello World!</body></html>";
@@ -68,28 +83,27 @@ void parse_http_request(httpd_state_t *hs, char *data, int len)
 
 
 // Send some data back for a HTTP request
-void httpd_send(client xtcp_if i_xtcp, xtcp_connection_t &conn)
+void httpd_send(client xtcp_if i_xtcp, int32_t conn_id)
 {
   unsafe {
-    struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
+    struct httpd_state_t *hs = (struct httpd_state_t *)i_xtcp.get_connection_client_data(conn_id);
 
     // Check if we have no data to send
     if (hs->dlen == 0 || hs->dptr == NULL) {
-      // Close the connection
-      printstr("Close\n");
-      i_xtcp.close(conn);
+      debug_printf("All data sent, id %d\n", conn_id);
 
     } else {
       // We need to send some new data
       int len = hs->dlen;
 
-      if (len > conn.mss) {
-        len = conn.mss;
+      debug_printf("Sending %d bytes\n", len);
+      int32_t result = i_xtcp.send(conn_id, (char*)hs->dptr, len);
+      if (result < 0) {
+        debug_printf("Error sending data: %d\n", result);
+        // Close the connection
+        i_xtcp.close(conn_id);
+        return;
       }
-
-      printstr("Send ");
-      printintln(len);
-      i_xtcp.send(conn, (char*)hs->dptr, len);
 
       hs->prev_dptr = hs->dptr;
       hs->dptr += len;
@@ -100,11 +114,11 @@ void httpd_send(client xtcp_if i_xtcp, xtcp_connection_t &conn)
 
 
 // Receive a HTTP request
-void httpd_recv(client xtcp_if i_xtcp, xtcp_connection_t &conn,
+void httpd_recv(client xtcp_if i_xtcp, int32_t conn_id,
                 char data[n], const unsigned n)
 {
   unsafe {
-    struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
+    struct httpd_state_t *hs = (struct httpd_state_t *)i_xtcp.get_connection_client_data(conn_id);
 
     // If we already have data to send, return
     if (hs == NULL || hs->dptr != NULL) {
@@ -114,13 +128,13 @@ void httpd_recv(client xtcp_if i_xtcp, xtcp_connection_t &conn,
     // Otherwise we have data, so parse it
     parse_http_request(hs, &data[0], n);
 
-    httpd_send(i_xtcp, conn);
+    httpd_send(i_xtcp, conn_id);
   }
 }
 
 
 // Setup a new connection
-void httpd_init_state(client xtcp_if i_xtcp, xtcp_connection_t &conn)
+void httpd_init_state(client xtcp_if i_xtcp, int32_t conn_id)
 {
   int i;
 
@@ -133,26 +147,32 @@ void httpd_init_state(client xtcp_if i_xtcp, xtcp_connection_t &conn)
 
   // If no free connection slots were found, abort the connection
   if (i == NUM_HTTPD_CONNECTIONS) {
-    i_xtcp.abort(conn);
-    printstr("Abort\n");
+    i_xtcp.abort(conn_id);
+    debug_printf("Abort\n");
   } else {
-    printstr("Connect ");
-    printintln(i);
+    xtcp_remote_t remote = i_xtcp.get_ipconfig_remote(conn_id);
+    debug_printf("Connection, id %d, from %d.%d.%d.%d:%d\n", conn_id,
+                 remote.ipaddr[0], remote.ipaddr[1],
+                 remote.ipaddr[2], remote.ipaddr[3],
+                 remote.port_number);
     // Otherwise, assign the connection to a slot
     connection_states[i].active = 1;
-    connection_states[i].conn_id = conn.id;
+    connection_states[i].conn_id = conn_id;
     connection_states[i].dptr = NULL;
-    i_xtcp.set_appstate(conn, (xtcp_appstate_t) &connection_states[i]);
+    unsafe {
+      (void)i_xtcp.set_connection_client_data(conn_id, &connection_states[i]);
+    }
   }
 }
 
 
 // Free a connection slot, for a finished connection
-void httpd_free_state(xtcp_connection_t &conn)
+void httpd_free_state(int32_t conn_id)
 {
   for (int i = 0; i < NUM_HTTPD_CONNECTIONS; i++) {
-    if (connection_states[i].conn_id == conn.id) {
+    if (connection_states[i].conn_id == conn_id) {
       connection_states[i].active = 0;
+      connection_states[i].conn_id = -1;
     }
   }
 }
@@ -161,67 +181,76 @@ void httpd_free_state(xtcp_connection_t &conn)
 // HTTP event handler
 void xhttpd(client xtcp_if i_xtcp)
 {
-  printstr("**WELCOME TO THE SIMPLE WEBSERVER DEMO**\n");
+  debug_printf("**WELCOME TO THE SIMPLE WEBSERVER DEMO**\n");
 
   // Initiate the HTTP state
   httpd_init(i_xtcp);
 
   // Loop forever processing TCP events
   while(1) {
-    xtcp_connection_t conn;
     char rx_buffer[RX_BUFFER_SIZE];
     unsigned data_len;
+    int32_t conn_id;
 
     select {
-      case i_xtcp.packet_ready(): {
-        i_xtcp.get_packet(conn, rx_buffer, RX_BUFFER_SIZE, data_len);
+      case i_xtcp.event_ready():
+        const xtcp_event_type_t event = i_xtcp.get_event(conn_id);
+        switch (event) {
+          case XTCP_EVENT_NONE:
+            // No event to process
+            break;
+          
+          case XTCP_IFUP:
+            xtcp_ipconfig_t ipconfig = i_xtcp.get_netif_ipconfig(0);
 
-        if (conn.local_port == 80) {
-          // HTTP connections
-          switch (conn.event) {
-            case XTCP_NEW_CONNECTION:
-              httpd_init_state(i_xtcp, conn);
-              break;
-            case XTCP_RECV_DATA:
-              httpd_recv(i_xtcp, conn, rx_buffer, data_len);
-              break;
-            case XTCP_SENT_DATA:
-              httpd_send(i_xtcp, conn);
-              break;
-            case XTCP_RESEND_DATA:
-              unsafe {
-                struct httpd_state_t *hs = (struct httpd_state_t *) conn.appstate;
-                i_xtcp.send(conn, (char*)hs->prev_dptr, (hs->dptr - hs->prev_dptr));
-              }
-              break;
-            case XTCP_TIMED_OUT:
-            case XTCP_ABORTED:
-            case XTCP_CLOSED:
-                httpd_free_state(conn);
-                break;
-            default:
-              // Ignore anything else
-              break;
-          }
-        } else {
-          // Other connections
-          switch(conn.event) {
-            case XTCP_IFUP:
-              xtcp_ipconfig_t ipconfig;
-              i_xtcp.get_ipconfig(ipconfig);
+            debug_printf("IP Address: %d.%d.%d.%d\n", ipconfig.ipaddr[0], ipconfig.ipaddr[1], ipconfig.ipaddr[2], ipconfig.ipaddr[3]);
+            break;
 
-              printstr("IP Address: ");
-              printint(ipconfig.ipaddr[0]);printstr(".");
-              printint(ipconfig.ipaddr[1]);printstr(".");
-              printint(ipconfig.ipaddr[2]);printstr(".");
-              printint(ipconfig.ipaddr[3]);printstr("\n");
+          case XTCP_IFDOWN:
+            debug_printf("IFDOWN\n");
+            break;
+
+          case XTCP_ACCEPTED:
+            httpd_init_state(i_xtcp, conn_id);
+            break;
+
+          case XTCP_RECV_DATA:
+            int32_t data_len = i_xtcp.recv(conn_id, rx_buffer, RX_BUFFER_SIZE);
+            if (data_len < 0) {
+              // Close connection if error receiving data
+              debug_printf("RECV error: closing, id %d\n", conn_id);
+              i_xtcp.close(conn_id);
               break;
-            default:
+            } else {
+              httpd_recv(i_xtcp, conn_id, rx_buffer, data_len);
               break;
-          }
+            }
+            break;
+
+          case XTCP_SENT_DATA:
+            httpd_send(i_xtcp, conn_id);
+            break;
+
+          case XTCP_RESEND_DATA:
+            debug_printf("Resend, id %d\n", conn_id);
+            unsafe {
+              struct httpd_state_t *hs = (struct httpd_state_t *)i_xtcp.get_connection_client_data(conn_id);
+              i_xtcp.send(conn_id, (char*)hs->prev_dptr, (hs->dptr - hs->prev_dptr));
+            }
+            break;
+
+          case XTCP_CLOSED:
+            i_xtcp.close(conn_id);
+            httpd_free_state(conn_id);
+            debug_printf("Closed, id %d\n", conn_id);
+            break;
+
+          case XTCP_ABORTED:
+            httpd_free_state(conn_id);
+            debug_printf("Aborted, id %d\n", conn_id);
+            break;
         }
         break;
-      }
     }
   }
 }

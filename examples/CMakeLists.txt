@@ -4,3 +4,4 @@ include($ENV{XMOS_CMAKE_PATH}/xcommon.cmake)
 project(lib_xtcp_examples)
 
 add_subdirectory(app_simple_webserver)
+add_subdirectory(app_simple_echo)
