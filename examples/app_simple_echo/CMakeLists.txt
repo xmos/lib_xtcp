@@ -9,7 +9,7 @@ set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 
-set(APP_PCA_ENABLE ON)
+set(APP_PCA_ENABLE OFF)
 
 set(APP_COMPILER_FLAGS      -O3
                             -g

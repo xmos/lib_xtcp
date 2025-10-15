@@ -32,6 +32,7 @@ TCP/IP Stack
 
 The TCP/IP stack used is the third-party lwIP (lightweight IP) stack ported to the
 xCORE architecture. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
+Throughput in excess of 50 Mbps can be achieved using RMII with this stack on xcore.ai devices.
 
 ********
 Features
@@ -47,7 +48,7 @@ Features
 Known issues
 ************
 
-* Only one network interface supported at a time. This needs support from the underlying ``lib_ethernet`` library.
+* Only one network interface supported at a time. This needs support from the underlying ``lib_ethernet`` library (https://github.com/xmos/lib_xtcp/issues/51).
 * Support for IP4LL have been disabled.
 
 ****************

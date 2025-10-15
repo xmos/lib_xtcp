@@ -12,7 +12,7 @@ from hardware_test_tools import XcoreApp
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
 @pytest.mark.parametrize('processes', [1, 2])
-@pytest.mark.parametrize('message_length', [10, 100])  # TODO test what happens over TCP MSS of 536 and up to MTU for UDP
+@pytest.mark.parametrize('message_length', [10, 100])
 def test_basic(request, protocol, processes, message_length):
     dut_ip = '192.168.200.198'
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity

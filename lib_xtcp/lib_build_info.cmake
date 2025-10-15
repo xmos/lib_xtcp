@@ -78,7 +78,7 @@ set(LIB_COMPILER_FLAGS      -g
                             -Wdiv-by-zero
                             -Wfloat-equal
                             -Wsign-compare
-                            -DSSIZE_MAX=2147483647)
+                            -DSSIZE_MAX=INT_MAX)
 
 set(LIB_OPTIONAL_HEADERS    xtcp_client_conf.h xtcp_conf.h)
 

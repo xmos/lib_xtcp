@@ -3,6 +3,8 @@
 lib_xtcp: TCP/IP Library
 ########################
 
+|newpage|
+
 ************
 Introduction
 ************
@@ -76,14 +78,12 @@ HTTP example provided in the library's example ``app_simple_webserver``, see
     - lib_ethernet (PHY)
 
 
-The TCP/IP stack runs in a task implemented in either the :c:func:`xtcp_uip` or
-:c:func:`xtcp_lwip` functions depending on which stack implementation is 
-preferred. The interface to the stack are the same, regardless of which
-implementation is being used.
+The TCP/IP stack runs in a task implemented in the
+:c:func:`xtcp_lwip` function which implements TCP/IP functionality using the lwIP stack.
 
 This task connects to either the RMII/RGMII MAC components or the MII component
-in the Ethernet library ``lib_etherent``.
-See the figures :ref:`tcp_task_mac_section` and :ref:`tcp_task__mii_section` 
+in the Ethernet library ``lib_ethernet``.
+See the figures :ref:`tcp_task_mac_section` and :ref:`tcp_task__mii_section`
 and the Ethernet library user guide for details on these components.
 
 .. _tcp_task_mac_section:
@@ -134,10 +134,8 @@ IP Configuration
 ================
 
 The library server will determine its IP configuration based on the ``xtcp_ipconfig_t``
-configuration passed into the :c:func:`xtcp_uip` / :c:func:`xtcp_lwip` task 
-(see section :ref:`xtcp_server_api`).
-If an address is supplied then that address will be used (a static IP address
-configuration):
+configuration passed into the :c:func:`xtcp_lwip` task (see section :ref:`xtcp_server_api`).
+If an address is supplied then that address will be used (a static IP address configuration):
 
 .. code-block:: C
 
@@ -153,8 +151,8 @@ automatically. If it cannot obtain an address from DHCP, it will determine
 a link local address (in the range 169.254/16) automatically using the
 Zeroconf IPV4LL protocol.
 
-To use dynamic address, the :c:func:`xtcp_uip` and :c:func:`xtcp_lwip`
-functions can be passed a structure with an IP address that is all zeros:
+To use dynamic address, the :c:func:`xtcp_lwip`
+function can be passed a structure with an IP address that is all zeros:
 
 .. code-block:: C
 
@@ -322,7 +320,7 @@ Server Configuration
 ====================
 
 The server is configured via arguments passed to server task, see section 
-:ref:`xtcp_server_api` (:c:func:`xtcp_uip`/ :c:func:`xtcp_lwip`) and the defines 
+:ref:`xtcp_server_api` (:c:func:`xtcp_lwip`) and the defines 
 described in Section :ref:`sec_config_defines`.
 
 Stack Configuration
@@ -330,7 +328,7 @@ Stack Configuration
 
 The underlying stack configuration can by modified by including optional header
 files in the application. One or both of the following, these will override the
-uIP or LwIP build settings. See :ref:`sec_config_defines`.
+LwIP build settings. See :ref:`sec_config_defines`.
 
 * xtcp_client_conf.h
 * xtcp_conf.h
@@ -359,14 +357,6 @@ All functions and types can be found in the ``xtcp.h`` header file:
 
   #include <xtcp.h>
 
-.. _stack_selection_section:
-
-Stack Selection
-===============
-
-To choose which stack to use, simply call either :c:func:`xtcp_uip` or 
-:c:func:`xtcp_lwip` in main.
-
 .. _getting_Started_section:
 
 Getting Started
@@ -378,16 +368,11 @@ use TCP traffic for a very simple HTTP server.
 The example targets the XCORE-200-EXPLORER dev-kit and 1000BASE-T ethernet 
 with an RGMII PHY.
 
-The ``lib_xtcp`` supports two TCP/IP stacks, either ``uIP`` or ``LwIP`` stacks.
-The example is configured to support both stacks, selecting the correct entry 
-point depending on the application compiler defines. To change the selected 
-stack please see the CMakelists.txt for the example and swap the 
-define for either ``XTCP_STACK_LWIP`` or ``XTCP_STACK_UIP`` in 
-``APP_COMPILER_FLAGS``.
+The ``lib_xtcp`` uses a third-party TCP/IP stack, the ``LwIP`` stack. This is built automatically
+when the library is built. ``lib_xtcp`` uses one thread to run the TCP/IP stack and uses around 50 kB of code
+and 30kB of data, and the application client runs in another thread. The memory usage will vary
+depending on the configuration of the stack and the application.
 
-.. code-block:: cmake
-
-  set(APP_COMPILER_FLAGS ${COMPILER_FLAGS_COMMON} -DXTCP_STACK_LWIP)
 
 By default the The IP address for the XCORE will be automatically assigned via 
 DHCP if :c:struct:`xtcp_ipconfig_t` ``ipconfig = { ... };`` in ``main.xc`` is 
@@ -500,31 +485,9 @@ by the library on build).
        set to a smaller value, larger incoming packets will be truncated. Default
        is 1472.
 
-``UIP_CONF_MAX_CONNECTIONS``
-       The maximum number of UDP or TCP connections the server can
-       handle simultaneously. Default is 20.
-
-``UIP_CONF_MAX_LISTENPORTS``
-       The maximum number of UDP or TCP ports the server can listen to
-       simultaneously. Default is 20.
-
-``UIP_USE_AUTOIP``
-       By defining this as 0, the IPv4LL application is removed from the code. Do this to save
-       approximately 1kB.  Auto IP is a stateless protocol that assigns an IP address to a
-       device.  Typically, if a unit is trying to use DHCP to obtain an address, and a server
-       cannot be found, then auto IP is used to assign an address of
-       the form 169.254.x.y. Auto IP is enabled by default
-
-``UIP_USE_DHCP``
-       By defining this as 0, the DHCP client is removed from the
-       code. This will save approximately 2kB.
-       DHCP is a protocol for dynamically acquiring an IP address from
-       a centralised DHCP server.  This option is enabled by default.
-
+.. doxygendefine:: MAX_XTCP_CLIENTS
 
 .. doxygendefine:: CLIENT_QUEUE_SIZE
-
-.. doxygendefine:: MAX_XTCP_CLIENTS
 
 |newpage|
 
