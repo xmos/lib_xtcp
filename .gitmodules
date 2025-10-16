@@ -1,0 +1,3 @@
+[submodule "lib_xtcp/lwip"]
+	path = lib_xtcp/lwip
+url=git@github.com:xmos/lwip.git

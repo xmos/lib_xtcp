@@ -11,13 +11,14 @@ from hardware_test_tools import XcoreApp
 
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
-@pytest.mark.parametrize('library', ['LWIP'])
 @pytest.mark.parametrize('processes', [1, 2])
-def test_basic(request, protocol, library, processes):
+@pytest.mark.parametrize('message_length', [10, 100])
+def test_basic(request, protocol, processes, message_length):
     dut_ip = '192.168.200.198'
-    dut_ports_per_proc = processes  # TODO parameterise this independently???
+    dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
+    library = 'LWIP'
 
-    tester = RunXtcp(processes, dut_ports_per_proc, protocol)
+    tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
     tester.setup(request)
 
     tester.run_test(0.002, 'EXPLORER', dut_ip, 'ETH', library)
@@ -45,12 +46,13 @@ class CollectFailures():
 
 
 class RunXtcp(CollectFailures):
-    def __init__(self, processes, ports, protocol):
+    def __init__(self, processes, ports, protocol, message_length):
         super(RunXtcp, self).__init__()
         self._adapter_id = None
         self.processes = processes
         self.ports = ports
         self.protocol = protocol
+        self.message_length = message_length
 
         self.python_output = ""
         self.xrun_stdout = ""
@@ -93,7 +95,8 @@ class RunXtcp(CollectFailures):
                     '--packets', f'{self.packets}',
                     '--delay-between-packets', f'{delay}',
                     '--halt-sequential-errors', f'{11}',
-                    '--num-timeouts-reconnect', f'{3}'
+                    '--num-timeouts-reconnect', f'{3}',
+                    '--packet-size-limit', f'{self.message_length}'
                 ],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )

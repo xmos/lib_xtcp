@@ -5,4 +5,4 @@ PROJECT_BRIEF          = "TCP/IP library"
 
 INPUT                  = ../lib_xtcp/api
 
-PREDEFINED             = C_API= EXTERN_C= UNSAFE= slave= __DOXYGEN__=1
+PREDEFINED             = C_API= EXTERN_C= unsafe= slave= __DOXYGEN__=1 server= client= __attribute__(x)=

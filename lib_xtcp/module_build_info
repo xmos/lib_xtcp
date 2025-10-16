@@ -1,29 +1,24 @@
 VERSION = 6.2.0
 
-DEPENDENT_MODULES = lib_ethernet(>=4.1.0) lib_otpinfo(>=2.2.1) lib_random(>=1.3.0) lib_xassert(>=4.3.2) lib_logging(>=3.4.0)
+DEPENDENT_MODULES = lib_ethernet(>=4.1.0) lib_otpinfo(>=2.2.1) lib_random(>=1.3.1) lib_xassert(>=4.3.2) lib_logging(>=3.4.0)
 
 # Build flags
-MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3  -mno-dual-issue
+MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3 -mno-dual-issue -DSSIZE_MAX=INT_MAX
 
 # Source directories
 # Note: only includes IPv4 of lwIP
-LWIP_SOURCE_DIRS = src src/xtcp_lwip/api src/xtcp_lwip/core src/xtcp_lwip/core/ipv4 src/xtcp_lwip/netif src/xtcp_lwip/xcore/src
+LWIP_SOURCE_DIRS = lwip/api lwip/src/api lwip/src/core lwip/src/core/ipv4 lwip/src/netif lwip/contrib/ports/xmos/port
 
 # Include directories
-LWIP_INCLUDE_DIRS = src src/xtcp_lwip/include src/xtcp_lwip/xcore/include
+LWIP_INCLUDE_DIRS = lwip/src/include lwip/contrib lwip/contrib/ports/xmos/include lwip/contrib/ports/xmos/lib/standard
 
 # Exclude files
-LWIP_EXCLUDE_FILES += xtcp_uip.xc xtcp_uip_includes.h
+LWIP_EXCLUDE_FILES += slipif.c
 
 # Provide the conditional defines needed for optional includes
 OPTIONAL_HEADERS += xtcp_client_conf.h xtcp_conf.h
 
-ifneq (,$(findstring XTCP_STACK_LWIP,$(XCC_FLAGS)))
-SOURCE_DIRS   += $(LWIP_SOURCE_DIRS)
-INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api
+SOURCE_DIRS   += $(LWIP_SOURCE_DIRS) src
+INCLUDE_DIRS  += $(LWIP_INCLUDE_DIRS) api src
 EXCLUDE_FILES += $(LWIP_EXCLUDE_FILES)
 
-else
-$(error Must define either XTCP_STACK_LWIP in XCC_FLAGS)
-
-endif

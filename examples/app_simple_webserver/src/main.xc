@@ -84,6 +84,7 @@ int main(void) {
     // SMI/ethernet phy driver
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
 
+    // TCP component
     on tile[0]: xtcp_lwip(i_xtcp, NUM_XTCP_CLIENTS, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                           mac_address_phy, null, ipconfig);

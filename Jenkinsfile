@@ -56,8 +56,18 @@ pipeline {
               env.REPO_NAME = repo
             }
 
-            dir(REPO_NAME){
-              checkoutScmShallow()
+            dir(REPO_NAME) {
+              // checkoutScmShallow()
+              // here until the latest checkoutScmShallow is released
+              checkout scm: [
+                $class: 'GitSCM',
+                branches: scm.branches,
+                userRemoteConfigs: scm.userRemoteConfigs,
+                extensions: [
+                  submodule(depth: 1, recursiveSubmodules: true, shallow: true),
+                  cloneOption(depth: 1, noTags: false, shallow: true)
+                ]
+              ]
             }
           }
         }
@@ -117,47 +127,103 @@ pipeline {
       }
     } // stage('Build + Documentation')
 
-    stage('Tests: HW tests - PHY0') {
-      agent {
-        label 'sw-hw-eth-ubu0'
-      }
 
-      steps {
-        dir("${REPO_NAME}") {
-          checkoutScmShallow()
+    stage('Tests') {
+      parallel {
 
-          dir("examples") {
-            unstash 'webserver_test_bin'
+        stage('Tests: unit tests - lib_unity') {
+          agent {
+            label 'documentation && linux && x86_64'
           }
+          
+          steps {
+            dir(REPO_NAME) {
+              // checkoutScmShallow()
+              // here until the latest checkoutScmShallow is released
+              checkout scm: [
+                $class: 'GitSCM',
+                branches: scm.branches,
+                userRemoteConfigs: scm.userRemoteConfigs,
+                extensions: [
+                  submodule(depth: 1, recursiveSubmodules: true, shallow: true),
+                  cloneOption(depth: 1, noTags: false, shallow: true)
+                ]
+              ]
 
-          withTools(params.TOOLS_VERSION) {
-            dir("tests") {
-              unstash 'xtcp_test_bin'
+              withTools(params.TOOLS_VERSION) {
+                dir("tests") {
 
-              createVenv(reqFile: "requirements.txt")
-              withVenv {
-                warnError("Pytest failed or test asserted") {
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    dir("unit") {
 
-                  withXTAG(["xk-eth-xu316-dual-100m"]) {
-                    xtagIds ->
-                      sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'not webserver' ")
+                      warnError("Pytest failed or test asserted") {
+                        sh(script: "python -m pytest -v --junitxml=pytest_unit.xml")
+                      }
+                    }
                   }
                 }
               }
+            } // dir(REPO_NAME)
+          } // steps
+
+          post {
+            always {
+              junit "${REPO_NAME}/tests/unit/pytest_unit.xml"
+            }
+            cleanup {
+              xcoreCleanSandbox()
             }
           }
-        } // dir("${REPO_NAME}")
-      } // steps
+        } // stage('Tests: unit tests - lib_unity')
 
-      post {
-        always {
-          junit "${REPO_NAME}/tests/pytest_checks.xml"
-        }
-        cleanup {
-          xcoreCleanSandbox()
-        }
-      }
-    }
+        stage('Tests: HW tests - PHY0') {
+          agent {
+            label 'sw-hw-eth-ubu0'
+          }
+
+          steps {
+            dir(REPO_NAME) {
+              checkoutScmShallow()
+
+              dir("examples") {
+                unstash 'webserver_test_bin'
+              }
+
+              withTools(params.TOOLS_VERSION) {
+                dir("tests") {
+                  unstash 'xtcp_test_bin'
+
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    warnError("Pytest failed or test asserted") {
+
+                      withXTAG(["xk-eth-xu316-dual-100m"]) {
+                        // TODO - link in TEST_TYPE to pytest
+                        xtagIds ->
+                          sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'not webserver' --ignore=unit")
+                          // TODO - add back in webserver test when fixed
+                      }
+                    }
+                  }
+                }
+              }
+            } // dir(REPO_NAME)
+          } // steps
+
+          post {
+            always {
+              junit "${REPO_NAME}/tests/pytest_checks.xml"
+            }
+            cleanup {
+              xcoreCleanSandbox()
+            }
+          }
+        } // stage('Tests: HW tests - PHY0')
+
+
+      } // parallel
+    } // stage('Tests')
     
     stage('🚀 Release') {
       when {

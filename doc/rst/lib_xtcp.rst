@@ -518,8 +518,6 @@ Event types
 
 .. doxygenenum:: xtcp_event_type_t
 
-.. doxygenstruct:: xtcp_connection_t
-
 |newpage|
 
 .. _xtcp_server_api:

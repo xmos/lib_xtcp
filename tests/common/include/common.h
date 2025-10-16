@@ -40,13 +40,17 @@ enum eth_clients { ETH_TO_XTCP, NUM_ETH_CLIENTS };
 
 enum cfg_clients { CFG_TO_XTCP, CFG_TO_PHY_DRIVER, NUM_CFG_CLIENTS };
 
+// Maximum TCP concurrent connections per listening port
+#define CONCURRENT_TCP_PORTS 3
+
 // Structure to hold connection state
 typedef struct reflect_state_t {
   int active;   //< Whether this state structure is being used for a connection
-  int conn_id;  //< The connection id
-  xtcp_ipaddr_t remote_addr;  //< Host addrress, for UDP reconnect events
+  int socket_id; //< The listening socket id, the UDP socket or TCP listen socket
+  int tcp_id[CONCURRENT_TCP_PORTS];  //< The connection id for TCP data connections
+  uint16_t local_port;   //< Host port, for UDP reconnect events
 } reflect_state_t;
 
-void udp_reflect(client xtcp_if i_xtcp, int start_port);
+void reflect(client xtcp_if i_xtcp, int start_port);
 
 #endif

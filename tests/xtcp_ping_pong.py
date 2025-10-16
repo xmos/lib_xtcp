@@ -150,8 +150,7 @@ def process_test(args):
         time.sleep(args.delay_between_packets)
         sys.stdout.write('.')  # show progress
         sys.stdout.flush()
-        # length_of_message = random.randint(1, packet_size_limit)
-        length_of_message = 100
+        length_of_message = args.packet_size_limit
         # Don't allow an 'a' char to be sent, as this kills the remote device
         message = ''.join(random.choice(
             string.ascii_lowercase[1:]) for c in range(length_of_message))
@@ -161,7 +160,8 @@ def process_test(args):
 
         try:
             sock.send(message)
-            returned_message = sock.recv(length_of_message)
+            # Receive up to one MTU of data
+            returned_message = sock.recv(1500)
 
             # if returned_message != message:
             if returned_message != message[::-1]:  # Reverse string
@@ -376,7 +376,7 @@ def webserver_test(args):
 if __name__ == '__main__':
     # Defaults
     packets = 10000
-    packet_size_limit = 50
+    packet_size_limit = 100
     delay_between_packets = 0
     remote_processes = 1
     remote_ports = 1

@@ -4,22 +4,28 @@ project(app_simple_webserver)
 
 set(APP_HW_TARGET          xk-eth-316-dual.xn)
 
+# LwIP options needed for library build
+set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
+
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 
-set(APP_PCA_ENABLE          ON)
+set(APP_PCA_ENABLE OFF)
 
-set(COMPILER_FLAGS_COMMON   -g
+set(APP_COMPILER_FLAGS      -g
                             -O3
                             -mno-dual-issue
+                            -Wall
+                            -Wextra
+                            -Wconversion
+                            -Wdiv-by-zero
+                            -Wfloat-equal
+                            -Wsign-compare
                             -report
                             -DBOARD_SUPPORT_BOARD=XK_ETH_316_DUAL
                             -DDEBUG_PRINT_ENABLE=1
+                            -DDEBUG_PRINT_ENABLE_LIB_XTCP=1
                             -DDEBUG_PRINT_ENABLE_xk_eth_316_dual=1
                             -DXASSERT_ENABLE_DEBUG=1)
-
-# In the compiler flags define either XTCP_STACK_UIP or XTCP_STACK_LWIP
-# according to which TCP stack is preferred to run the app note
-set(APP_COMPILER_FLAGS      ${COMPILER_FLAGS_COMMON} -DXTCP_STACK_LWIP)
 
 set(APP_XSCOPE_SRCS         src/config.xscope)
 
