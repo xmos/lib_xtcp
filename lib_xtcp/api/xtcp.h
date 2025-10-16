@@ -52,15 +52,15 @@
  */
 typedef uint8_t xtcp_ipaddr_t[4];
 
-/** XTCP remote address.
+/** XTCP host's address.
  *
  *  This data type represents a single ipv4 address in the XTCP
  *  stack.
  */
-typedef struct xtcp_remote_t {
+typedef struct xtcp_host_t {
   xtcp_ipaddr_t ipaddr; /**< The IP Address of the remote host */
   uint16_t port_number; /**< The port number of the remote host */
-} xtcp_remote_t;
+} xtcp_host_t;
 
 /** IP configuration information structure.
  *
@@ -248,7 +248,8 @@ typedef interface xtcp_if {
    * \param id       The connection descriptor to act on.
    * \param port_number The local port number to listen to.
    * \param ipaddr      The address of the local host.
-   * \returns           A xtcp_error_code_t describing the state of the listen.
+   * \returns           XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided. Also, XTCP_EINUSE if the
+   *                    connection is already active, and may require a TCP timeout before using again.
    *
    * \see close()
    */
@@ -264,9 +265,9 @@ typedef interface xtcp_if {
    * \param id       The connection descriptor to act on.
    * \param port_number The remote port to associate with the connection.
    * \param ipaddr      The address of the remote host.
-   * \returns           A xtcp_error_code_t describing the connection attempt's state.
+   * \returns           XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided.
    */
-  int32_t connect(int32_t id, uint16_t port_number, xtcp_ipaddr_t ipaddr);
+  xtcp_error_code_t connect(int32_t id, uint16_t port_number, xtcp_ipaddr_t ipaddr);
 
   /** \brief Send data to the connection.
    *
@@ -274,7 +275,7 @@ typedef interface xtcp_if {
    * \param buffer        An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
-   * \returns           The number of bytes accepted by xtcp or an xtcp_error_code_t.
+   * \returns           The number of bytes accepted by xtcp or a negative xtcp_error_code_t.
    */
   int32_t send(int32_t id, const uint8_t buffer[length], uint32_t length);
 
@@ -334,7 +335,7 @@ typedef interface xtcp_if {
    *
    * \note For UDP connections this will be unset unless connect() has been called.
    */
-  xtcp_remote_t get_ipconfig_remote(int32_t id);
+  xtcp_host_t get_ipconfig_remote(int32_t id);
 
   /** \brief Fill the provided ipconfig address with the current local host for the connection.
    *
@@ -344,7 +345,7 @@ typedef interface xtcp_if {
    *
    * \note For UDP connections this will be unset unless connect() has been called.
    */
-  xtcp_remote_t get_ipconfig_local(int32_t id);
+  xtcp_host_t get_ipconfig_local(int32_t id);
 
   /** \brief Allows the client to record additional data alongside the connection.
    *
@@ -386,7 +387,7 @@ typedef interface xtcp_if {
    * 
    * \note This is a non-blocking call. The result of the lookup will be indicated by an XTCP_DNS_RESULT event.
    */
-  xtcp_remote_t request_host_by_name(const uint8_t hostname[len], static_const_unsigned len, xtcp_ipaddr_t dns_server);
+  xtcp_host_t request_host_by_name(const uint8_t hostname[len], static_const_unsigned len, xtcp_ipaddr_t dns_server);
 
   /** \brief Query if the underlying interface is up.
    *

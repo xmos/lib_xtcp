@@ -150,7 +150,7 @@ void httpd_init_state(client xtcp_if i_xtcp, int32_t conn_id)
     i_xtcp.abort(conn_id);
     debug_printf("Abort\n");
   } else {
-    xtcp_remote_t remote = i_xtcp.get_ipconfig_remote(conn_id);
+    xtcp_host_t remote = i_xtcp.get_ipconfig_remote(conn_id);
     debug_printf("Connection, id %d, from %d.%d.%d.%d:%d\n", conn_id,
                  remote.ipaddr[0], remote.ipaddr[1],
                  remote.ipaddr[2], remote.ipaddr[3],

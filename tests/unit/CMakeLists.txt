@@ -12,7 +12,7 @@ list(APPEND APP_DEPENDENT_MODULES lib_unity)
 set(APP_XSCOPE_SRCS         config.xscope)
 
 # LwIP options needed for library build
-set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
+set(LWIP_OPTS_PATH          "../lwip/contrib/ports/xmos/lib/standard")
 
 set(APP_COMPILER_FLAGS      -O3
                             -g

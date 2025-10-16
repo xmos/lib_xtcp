@@ -173,7 +173,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         result = shim_listen(i, id, port_number, local);
         break;
         
-      case i_xtcp[unsigned i].connect(int32_t id, uint16_t port_number, xtcp_ipaddr_t ipaddr) -> int32_t result:
+      case i_xtcp[unsigned i].connect(int32_t id, uint16_t port_number, xtcp_ipaddr_t ipaddr) -> xtcp_error_code_t result:
         xtcp_ipaddr_t remote_addr;
         memcpy(remote_addr, ipaddr, sizeof(xtcp_ipaddr_t));
         xtcp_error_int32_t connection = find_client_connection(i, id);
@@ -244,7 +244,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
             // Error in getting remote data
             result = copy_length.status;
           } else {
-            // length.value is the minimum of length and pbuf->len
+            // copy_length.value is pbuf->len
             result = copy_length.value;
             unsafe {
               memcpy(buffer, data, copy_length.value);
@@ -264,7 +264,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
           result = XTCP_EPROTONOSUPPORT;
         } else {
           // Connection is active, so we can proceed
-          xtcp_remote_t remote = get_remote(id);
+          xtcp_host_t remote = get_remote(id);
           memcpy(ipaddr, remote.ipaddr, sizeof(xtcp_ipaddr_t));
           port_number = remote.port_number;
 
@@ -279,7 +279,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
             // Error in getting remote data
             result = copy_length.status;
           } else {
-            // length.value is the minimum of length and pbuf->len
+            // copy_length.value is pbuf->len
             result = copy_length.value;
             unsafe {
               memcpy(buffer, data, copy_length.value);
@@ -321,7 +321,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         shim_leave_multicast_group(group_addr);
         break;
 
-      case i_xtcp[unsigned i].request_host_by_name(const uint8_t hostname[len], static const unsigned len, xtcp_ipaddr_t dns_server) -> xtcp_remote_t result:
+      case i_xtcp[unsigned i].request_host_by_name(const uint8_t hostname[len], static const unsigned len, xtcp_ipaddr_t dns_server) -> xtcp_host_t result:
         xtcp_ipconfig_t xipaddr = xcore_netif_get_ipconfig();
         if (xipaddr.gateway[0] != 0) {
           uint8_t hostname_copy[len];
@@ -341,11 +341,11 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         ipconfig = xcore_netif_get_ipconfig();
         break;
 
-      case i_xtcp[unsigned i].get_ipconfig_remote(int32_t id) -> xtcp_remote_t ipaddr:
+      case i_xtcp[unsigned i].get_ipconfig_remote(int32_t id) -> xtcp_host_t ipaddr:
         ipaddr = get_remote_from_pcb(id);
         break;
 
-      case i_xtcp[unsigned i].get_ipconfig_local(int32_t id) -> xtcp_remote_t ipaddr:
+      case i_xtcp[unsigned i].get_ipconfig_local(int32_t id) -> xtcp_host_t ipaddr:
         ipaddr = get_local_from_pcb(id);
         break;
 
@@ -369,7 +369,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
             }
           }
         }
-        timeout[i] = current + period[i];
+        timeout[i] += period[i];
         break;
       }
     }

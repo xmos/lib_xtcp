@@ -108,7 +108,7 @@ void udp_echo(client xtcp_if i_xtcp) {
               // Example DNS lookup, note DNS aserver and host name need to be configured.
               if (!dns_lookup) {
                 dns_lookup = 1;
-                xtcp_remote_t dns_result = i_xtcp.request_host_by_name(hostname, sizeof(hostname), dns_server);
+                xtcp_host_t dns_result = i_xtcp.request_host_by_name(hostname, sizeof(hostname), dns_server);
                 if (dns_result.ipaddr[0] == 0) {
                   debug_printf("DNS request pending...\n");
                 } else {
@@ -142,7 +142,7 @@ void udp_echo(client xtcp_if i_xtcp) {
               debug_printf("DNS response: success\n");
               if (dns_retries == 0) {
                 dns_retries = 1;
-                xtcp_remote_t dns_result = i_xtcp.request_host_by_name(hostname, sizeof(hostname), dns_server);
+                xtcp_host_t dns_result = i_xtcp.request_host_by_name(hostname, sizeof(hostname), dns_server);
                 if (dns_result.ipaddr[0] == 0) {
                   debug_printf("DNS lookup failed, second request pending...\n");
                 } else {

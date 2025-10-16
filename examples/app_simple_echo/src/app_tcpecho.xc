@@ -119,7 +119,7 @@ void tcp_echo(client xtcp_if i_xtcp) {
             if (data_len < 0) {
               debug_printf("Error receiving data: %d\n", data_len);
             } else {
-              xtcp_remote_t ip = i_xtcp.get_ipconfig_remote(client_conn);
+              xtcp_host_t ip = i_xtcp.get_ipconfig_remote(client_conn);
               debug_printf("Got data: %d bytes, from %d.%d.%d.%d:%d\n", data_len,
                           ip.ipaddr[0], ip.ipaddr[1], ip.ipaddr[2], ip.ipaddr[3], ip.port_number);
 
