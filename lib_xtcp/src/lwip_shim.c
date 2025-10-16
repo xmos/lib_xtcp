@@ -293,8 +293,8 @@ xtcp_error_code_t shim_leave_multicast_group(xtcp_ipaddr_t addr) {
   return result;
 }
 
-xtcp_remote_t shim_request_host_by_name(unsigned client_num, const uint8_t hostname[], xtcp_ipaddr_t dns_server) {
-  xtcp_remote_t result = { .ipaddr = {0}, .port_number = 0 };
+xtcp_host_t shim_request_host_by_name(unsigned client_num, const uint8_t hostname[], xtcp_ipaddr_t dns_server) {
+  xtcp_host_t result = { .ipaddr = {0}, .port_number = 0 };
 
   ip_addr_t ipaddr = IPADDR4_INIT_BYTES(0,0,0,0);
   ip_addr_t server;

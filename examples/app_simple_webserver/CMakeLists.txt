@@ -5,7 +5,7 @@ project(app_simple_webserver)
 set(APP_HW_TARGET          xk-eth-316-dual.xn)
 
 # LwIP options needed for library build
-set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
+set(LWIP_OPTS_PATH          "../lwip/contrib/ports/xmos/lib/standard")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
 

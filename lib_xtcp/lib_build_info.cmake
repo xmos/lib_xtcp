@@ -5,19 +5,19 @@ set(LIB_VERSION             6.2.0)
 # Please note: LWIP_OPTS_PATH may be overridden in the application's CMakeLists.txt file
 if(NOT DEFINED LWIP_OPTS_PATH)
     message(STATUS "LWIP_OPTS_PATH not defined, setting to 'standard', may be overridden in the application's CMakeLists.txt file")
-    set(LWIP_OPTS_PATH      "lwip/contrib/ports/xmos/lib/standard")
+    set(LWIP_OPTS_PATH      "../lwip/contrib/ports/xmos/lib/standard")
 endif()
 
 # LWIP
-set(LWIP_DIR                ${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip)
+set(LWIP_DIR                ${XMOS_SANDBOX_DIR}/lib_xtcp/lwip)
 set(LWIP_CONTRIB_DIR        ${LWIP_DIR}/contrib)
 
-include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/src/Filelists.cmake")
-include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/contrib/Filelists.cmake")
-include("${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/lwip/contrib/ports/xmos/Filelists.cmake")
+include("${XMOS_SANDBOX_DIR}/lib_xtcp/lwip/src/Filelists.cmake")
+include("${XMOS_SANDBOX_DIR}/lib_xtcp/lwip/contrib/Filelists.cmake")
+include("${XMOS_SANDBOX_DIR}/lib_xtcp/lwip/contrib/ports/xmos/Filelists.cmake")
 
 # Map LwIP source files to relative paths for module build
-set(MODULE_DIR              ${XMOS_SANDBOX_DIR}/lib_xtcp/lib_xtcp/)
+set(MODULE_DIR              ${XMOS_SANDBOX_DIR}/lib_xtcp/)
 
 if (LWIP_VERSION_STRING)
     message(STATUS "Capturing LwIP")
@@ -31,7 +31,7 @@ if (LWIP_VERSION_STRING)
 
     # Map source files to xcommon.cmake relative paths
     foreach(lwip_file ${lwipnoapps_SRCS} ${lwipcontribportxmos_SRCS})
-        string(REGEX REPLACE "${MODULE_DIR}" "" REL_SRC_PATH "${lwip_file}")
+        string(REGEX REPLACE "${MODULE_DIR}" "../" REL_SRC_PATH "${lwip_file}")
         list(APPEND LWIP_CODE_LIST ${REL_SRC_PATH})
     endforeach()
 
@@ -58,9 +58,9 @@ set(LIB_XC_SRCS             src/xtcp_lwip.xc
 
 set(LIB_INCLUDES            api
                             src
-                            "lwip/src/include"
-                            "lwip/contrib"
-                            "lwip/contrib/ports/xmos/include"
+                            "../lwip/src/include"
+                            "../lwip/contrib"
+                            "../lwip/contrib/ports/xmos/include"
                             "${LWIP_OPTS_PATH}")
 
 set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.1.0)"

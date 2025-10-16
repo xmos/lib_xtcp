@@ -34,8 +34,8 @@ static int32_t connect_udp(client xtcp_if i_xtcp)
 
   int32_t socket_id = i_xtcp.socket(XTCP_PROTOCOL_UDP);
   // create new connection on the port
-  int32_t connect_result = i_xtcp.connect(socket_id, UDP_CONNECT_PORT, udp_addr);
-  if (connect_result < 0) {
+  xtcp_error_code_t connect_result = i_xtcp.connect(socket_id, UDP_CONNECT_PORT, udp_addr);
+  if (connect_result != XTCP_SUCCESS) {
     i_xtcp.close(socket_id);
     socket_id = INIT_VAL;
   } else {
@@ -98,7 +98,7 @@ void app_udp_connect(client xtcp_if i_xtcp) {
             if (data_len < 0) {
               debug_printf("Error receiving data: %d\n", data_len);
             } else {
-              xtcp_remote_t ip = i_xtcp.get_ipconfig_remote(client_conn);
+              xtcp_host_t ip = i_xtcp.get_ipconfig_remote(client_conn);
               debug_printf("Got data: %d bytes, from %d.%d.%d.%d:%d\n", data_len,
                           ip.ipaddr[0], ip.ipaddr[1], ip.ipaddr[2], ip.ipaddr[3], ip.port_number);
 

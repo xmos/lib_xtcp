@@ -22,6 +22,6 @@ xtcp_error_code_t shim_sendto(unsigned client_num, int32_t id, void* unsafe buff
 xtcp_error_code_t shim_join_multicast_group(xtcp_ipaddr_t addr);
 xtcp_error_code_t shim_leave_multicast_group(xtcp_ipaddr_t addr);
 
-xtcp_remote_t shim_request_host_by_name(unsigned client_num, const uint8_t hostname[], xtcp_ipaddr_t dns_server);
+xtcp_host_t shim_request_host_by_name(unsigned client_num, const uint8_t hostname[], xtcp_ipaddr_t dns_server);
 
 #endif /* XTCP_LWIP_SHIM_H */

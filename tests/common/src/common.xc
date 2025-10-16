@@ -117,7 +117,7 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
             for (int k = 0; k < OPEN_PORTS_PER_PROCESS; k++) {
               reflect_state_t *socket = &connection_states[k];
 
-              xtcp_remote_t ipaddr = i_xtcp.get_ipconfig_local(conn_id);
+              xtcp_host_t ipaddr = i_xtcp.get_ipconfig_local(conn_id);
               if (socket->local_port == ipaddr.port_number) {
                 if (!socket->active) {
                   debug_printf("New connection accepted: %d\n", conn_id);

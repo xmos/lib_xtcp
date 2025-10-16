@@ -7,7 +7,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../board_support/board_support.cmake)
 set(APP_HW_TARGET           xk-eth-xu316-dual-100m.xn)
 
 # LwIP options needed for library build
-set(LWIP_OPTS_PATH          "lwip/contrib/ports/xmos/lib/standard")
+set(LWIP_OPTS_PATH          "../lwip/contrib/ports/xmos/lib/standard")
 
 set(APP_INCLUDES            ../common/include ${test_board_support_INC})
 

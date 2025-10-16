@@ -10,17 +10,9 @@
 /* Lwip headers */
 #include "lwip/pbuf.h"
 
-typedef enum connection_state_e {
-  XTCP_NULL_STATE = 0,
-  XTCP_CONNECT_PENDING = 1,
-  XTCP_CONNECTED = 2,
-  XTCP_LISTENING = 4
-} connection_state_t;
-
 typedef struct connection_entry_s {
   int32_t is_active;
   unsigned client_num;
-  connection_state_t state;
   xtcp_protocol_t protocol;
   union pcb {
     struct tcp_pcb *tcp;
@@ -38,7 +30,6 @@ void init_client_connections(void) {
   for (int32_t i = 0; i < MAX_OPEN_SOCKETS; ++i) {
     connections[i].is_active = 0;
     connections[i].client_num = DEINIT;
-    connections[i].state = XTCP_NULL_STATE;
     connections[i].protocol = XTCP_PROTOCOL_NONE;
     connections[i].pcb.tcp = NULL;
     connections[i].pbuf = NULL;
@@ -76,7 +67,6 @@ void free_client_connection(int32_t index) {
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS)) {
     connections[index].is_active = 0;
     connections[index].client_num = DEINIT;
-    connections[index].state = XTCP_NULL_STATE;
     connections[index].protocol = XTCP_PROTOCOL_NONE;
     connections[index].pcb.tcp = NULL;
     connections[index].client_data = NULL;
@@ -103,7 +93,6 @@ xtcp_error_int32_t assign_client_connection(unsigned client_num, xtcp_protocol_t
     int32_t index = result.value;
     connections[index].is_active = 1;
     connections[index].client_num = client_num;
-    connections[index].state = XTCP_NULL_STATE;
     connections[index].protocol = protocol;
     connections[index].pcb.tcp = NULL;
   }
@@ -196,8 +185,8 @@ xtcp_error_code_t set_remote(int32_t index, const ip_addr_t *remote, uint16_t po
   return XTCP_EINVAL;
 }
 
-xtcp_remote_t get_remote_from_pcb(int32_t index) {
-  xtcp_remote_t remote = {.ipaddr = {0}, .port_number = 0};
+xtcp_host_t get_remote_from_pcb(int32_t index) {
+  xtcp_host_t remote = {.ipaddr = {0}, .port_number = 0};
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS)) {
     if (connections[index].protocol == XTCP_PROTOCOL_TCP) {
       struct tcp_pcb* tcp_pcb = get_tcp_pcb(index);
@@ -216,8 +205,8 @@ xtcp_remote_t get_remote_from_pcb(int32_t index) {
   return remote;
 }
 
-xtcp_remote_t get_local_from_pcb(int32_t index) {
-  xtcp_remote_t remote = {.ipaddr = {0}, .port_number = 0};
+xtcp_host_t get_local_from_pcb(int32_t index) {
+  xtcp_host_t remote = {.ipaddr = {0}, .port_number = 0};
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS)) {
     if (connections[index].protocol == XTCP_PROTOCOL_TCP) {
       struct tcp_pcb* tcp_pcb = get_tcp_pcb(index);
@@ -236,8 +225,8 @@ xtcp_remote_t get_local_from_pcb(int32_t index) {
   return remote;
 }
 
-xtcp_remote_t get_remote(int32_t index) {
-  xtcp_remote_t remote = {.ipaddr = {0}, .port_number = 0};
+xtcp_host_t get_remote(int32_t index) {
+  xtcp_host_t remote = {.ipaddr = {0}, .port_number = 0};
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS) && (connections[index].pbuf != NULL)) {
     memcpy(remote.ipaddr, connections[index].pbuf->remote.ipaddr, sizeof(xtcp_ipaddr_t));
     remote.port_number = connections[index].pbuf->remote.port_number;
@@ -250,11 +239,15 @@ xtcp_error_int32_t get_remote_data(int32_t index, uint8_t **data, int32_t length
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS)) {
     struct pbuf *pbuf = connections[index].pbuf;
     if (pbuf != NULL) {
-      int32_t copy_length = (length < pbuf->len) ? length : pbuf->len;
-      *data = pbuf->payload;
+      if (length < pbuf->len) {
+        result.status = XTCP_EAGAIN;
+      } else {
+        int32_t copy_length = pbuf->len;
+        *data = pbuf->payload;
 
-      result.status = XTCP_SUCCESS;
-      result.value = copy_length;
+        result.status = XTCP_SUCCESS;
+        result.value = copy_length;
+      }
     }
   }
   return result;

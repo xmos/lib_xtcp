@@ -94,7 +94,7 @@ void test_set_remote_then_get_remote_matches(void) {
     (void)set_remote(connection.value, &test_set_addr, test_port, &pbuf);
 
     // Retrieve and test remote state
-    xtcp_remote_t remote = get_remote(connection.value);
+    xtcp_host_t remote = get_remote(connection.value);
     TEST_ASSERT_EQUAL(test_port, remote.port_number);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(test_addr, remote.ipaddr, 4);
 

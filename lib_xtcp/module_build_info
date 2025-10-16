@@ -7,10 +7,10 @@ MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3 -mno-dual-issue -DSSIZE_MAX=INT_MAX
 
 # Source directories
 # Note: only includes IPv4 of lwIP
-LWIP_SOURCE_DIRS = lwip/api lwip/src/api lwip/src/core lwip/src/core/ipv4 lwip/src/netif lwip/contrib/ports/xmos/port
+LWIP_SOURCE_DIRS = ../lwip/api ../lwip/src/api ../lwip/src/core ../lwip/src/core/ipv4 ../lwip/src/netif ../lwip/contrib/ports/xmos/port
 
 # Include directories
-LWIP_INCLUDE_DIRS = lwip/src/include lwip/contrib lwip/contrib/ports/xmos/include lwip/contrib/ports/xmos/lib/standard
+LWIP_INCLUDE_DIRS = ../lwip/src/include ../lwip/contrib ../lwip/contrib/ports/xmos/include ../lwip/contrib/ports/xmos/lib/standard
 
 # Exclude files
 LWIP_EXCLUDE_FILES += slipif.c

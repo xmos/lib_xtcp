@@ -176,9 +176,6 @@ def process_test(args):
             time.sleep(0.01)  # Small delay to try and get packets to arrive separately
             send_len += sock.send(message10)
 
-            failures.append(
-                'Info:' + build_basic_report('sent', args, sock, args.packets - tests_to_perform)
-            )
             recv_len = 0
             returned_message = b''
             while recv_len < send_len:
