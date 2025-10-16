@@ -31,8 +31,14 @@ TCP/IP Stack
 ============
 
 The TCP/IP stack used is the third-party lwIP (lightweight IP) stack ported to the
-xCORE architecture. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
+xcore architecture. The lwIP stack is designed to provide good throughput and also has support for TCP windowing.
 Throughput in excess of 50 Mbps can be achieved using RMII with this stack on xcore.ai devices.
+
+Repository Submodule
+====================
+
+Please note: the TCP/IP stack is included as a submodule, if cloning the repository please ensure to
+clone with ``--recurse-submodules`` or run ``git submodule update --init --recursive`` after cloning.
 
 ********
 Features
@@ -48,8 +54,9 @@ Features
 Known issues
 ************
 
-* Only one network interface supported at a time. This needs support from the underlying ``lib_ethernet`` library (https://github.com/xmos/lib_xtcp/issues/51).
+* Only one network interface supported at a time with an RMII/RGMII MAC. This needs support from the underlying ``lib_ethernet`` library (https://github.com/xmos/lib_xtcp/issues/51).
 * Support for IP4LL have been disabled.
+* Only supports real-time variants of ``lib_ethernet`` MACs, due to use of timestamps of sent and received packets.
 
 ****************
 Development repo

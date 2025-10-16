@@ -25,17 +25,19 @@
 #define DHCPC_SERVER_PORT 67
 #define DHCPC_CLIENT_PORT 68
 
-/** Ethernet network interface hostname. Option LWIP_NETIF_HOSTNAME=1 required in lwipopts.h. */
+/** Ethernet network interface hostname. By default "lwip-xcore". 
+ * Option LWIP_NETIF_HOSTNAME=1 required in lwipopts.h to use client host name. */
 #ifndef XTCP_HOSTNAME
 #define XTCP_HOSTNAME "lwip-xcore"
 #endif
 
-/** Maximum number of connected XTCP clients */
+/** Maximum number of connected XTCP clients. Used by the interface in allocating resources. Default is 5. */
 #ifndef MAX_XTCP_CLIENTS
 #define MAX_XTCP_CLIENTS 5
 #endif
 
-/** Maximum number of events in a client queue */
+/** Maximum number of events in a client queue. Used for allocating resources for retaining and passing notification
+ * events to the clients. Default is 20. */
 #ifndef CLIENT_QUEUE_SIZE
 #define CLIENT_QUEUE_SIZE 20
 #endif
@@ -45,24 +47,23 @@
 
 /** XTCP IP address.
  *
- *  This data type represents a single ipv4 address in the XTCP
- *  stack.
+ *  This data type represents a single ipv4 address in the XTCP stack.
  */
 typedef uint8_t xtcp_ipaddr_t[4];
 
 /** XTCP host's address.
  *
- *  This data type represents a single ipv4 address in the XTCP
- *  stack.
+ *  This data type represents the address of a host in the XTCP, with an IP address and port number.
+ *
  */
 typedef struct xtcp_host_t {
-  xtcp_ipaddr_t ipaddr; /**< The IP Address of the remote host */
-  uint16_t port_number; /**< The port number of the remote host */
+  xtcp_ipaddr_t ipaddr; /**< The IP Address of the host */
+  uint16_t port_number; /**< The port number of the host */
 } xtcp_host_t;
 
 /** IP configuration information structure.
  *
- *  This structure describes IP configuration for an ip node.
+ *  This structure describes IP configuration for a network interface. With an IP address, netmask and gateway.
  *
  */
 typedef struct xtcp_ipconfig_t {
@@ -92,7 +93,7 @@ typedef enum xtcp_event_type_t {
   /** No event */
   XTCP_EVENT_NONE,
 
-  /** This event represents a new connection has been made. For TCP client connections it occurs when a stream is setup
+  /** This event represents a new connection has been made. For TCP client connections it occurs when a session is set up
    * with the remote host. */
   XTCP_NEW_CONNECTION,
 
@@ -102,7 +103,7 @@ typedef enum xtcp_event_type_t {
   /** This event occurs when the connection has received some data. Call recv() to access the data. */
   XTCP_RECV_DATA,
 
-  /** This event occurs when the connection has received some data from a remote host, UDP only. Call recvfrom() to access the data. */
+  /** This event occurs when the connection has received some data from a remote host, UDP only. Call recvfrom() to access the data and address of remote host. */
   XTCP_RECV_FROM_DATA,
 
   /** This event occurs when the server has successfully sent the previous piece of TCP data that was given to it via a
@@ -212,7 +213,8 @@ typedef interface xtcp_if {
    *  After the client is notified by event_ready() it must call this function
    *  to receive the event from the server.
    *
-   * \note When receiving a new connection event on a TCP socket, the id will denote the new connection socket.
+   * \note When receiving a new connection event on a TCP socket, the id will denote the new connection socket
+   * not the listening socket's ID.
    *
    * \param id Output parameter for the connection descriptor the event occurred on.
    * \returns     The event type produced on the given connection.
@@ -233,8 +235,8 @@ typedef interface xtcp_if {
    *  May still receive data on a TCP connection after this call, until the close session hand-shake has completed with
    * the remote-host. Use abort() if you wish to stop all data immediately.
    *
-   *  If this is TCP socket was a remote-host triggered connection on a listening socket, it will continue to listen on
-   *  the assigned port.
+   *  If this TCP socket was a remote-host data connection on a listening socket, it will continue to listen on
+   *  the assigned port unless closing the listening socket itself.
    *
    *  If this TCP socket was a local-host triggered connection, it will close the connection.
    *
@@ -261,16 +263,17 @@ typedef interface xtcp_if {
 
   /** \brief Listen to a particular incoming port.
    *
-   *  After this call, when a TCP connection is established by a remote-host an XTCP_NEW_CONNECTION event is signalled.
-   *  When processing the connection, this will create a new socket with the connection details of the remote-host. The
+   *  After this call, when a TCP connection is established by a remote-host an XTCP_ACCEPTED event is signalled.
+   *
+   *  \note  The XTCP_ACCEPTED event will create a new socket ID with the connection details of the remote-host. The
    *  original listening socket remains valid and active.
    *
-   * \note  For TCP connections, the id parameter will be overwritten with the new connection descriptor.
-   *
    *  For a UDP socket, this will bind on the specified port allowing incoming packets. Any data received will
-   *  be passed as a data received event, XTCP_RECV_DATA.
+   *  be passed as a data received event, XTCP_RECV_FROM_DATA.
+   * 
+   *  \note  For UDP connections, no XTCP_ACCEPTED event will be generated.
    *
-   * \param id       The connection descriptor to act on.
+   * \param id          The connection descriptor to act on.
    * \param port_number The local port number to listen to.
    * \param ipaddr      The address of the local host.
    * \returns           XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided. Also, XTCP_EINUSE if the
@@ -280,14 +283,14 @@ typedef interface xtcp_if {
    */
   xtcp_error_code_t listen(int32_t id, uint16_t port_number, xtcp_ipaddr_t ipaddr);
 
-  /** \brief Try to connect to a remote port.
+  /** \brief Attempt to connect to a remote port.
    *
-   *  For TCP this will initiate the remote-host handshake.
+   *  For TCP this will initiate the remote-host handshake. When the handshake is complete an XTCP_NEW_CONNECTION event will be signalled.
    *
    *  For UDP this will assign a local port and bind the remote address of the connection to the host specified. This
-   * sends no network traffic.
+   * sends no network traffic and no event is generated. So, it can be considered `connected` immediately.
    *
-   * \param id       The connection descriptor to act on.
+   * \param id          The connection descriptor to act on.
    * \param port_number The remote port to associate with the connection.
    * \param ipaddr      The address of the remote host.
    * \returns           XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided.
@@ -296,47 +299,51 @@ typedef interface xtcp_if {
 
   /** \brief Send data to the connection.
    *
-   * \param id       The connection descriptor to act on.
-   * \param buffer        An array of data to be transmitted on the network.
+   * \param id          The connection descriptor to act on.
+   * \param buffer      An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    * \returns           The number of bytes accepted by xtcp or a negative xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
    */
   int32_t send(int32_t id, const uint8_t buffer[length], uint32_t length);
 
   /** \brief Send data to the connection.
    *
-   * \param id       The connection descriptor to act on.
-   * \param buffer        An array of data to be transmitted on the network.
+   * \param id          The connection descriptor to act on.
+   * \param buffer      An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    * \param ts          The packet transmit timestamp.
    * \returns           The number of bytes accepted by xtcp or a negative xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
    */
   int32_t send_timed(int32_t id, const uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(uint32_t, ts));
 
   /** \brief Send data to the connection.
    *
-   * \param id       The connection descriptor to act on.
-   * \param buffer        An array of data to be transmitted on the network.
+   * \param id          The connection descriptor to act on.
+   * \param buffer      An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    * \param remote_addr The address of the remote host.
    * \param remote_port The remote port of the remote host.
    * \returns           The number of bytes accepted by xtcp or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
    */
   int32_t sendto(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port);
 
   /** \brief Send timestamped data to the connection.
    *
-   * \param id       The connection descriptor to act on.
-   * \param buffer        An array of data to be transmitted on the network.
+   * \param id          The connection descriptor to act on.
+   * \param buffer      An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
    * \param remote_addr The address of the remote host.
    * \param remote_port The remote port of the remote host.
    * \param ts          The packet transmit timestamp.
    * \returns           The number of bytes accepted by xtcp or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
    */
   int32_t sendto_timed(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port, REFERENCE_PARAM(uint32_t, ts));
 
@@ -344,12 +351,12 @@ typedef interface xtcp_if {
    *
    * Copies data from an internal buffer to the given buffer, if data is available.
    *
-   *  If the data buffer is not large enough then an exception will be raised.
-   *
-   * \param id       The connection descriptor to act on.
+   * \param id          The connection descriptor to act on.
    * \param buffer      The destination buffer where received data will be stored.
    * \param length      The length of the given buffer and the maximum amount of data that will be copied.
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
+   *                    XTCP_EAGAIN if the send buffer is less than the length of the data received.
    */
   int32_t recv(int32_t id, uint8_t buffer[length], uint32_t length);
 
@@ -357,13 +364,13 @@ typedef interface xtcp_if {
    *
    * Copies data from an internal buffer to the given buffer, if data is available.
    *
-   *  If the data buffer is not large enough then an exception will be raised.
-   *
    * \param id          The connection descriptor to act on.
    * \param buffer      The destination buffer where received data will be stored.
    * \param length      The length of the given buffer and the maximum amount of data that will be copied.
    * \param ts          The packet receive timestamp.
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
+   *                    XTCP_EAGAIN if the send buffer is less than the length of the data received.
    */
   int32_t recv_timed(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(uint32_t, ts));
 
@@ -371,22 +378,20 @@ typedef interface xtcp_if {
    *
    * Copies data from an internal buffer to the given buffer, if data is available.
    *
-   *  If the data buffer is not large enough then an exception will be raised.
-   *
    * \param id          The connection descriptor to act on.
    * \param buffer      The destination buffer where received data will be stored.
    * \param length      The length of the given buffer and the maximum amount of data that will be copied.
    * \param port_number The remote port buffer data was received from.
    * \param ipaddr      The address of the remote host.
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
+   *                    XTCP_EAGAIN if the send buffer is less than the length of the data received.
    */
   int32_t recvfrom(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(xtcp_ipaddr_t, ipaddr), REFERENCE_PARAM(uint16_t, port_number));
 
   /** \brief Receive timestamped data on a connection, remote host and port.
    *
    * Copies data from an internal buffer to the given buffer, if data is available.
-   *
-   *  If the data buffer is not large enough then an exception will be raised.
    *
    * \param id          The connection descriptor to act on.
    * \param buffer      The destination buffer where received data will be stored.
@@ -395,6 +400,8 @@ typedef interface xtcp_if {
    * \param ipaddr      The address of the remote host.
    * \param ts          The packet receive timestamp.
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   *                    XTCP_EINVAL if invalid parameters are provided.
+   *                    XTCP_EAGAIN if the send buffer is less than the length of the data received.
    */
   int32_t recvfrom_timed(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(xtcp_ipaddr_t, ipaddr), REFERENCE_PARAM(uint16_t, port_number), REFERENCE_PARAM(uint32_t, ts));
 
@@ -421,8 +428,6 @@ typedef interface xtcp_if {
    * \param id          The connection descriptor
    *
    * \returns           The current local host for the connection.
-   *
-   * \note For UDP connections this will be unset unless connect() has been called.
    */
   xtcp_host_t get_ipconfig_local(int32_t id);
 
@@ -431,7 +436,7 @@ typedef interface xtcp_if {
    * \param id          The connection descriptor to set the state for.
    * \param data        A pointer to the additional data to associate with the connection.
    *
-   * \returns           0 on success, or a negative error code on failure.
+   * \returns           XTCP_SUCCESS on success, or a negative error code on failure.
    */
   int32_t set_connection_client_data(int32_t id, void *unsafe data);
 
@@ -462,9 +467,10 @@ typedef interface xtcp_if {
    * \param hostname    The human readable host name, e.g. "www.xmos.com"
    * \param len         Length of hostname string
    * \param dns_server  IP address of DNS server to query
-   * \returns           The remote host for the hostname
+   * \returns           The remote host for the hostname, or an empty IP address on error if the lookup failed or the request is in progress.
    * 
    * \note This is a non-blocking call. The result of the lookup will be indicated by an XTCP_DNS_RESULT event.
+   * If the event returns XTCP_SUCCESS then this function should be called a second time and the returned address is that of the host requested.
    */
   xtcp_host_t request_host_by_name(const uint8_t hostname[len], static_const_unsigned len, xtcp_ipaddr_t dns_server);
 
@@ -492,7 +498,8 @@ typedef interface xtcp_if {
 
   /** \brief Query if the underlying interface is up.
    *
-   * \returns           1 if the underlying interface us up, 0 otherwise.
+   * \retval           1 if the underlying interface is up,
+   * \retval           0 if the underlying interface is down.
    */
   int is_ifup(void);
   
@@ -547,10 +554,9 @@ void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
                REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 #endif /* __XC__ || __DOXYGEN__ */
 
-/** Configure the MAC address for a given network interface
+/** Configure the MAC address for a given network interface. Define in the client application to provide a MAC address.
  * 
  * This function is called by xtcp_lwip() during initialization to set the MAC address for the network interface.
- * Define in the client application to provide a MAC address.
  * 
  * \param netif_id      The network interface ID to configure the MAC address for. Can be ignored for now as only 1 netif is currently supported.
  * \param mac_address   The six-octet MAC address output parameter to set for the given network interface.
