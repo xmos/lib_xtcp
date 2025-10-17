@@ -61,9 +61,9 @@ void udp_echo(client xtcp_if i_xtcp) {
             printip(ipconfig.ipaddr);
 
             responding_connection = i_xtcp.socket(XTCP_PROTOCOL_UDP);
-            // Instruct server to listen and create new connections on the incoming port
-            int32_t listen_result = i_xtcp.listen(responding_connection, INCOMING_PORT, any_addr);
-            if (listen_result < 0) {
+            // Instruct server to listen on the incoming port
+            xtcp_error_code_t listen_result = i_xtcp.listen(responding_connection, INCOMING_PORT, any_addr);
+            if (listen_result != XTCP_SUCCESS) {
               debug_printf("Failed to listen on port %d, %i\n", INCOMING_PORT, listen_result);
             } else {
               debug_printf("Listening on port %d, %d\n", INCOMING_PORT, responding_connection);
@@ -81,7 +81,11 @@ void udp_echo(client xtcp_if i_xtcp) {
             break;
 
           case XTCP_NEW_CONNECTION:
-            debug_printf("Unexpected, New broadcast connection request: %d\n", client_conn);
+            debug_printf("Unexpected, New connection notification: %d\n", client_conn);
+            break;
+
+          case XTCP_ACCEPTED:
+            debug_printf("Unexpected, Accepted connection notification: %d\n", client_conn);
             break;
 
           case XTCP_RECV_FROM_DATA:

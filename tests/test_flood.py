@@ -8,11 +8,13 @@ import time
 import pathlib
 import subprocess
 from hardware_test_tools import XcoreApp
+from CollectFailures import CollectFailures
 
 
 @pytest.mark.parametrize('protocol', ['TCP'])  # Flood test is only meaningful for TCP
 @pytest.mark.parametrize('processes', [1])  # Works with processes=2, but fails with ports=2, todo
-def test_flood(request, protocol, processes):
+@pytest.mark.parametrize('target', ['XMS0020'])
+def test_flood(request, protocol, processes, target):
     dut_ip = '192.168.200.198'
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
     library = 'LWIP'
@@ -21,28 +23,12 @@ def test_flood(request, protocol, processes):
     tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
     tester.setup(request)
 
-    tester.run_test(0.002, 'EXPLORER', dut_ip, 'ETH', library)
+    tester.run_test(0.002, target, dut_ip, 'ETH', library)
 
     tester.check_xrun()
     tester.check_python()
 
     assert len(tester.failures()) == 0
-
-
-class CollectFailures():
-    def __init__(self):
-        self._failures = []
-
-    def record_failure(self, failure_reason):
-        # Append a newline if there isn't one already
-        if not failure_reason.endswith('\n'):
-            failure_reason += '\n'
-        self._failures.append(failure_reason)
-        print("Failure reason: {}".format(failure_reason))
-        self.result = False
-
-    def failures(self):
-        return self._failures
 
 
 class RunXtcp(CollectFailures):
@@ -74,8 +60,8 @@ class RunXtcp(CollectFailures):
         else:  # weekend
             self.packets = 1000
 
-    def run_test(self, delay, device, ip, interface, library):
-        setup = f'{self.processes}_{self.ports}_{self.protocol}_{device}_{interface}'
+    def run_test(self, delay, target, ip, interface, library):
+        setup = f'{self.processes}_{self.ports}_{self.protocol}_{target}_{interface}'
         binary = pathlib.Path(f'xtcp_burst/bin/{setup}/xtcp_burst_{setup}.xe')
 
         assert binary.exists(), 'Found test binary'

@@ -1,6 +1,6 @@
 // This file relates to internal XMOS infrastructure and should be ignored by external users
 
-@Library('xmos_jenkins_shared_library@v0.43.0') _
+@Library('xmos_jenkins_shared_library@v0.43.2') _
 
 getApproval()
 
@@ -57,17 +57,7 @@ pipeline {
             }
 
             dir(REPO_NAME) {
-              // checkoutScmShallow()
-              // here until the latest checkoutScmShallow is released
-              checkout scm: [
-                $class: 'GitSCM',
-                branches: scm.branches,
-                userRemoteConfigs: scm.userRemoteConfigs,
-                extensions: [
-                  submodule(depth: 1, recursiveSubmodules: true, shallow: true),
-                  cloneOption(depth: 1, noTags: false, shallow: true)
-                ]
-              ]
+              checkoutScmShallow()
             }
           }
         }
@@ -138,17 +128,7 @@ pipeline {
           
           steps {
             dir(REPO_NAME) {
-              // checkoutScmShallow()
-              // here until the latest checkoutScmShallow is released
-              checkout scm: [
-                $class: 'GitSCM',
-                branches: scm.branches,
-                userRemoteConfigs: scm.userRemoteConfigs,
-                extensions: [
-                  submodule(depth: 1, recursiveSubmodules: true, shallow: true),
-                  cloneOption(depth: 1, noTags: false, shallow: true)
-                ]
-              ]
+              checkoutScmShallow()
 
               withTools(params.TOOLS_VERSION) {
                 dir("tests") {
@@ -201,8 +181,7 @@ pipeline {
                       withXTAG(["xk-eth-xu316-dual-100m"]) {
                         // TODO - link in TEST_TYPE to pytest
                         xtagIds ->
-                          sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'not webserver' --ignore=unit")
-                          // TODO - add back in webserver test when fixed
+                          sh(script: "python -m pytest -v --junitxml=pytest_checks.xml --adapter-id ${xtagIds[0]} -k 'XMS0020' --ignore=unit")
                       }
                     }
                   }
@@ -214,6 +193,55 @@ pipeline {
           post {
             always {
               junit "${REPO_NAME}/tests/pytest_checks.xml"
+            }
+            cleanup {
+              xcoreCleanSandbox()
+            }
+          }
+        } // stage('Tests: HW tests - PHY0')
+
+        stage('Tests: HW tests - regression') {
+          agent {
+            label 'sw-hw-eth-ubu2'
+          }
+
+          steps {
+            dir(REPO_NAME) {
+              checkoutScmShallow()
+
+              dir("examples") {
+                unstash 'webserver_test_bin'
+              }
+
+              withTools(params.TOOLS_VERSION) {
+                dir("tests") {
+                  unstash 'xtcp_test_bin'
+
+                  createVenv(reqFile: "requirements.txt")
+                  withVenv {
+                    warnError("Pytest failed or test asserted") {
+
+                      withXTAG(["xk-eth-316-dual"]) {
+                        // TODO - link in TEST_TYPE to pytest
+                        xtagIds ->
+                          sh(script: "python -m pytest -v --junitxml=pytest_xk_eth_316_dual.xml --adapter-id ${xtagIds[0]} -k 'webserver or XK_ETH_316_DUAL' --ignore=unit")
+                      }
+                      withXTAG(["xk-evk-xe216"]) {
+                        // TODO - link in TEST_TYPE to pytest
+                        xtagIds ->
+                          sh(script: "python -m pytest -v --junitxml=pytest_xk-evk-xe216.xml --adapter-id ${xtagIds[0]} -k 'XK_EVK_XE216' --ignore=unit")
+                      }
+                    }
+                  }
+                }
+              }
+            } // dir(REPO_NAME)
+          } // steps
+
+          post {
+            always {
+              junit "${REPO_NAME}/tests/pytest_xk_eth_316_dual.xml"
+              junit "${REPO_NAME}/tests/pytest_xk-evk-xe216.xml"
             }
             cleanup {
               xcoreCleanSandbox()

@@ -7,12 +7,9 @@ import string
 import time
 import argparse
 import sys
-import subprocess
-import struct
-import urllib.request
-import urllib.error
 from multiprocessing import Pool
 import copy
+import xtcp_support
 
 # This test script can run a bursty reflect test (sending and receiving)
 #
@@ -33,91 +30,9 @@ import copy
 #   python xtcp_burst.py --ip 192.168.200.198 --start-port 15533 --remote-processes 1 --remote-ports 1 \
 #   --protocol TCP --packets 100 --delay-between-packets 0.002 --halt-sequential-errors 11 --num-timeouts-reconnect 3
 #
-# This scripts stores issues in the list variables 'failures', these are then printed out at teh end of the test for
+# This scripts stores issues in the list variables 'failures', these are then printed out at the end of the test for
 # the pytest script running this one to pick up and parse.
 #   Issues are reported prefixed with 'Info:', 'LOSS:' or 'ERROR:'.
-
-
-def print_errors(failure_list):
-    # Flatten list
-    failure_list = [item for sublist in failure_list for item in sublist]
-
-    if len(failure_list) > 0:
-        print('    \ttype\tid\ttime\tlocal\tremote\tsent_l\t?ret_l\t?err\t?mess\t?recv')
-        print(''.join(failure_list))
-
-    print('Lost_packets: {} of {}'.format(len(failure_list),
-                                          args.packets * args.remote_processes * args.remote_ports))
-
-
-def build_base_string(short_name, args, socket, length=0):
-    error = (
-        f'\t{short_name}' +
-        f'\t{args.start_port - 15533}' +
-        '\t{0:.2f}'.format(time.time() - args.start_time) +
-        f'\t{socket.getsockname()[1]}' +
-        f'\t{args.start_port}'
-    )
-    error += '\t'
-    if length != 0:
-        error += f'{length}'
-    return error
-
-
-def build_basic_report(short_name, args, socket, length=0):
-    error = build_base_string(short_name, args, socket, length)
-    error += '\n'
-    return error
-
-
-def build_exception_report(short_name, args, socket, err, length=0):
-    error = build_base_string(short_name, args, socket, length)
-    error += '\t'
-    error += f'\t{err}\n'
-    return error
-
-
-def build_message_report(short_name, args, socket, length, message, returned_message):
-    error = build_base_string(short_name, args, socket, length)
-    error += (
-        f'\t{len(returned_message)}' +
-        '\t' +
-        f'\t{message}' +
-        f'\t{returned_message}\n'
-    )
-    return error
-
-
-def format_message(message, width):
-    return '\n  '.join([message[i:i+width]
-                        for i in range(0, len(message), width)])
-
-
-def attempt_connect(failures, args, sock=None):
-    # Limit reconnect attempts
-    for _ in range(3):
-        try:
-            if args.protocol == "UDP":
-                sock_proto = socket.SOCK_DGRAM
-            else:
-                sock_proto = socket.SOCK_STREAM
-
-            sock = socket.socket(socket.AF_INET, sock_proto)
-            sock.settimeout(2)  # seconds
-            sock.connect((args.ip, args.start_port))
-            return (failures, sock)
-
-        except socket.error as err:
-            failures.append(
-                'Info:' + build_exception_report('conn', args, sock, err)
-            )
-
-    # Sequential connect attempts failure
-    failures.append(
-        'ERROR:' + build_basic_report('conn', args, sock)
-    )
-
-    return (failures, None)
 
 
 def process_test(args):
@@ -126,9 +41,10 @@ def process_test(args):
     tests_to_perform = args.packets
     failures = []
 
-    (failures, sock) = attempt_connect(failures, args)
+    (failures, sock) = xtcp_support.attempt_connect(failures, args)
     if sock is None:
-        return failures
+        args.failures = failures
+        return args
 
     num_timeouts = 0
     num_exceptions = 0
@@ -164,17 +80,17 @@ def process_test(args):
             # if returned_message != message:
             if message1[::-1] not in returned_message:  # Reverse string
                 failures.append(
-                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message1, returned_message)
+                    'LOSS:' + xtcp_support.build_message_report('miss', args, sock, length_of_message, message1, returned_message)
                 )
 
             if message2[::-1] not in returned_message:  # Reverse string
                 failures.append(
-                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message2, returned_message)
+                    'LOSS:' + xtcp_support.build_message_report('miss', args, sock, length_of_message, message2, returned_message)
                 )
 
             if message3[::-1] not in returned_message:  # Reverse string
                 failures.append(
-                    'LOSS:' + build_message_report('miss', args, sock, length_of_message, message3, returned_message)
+                    'LOSS:' + xtcp_support.build_message_report('miss', args, sock, length_of_message, message3, returned_message)
                 )
 
             # timeout checks, force action to be 'n' sequential timeouts
@@ -184,41 +100,41 @@ def process_test(args):
         except socket.timeout:
             num_timeouts += 1
             failures.append(
-                'LOSS:' + build_basic_report('time', args, sock, length_of_message)
+                'LOSS:' + xtcp_support.build_basic_report('time', args, sock, length_of_message)
             )
 
             if args.num_timeouts_reconnect != 0 and num_timeouts >= args.num_timeouts_reconnect:
                 # Reconnect
-                (failures, sock) = attempt_connect(failures, args, sock)
+                (failures, sock) = xtcp_support.attempt_connect(failures, args, sock)
                 if sock is None:
                     break
 
             if args.halt_sequential_errors != 0 and num_timeouts >= args.halt_sequential_errors:
                 failures.append(
-                    'ERROR:' + build_basic_report('seq-time', args, sock, length_of_message)
+                    'ERROR:' + xtcp_support.build_basic_report('seq-time', args, sock, length_of_message)
                 )
                 break
 
         except socket.error as err:
             num_exceptions += 1
             failures.append(
-                'LOSS:' + build_exception_report('err', args, sock, err, length_of_message)
+                'LOSS:' + xtcp_support.build_exception_report('err', args, sock, err, length_of_message)
             )
 
             # Reconnect
-            (failures, sock) = attempt_connect(failures, args, sock)
+            (failures, sock) = xtcp_support.attempt_connect(failures, args, sock)
             if sock is None:
                 break
 
             if args.halt_sequential_errors != 0 and num_exceptions >= args.halt_sequential_errors:
                 failures.append(
-                    'ERROR:' + build_exception_report('seq-err', args, sock, err, length_of_message)
+                    'ERROR:' + xtcp_support.build_exception_report('seq-err', args, sock, err, length_of_message)
                 )
                 break
 
     if tests_to_perform != 0:
         failures.append(
-            'Info:' + build_basic_report('runs', args, sock, args.packets - tests_to_perform)
+            'Info:' + xtcp_support.build_basic_report('runs', args, sock, args.packets - tests_to_perform)
         )
 
     if sock is not None:
@@ -227,25 +143,8 @@ def process_test(args):
 
     # If printing progress '.' then add newline
     print('')
-    return failures
-
-
-def kill_remote_device(args):
-    # Remote device is setup to exit() if the first character of a message is 'a'
-    if args.protocol == "UDP":
-        sock_proto = socket.SOCK_DGRAM
-    else:
-        sock_proto = socket.SOCK_STREAM
-
-    with socket.socket(socket.AF_INET, sock_proto) as sock:
-        try:
-            sock.settimeout(10)  # seconds
-            sock.connect((args.ip, args.start_port))
-            sock.send(b'a')
-
-        except socket.error as err:
-            # Do nothing and wait for remote device to timeout
-            print(f'ERROR: Could not kill remote device: {err}')
+    args.failures = failures
+    return args
 
 
 def reflect_test(args):
@@ -268,40 +167,11 @@ def reflect_test(args):
         args_copy.start_port = x
         args_pool.append(args_copy)
 
-    pool.map_async(process_test, args_pool, 1, callback=print_errors)
+    pool.map_async(process_test, args_pool, 1, callback=xtcp_support.print_errors)
 
     pool.close()
     pool.join()
     pool.terminate()
-
-
-def check_and_set_args(args):
-    if args.ip is None:
-        parser.error('Need IP address')
-
-    if args.start_port is None:
-        parser.error('Need starting port')
-
-    if args.packet_size_limit > 1460:
-        parser.error('Packet size is too large and will be split')
-
-    if args.num_timeouts_reconnect != 0 and args.halt_sequential_errors != 0:
-        if args.num_timeouts_reconnect > args.halt_sequential_errors:
-            parser.error('Number of reconnect timeouts must be less than sequenctial errors')
-
-    args.start_time = time.time()
-
-    # Use the current git hash to seed the random number generator,
-    # to avoid the number of test cases for a particular snapshot increasing
-    # each time the view is built in the CI system.
-
-    git_rev = subprocess.run(
-        ['git', 'rev-parse', 'HEAD'],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-
-    # Git hash is hexadecimal string
-    args.seed_base = int(git_rev.stdout[0].strip(), 16)
 
 
 if __name__ == '__main__':
@@ -341,10 +211,10 @@ if __name__ == '__main__':
     parser.add_argument('--halt-sequential-errors', default=0, type=int,
                         help="After how many sequential errors does the test halt, 0='--packets' (default='%s')" % 0)
     parser.add_argument('--num-timeouts-reconnect', default=0, type=int,
-                        help="After how many timeouts to attempt a reconnect, typcailly UDP, 0=no reconnect (default='%s')" % 0)
+                        help="After how many timeouts to attempt a reconnect, typically UDP, 0=no reconnect (default='%s')" % 0)
     args = parser.parse_args()
 
-    check_and_set_args(args)
+    xtcp_support.check_and_set_args(args, parser)
 
     if args.protocol == 'UDP' or args.protocol == 'TCP':
         reflect_test(args)
@@ -352,4 +222,4 @@ if __name__ == '__main__':
         print("Unknown protocol")
 
     print("Kill target")
-    kill_remote_device(args)
+    xtcp_support.kill_remote_device(args)

@@ -63,7 +63,7 @@ void tcp_echo(client xtcp_if i_xtcp) {
 
             listening_connection = i_xtcp.socket(XTCP_PROTOCOL_TCP);
             // Instruct server to listen and create new connections on the incoming port
-            int32_t listen_result = i_xtcp.listen(listening_connection, INCOMING_PORT, any_addr);
+            xtcp_error_code_t listen_result = i_xtcp.listen(listening_connection, INCOMING_PORT, any_addr);
             if (listen_result == XTCP_EINUSE) {
               debug_printf("Port still in use, connection not closed by remote host? %d\n", INCOMING_PORT);
             } else if (listen_result < 0) {
@@ -97,16 +97,7 @@ void tcp_echo(client xtcp_if i_xtcp) {
             break;
 
           case XTCP_NEW_CONNECTION:
-            // The tcp server is giving us a new connection.
-            // It is either a remote host connecting on the listening port or the broadcast connection the threads asked
-            // for with the xtcp_connect() call
-            if (responding_connection == INIT_VAL) {
-              responding_connection = client_conn;
-              debug_printf("New connection listening: %d\n", client_conn);
-            } else {
-              debug_printf("Unknown connection, closing %d\n", client_conn);
-              i_xtcp.close(client_conn);
-            }
+            debug_printf("Unexpected, New connection notification: %d\n", client_conn);
             break;
 
           case XTCP_RECV_DATA:

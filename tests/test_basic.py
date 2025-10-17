@@ -8,41 +8,25 @@ import time
 import pathlib
 import subprocess
 from hardware_test_tools import XcoreApp
+from CollectFailures import CollectFailures
 
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
 @pytest.mark.parametrize('processes', [1, 2])
 @pytest.mark.parametrize('message_length', [10, 100])
-def test_basic(request, protocol, processes, message_length):
-    dut_ip = '192.168.200.198'
+@pytest.mark.parametrize('target', ['XMS0020', 'XK_EVK_XE216', 'XK_ETH_316_DUAL'])
+def test_basic(request, protocol, processes, message_length, target):
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
-    library = 'LWIP'
 
     tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
     tester.setup(request)
 
-    tester.run_test(0.002, 'EXPLORER', dut_ip, 'ETH', library)
+    tester.run_test(0.002, target)
 
     tester.check_xrun()
     tester.check_python()
 
     assert len(tester.failures()) == 0
-
-
-class CollectFailures():
-    def __init__(self):
-        self._failures = []
-
-    def record_failure(self, failure_reason):
-        # Append a newline if there isn't one already
-        if not failure_reason.endswith('\n'):
-            failure_reason += '\n'
-        self._failures.append(failure_reason)
-        print("Failure reason: {}".format(failure_reason))
-        self.result = False
-
-    def failures(self):
-        return self._failures
 
 
 class RunXtcp(CollectFailures):
@@ -74,9 +58,22 @@ class RunXtcp(CollectFailures):
         else:  # weekend
             self.packets = 100000
 
-    def run_test(self, delay, device, ip, interface, library):
-        setup = f'{self.processes}_{self.ports}_{self.protocol}_{device}_{interface}'
-        binary = pathlib.Path(f'xtcp_bombard_{library.lower()}/bin/{setup}/xtcp_bombard_{library.lower()}_{setup}.xe')
+    def run_test(self, delay, target):
+        
+        if (target == 'XMS0020'):
+            ip = '192.168.200.198'
+            xe_project = 'xtcp_bombard_lwip'
+        elif (target == 'XK_EVK_XE216'):
+            ip = '192.168.210.198'
+            xe_project = 'xtcp_xk_evk_xe216_basic'
+        elif (target == 'XK_ETH_316_DUAL'):
+            ip = '192.168.200.198'
+            xe_project = 'xtcp_xk_eth_316_dual_basic'
+        else:
+            assert False, f'Unknown target: {target}'
+
+        setup = f'{self.processes}_{self.ports}_{self.protocol}_{target}_ETH'
+        binary = pathlib.Path(f'{xe_project}/bin/{setup}/{xe_project}_{setup}.xe')
 
         assert binary.exists(), 'Found test binary'
 

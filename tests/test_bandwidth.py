@@ -13,17 +13,17 @@ from CollectFailures import CollectFailures
 
 @pytest.mark.parametrize('protocol', ['UDP', 'TCP'])
 @pytest.mark.parametrize('processes', [1, 2])
+@pytest.mark.parametrize('message_length', [100, 536, 1460])
 @pytest.mark.parametrize('target', ['XMS0020'])
-def test_burst(request, protocol, processes, target):
+def test_bandwidth(request, protocol, processes, message_length, target):
     dut_ip = '192.168.200.198'
     dut_ports_per_proc = processes  # Number of Ports and processes parameterised the same for simplicity
     library = 'LWIP'
-    message_length = 100
 
     tester = RunXtcp(processes, dut_ports_per_proc, protocol, message_length)
     tester.setup(request)
 
-    tester.run_test(0.002, target, dut_ip, 'ETH', library)
+    tester.run_test(0.000, target, dut_ip, 'ETH', library)
 
     tester.check_xrun()
     tester.check_python()
@@ -54,15 +54,15 @@ class RunXtcp(CollectFailures):
         if level == 'quick':
             self.packets = 10
         elif level == 'smoke':
-            self.packets = 100
+            self.packets = 1000
         elif level == 'nightly':
-            self.packets = 1000
+            self.packets = 10000
         else:  # weekend
-            self.packets = 1000
+            self.packets = 10000
 
     def run_test(self, delay, target, ip, interface, library):
         setup = f'{self.processes}_{self.ports}_{self.protocol}_{target}_{interface}'
-        binary = pathlib.Path(f'xtcp_burst/bin/{setup}/xtcp_burst_{setup}.xe')
+        binary = pathlib.Path(f'xtcp_bombard_{library.lower()}/bin/{setup}/xtcp_bombard_{library.lower()}_{setup}.xe')
 
         assert binary.exists(), 'Found test binary'
 
@@ -73,7 +73,7 @@ class RunXtcp(CollectFailures):
 
             self.python_output = subprocess.run(
                 [
-                    'python', 'xtcp_burst.py', '--ip', ip,
+                    'python', 'xtcp_bandwidth.py', '--ip', ip,
                     '--start-port', START_PORT,
                     '--remote-processes', f'{self.processes}',
                     '--remote-ports', f'{self.ports}',
@@ -93,7 +93,7 @@ class RunXtcp(CollectFailures):
         print("XRUN output:")
         print(self.xrun_stdout)
 
-        assert self.python_output.returncode == 0, "python script xtcp_ping_pong.py did not run"
+        assert self.python_output.returncode == 0, "python script xtcp_bandwidth.py did not run"
 
     def check_python(self):
         if isinstance(self.python_output, subprocess.CompletedProcess):
@@ -106,6 +106,23 @@ class RunXtcp(CollectFailures):
         python_valid = False
         total_runs = self.packets * self.processes * self.ports
         achieved_runs = self.packets * self.processes * self.ports
+        bandwidth_Mbps = 0.0
+        # Bandwidth test can be quite fickle, ideally run from C++ host not python, hence these limits are quite loose
+        if (self.message_length == 1460):
+            if (self.processes == 1):
+                bandwidth_target = 7.0  # Expecting ~13 Mbps
+            else:
+                bandwidth_target = 25.0  # Expecting 50+ Mbps for UDP and 40+ Mbps for TCP
+        elif (self.message_length == 536):
+            if (self.processes == 1):
+                bandwidth_target = 4.0  # Expecting ~7.5 Mbps
+            else:
+                bandwidth_target = 20.0  # Expecting ~30 Mbps
+        else:
+            if (self.processes == 1):
+                bandwidth_target = 1.0  # Expecting ~2 Mbps
+            else:
+                bandwidth_target = 3.5  # Expecting 7+ Mbps
 
         # Check for any test output errors
         for line in output.splitlines():
@@ -123,6 +140,9 @@ class RunXtcp(CollectFailures):
                 if len(split) > 1 and 'runs' in split[1]:
                     achieved_runs -= self.packets
                     achieved_runs += int(split[-1])
+
+                elif (match := re.search(r'Bandwidth: (?P<bandwidth>\d+(\.\d*)?)', line)):
+                    bandwidth_Mbps = float(match.group('bandwidth'))
 
             elif (re.match('Lost_packets: [0-9]+.*$', line)):
                 python_valid = True
@@ -145,6 +165,9 @@ class RunXtcp(CollectFailures):
                 "  Loss rate:        {0:.2f} %\n".format(total_losses * 100.0 / achieved_runs) +
                 f"  Runs:             {achieved_runs}/{total_runs} packets (achieved/requested)\n"
             )
+
+        if bandwidth_Mbps < bandwidth_target:
+            self.record_failure(f"Bandwidth too low for {self.protocol}\n  Expected: > {bandwidth_target} Mbps\n  Achieved: {bandwidth_Mbps} Mbps\n")
 
     def check_xrun(self):
         # Check the board is listening on every port
