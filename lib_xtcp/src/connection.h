@@ -26,7 +26,7 @@ xtcp_host_t get_local_from_pcb(int32_t index);
 xtcp_host_t get_remote(int32_t index);
 unsigned get_client_info(int32_t index);
 
-xtcp_error_int32_t get_remote_data(int32_t index, uint8_t * unsafe * unsafe  data, int32_t length);
+xtcp_error_int32_t get_remote_data(int32_t index, uint8_t * unsafe * unsafe data, int32_t length, uint32_t *unsafe timestamp);
 int32_t free_remote_data(int32_t index);
 
 xtcp_protocol_t get_protocol(int32_t index);

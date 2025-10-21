@@ -30,6 +30,133 @@
 #include "pbuf_shim.h"
 
 
+// this helper function is needed to allow null to be passed in when
+// timestamps are not required (taking a pointer and casting it to unsafe
+// appears to crash the compiler)
+
+static inline void set_nullable_uint32(uint32_t &?ref, const uint32_t value) {
+    if (!isnull(ref))
+        ref = value;
+}
+
+// macro to avoid needing to copy buffer (as remote references cannot
+// be passed as function arguments)
+
+#define send_common(result, i, id, buffer, length, ts)                          \
+  do {                                                                          \
+    xtcp_error_int32_t connection = find_client_connection(i, id);              \
+                                                                                \
+    if (connection.status != XTCP_SUCCESS) {                                    \
+      /* Bad parameter or inactive connection */                                \
+      result = connection.status;                                               \
+    } else {                                                                    \
+      /* Connection is active, so we can proceed */                             \
+      unsafe {                                                                  \
+        void* unsafe buffer_token = pbuf_shim_alloc_tx(length, (ts != NULL));   \
+        if (buffer_token == NULL) {                                             \
+          result = XTCP_ENOMEM;                                                 \
+        } else {                                                                \
+          memcpy(pbuf_shim_token_payload(buffer_token), buffer, length);        \
+          result = shim_send(i, id, buffer_token);                              \
+          set_nullable_uint32(ts, pbuf_shim_token_timestamp(buffer_token));     \
+        }                                                                       \
+      }                                                                         \
+    }                                                                           \
+  } while (0)
+
+#define sendto_common(result, i, id, buffer, length, remote_addr, remote_port, ts) \
+  do {                                                                          \
+    xtcp_error_int32_t connection = find_client_connection(i, id);              \
+                                                                                \
+    if (connection.status != XTCP_SUCCESS) {                                    \
+      /* Bad parameter or inactive connection */                                \
+      result = connection.status;                                               \
+    } else if (get_protocol(id) == XTCP_PROTOCOL_TCP) {                         \
+      /* TCP does not support sendto */                                         \
+      result = XTCP_EPROTONOSUPPORT;                                            \
+    } else {                                                                    \
+      /* Connection is active, so we can proceed */                             \
+      xtcp_ipaddr_t remote_addr_copy;                                           \
+      memcpy(remote_addr_copy, remote_addr, sizeof(xtcp_ipaddr_t));             \
+      unsafe {                                                                  \
+        void* unsafe buffer_token = pbuf_shim_alloc_tx(length, (ts != NULL));   \
+        if (buffer_token == NULL) {                                             \
+          result = XTCP_ENOMEM;                                                 \
+        } else {                                                                \
+          memcpy(pbuf_shim_token_payload(buffer_token), buffer, length);        \
+          result = shim_sendto(i, id, buffer_token,                             \
+                               remote_addr_copy, remote_port);                  \
+          set_nullable_uint32(ts, pbuf_shim_token_timestamp(buffer_token));     \
+        }                                                                       \
+      }                                                                         \
+    }                                                                           \
+  } while (0)
+
+#define recv_common(result, i, id, buffer, length, ts)                          \
+  do {                                                                          \
+    xtcp_error_int32_t connection = find_client_connection(i, id);              \
+                                                                                \
+    if (connection.status != XTCP_SUCCESS) {                                    \
+      /* Bad parameter or inactive connection */                                \
+      result = connection.status;                                               \
+    } else {                                                                    \
+      uint8_t * unsafe data = NULL;                                             \
+      xtcp_error_int32_t copy_length;                                           \
+      unsafe {                                                                  \
+        copy_length = get_remote_data(id, &data, length, ts);                   \
+      }                                                                         \
+      if (copy_length.status != XTCP_SUCCESS) {                                 \
+        /* Error in getting remote data */                                      \
+        result = copy_length.status;                                            \
+      } else {                                                                  \
+        /* copy_length.value is pbuf->len */                                    \
+        result = copy_length.value;                                             \
+        unsafe {                                                                \
+          memcpy(buffer, data, copy_length.value);                              \
+        }                                                                       \
+      }                                                                         \
+      (void)free_remote_data(id);                                               \
+    }                                                                           \
+  } while (0)
+
+#define recvfrom_common(result, i, id, buffer, length, ipaddr, port_number, ts) \
+  do {                                                                          \
+    xtcp_error_int32_t connection = find_client_connection(i, id);              \
+                                                                                \
+    if (connection.status != XTCP_SUCCESS) {                                    \
+      /* Bad parameter or inactive connection */                                \
+      result = connection.status;                                               \
+    } else if (get_protocol(id) == XTCP_PROTOCOL_TCP) {                         \
+      /* TCP does not support recvfrom */                                       \
+      result = XTCP_EPROTONOSUPPORT;                                            \
+    } else {                                                                    \
+      /* Connection is active, so we can proceed */                             \
+      xtcp_host_t remote = get_remote(id);                                      \
+      memcpy(ipaddr, remote.ipaddr, sizeof(xtcp_ipaddr_t));                     \
+      port_number = remote.port_number;                                         \
+                                                                                \
+      /* This is currently expecting data in only one pbuf, so no chaining      \
+       * If memory pool config in lwipopts.h is ever changed then this needs    \
+       * to change */                                                           \
+      uint8_t * unsafe data = NULL;                                             \
+      xtcp_error_int32_t copy_length;                                           \
+      unsafe {                                                                  \
+        copy_length = get_remote_data(id, &data, length, ts);                   \
+      }                                                                         \
+      if (copy_length.status != XTCP_SUCCESS) {                                 \
+        /* Error in getting remote data */                                      \
+        result = copy_length.status;                                            \
+      } else {                                                                  \
+        /* copy_length.value is pbuf->len */                                    \
+        result = copy_length.value;                                             \
+        unsafe {                                                                \
+          memcpy(buffer, data, copy_length.value);                              \
+        }                                                                       \
+      }                                                                         \
+      (void)free_remote_data(id);                                               \
+    }                                                                           \
+  } while (0)
+
 void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
                client interface mii_if ?i_mii,
                client interface ethernet_cfg_if ?i_eth_cfg,
@@ -107,7 +234,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         i_eth_rx.get_packet(desc, buffer, ETHERNET_MAX_PACKET_SIZE);
 
         if (desc.type == ETH_DATA) {
-          ethernetif_input(buffer, desc.len);
+          ethernetif_input(buffer, desc.len, desc.timestamp);
 
         } else if (desc.type == ETH_IF_STATUS) {
           if (buffer[0] == ETHERNET_LINK_UP) {
@@ -131,7 +258,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
           unsigned timestamp;
           {data, nbytes, timestamp} = i_mii.get_incoming_packet();
           if (data) {
-            ethernetif_input((uint8_t *)data, nbytes);
+            ethernetif_input((uint8_t *)data, nbytes, 0);
             i_mii.release_packet(data);
           }
         } while (data != NULL);
@@ -187,106 +314,35 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         break;
 
       case i_xtcp[unsigned i].send(int32_t id, const uint8_t buffer[length], uint32_t length) -> int32_t result:
-        xtcp_error_int32_t connection = find_client_connection(i, id);
-        if (connection.status != XTCP_SUCCESS) {
-          // Bad parameter or inactive connection
-          result = connection.status;
-        } else {
-          // Connection is active, so we can proceed
-          unsafe {
-            void* unsafe buffer_token = pbuf_shim_alloc_tx(length);
-            if (buffer_token == NULL) {
-              result = XTCP_ENOMEM;
-            } else {
-              memcpy(pbuf_shim_token_payload(buffer_token), buffer, length);
-              result = shim_send(i, id, buffer_token);
-            }
-          }
-        }
+        send_common(result, i, id, buffer, length, null);
+        break;
+
+      case i_xtcp[unsigned i].send_timed(int32_t id, const uint8_t buffer[length], uint32_t length, uint32_t &ts) -> int32_t result:
+        send_common(result, i, id, buffer, length, ts);
         break;
 
       case i_xtcp[unsigned i].sendto(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port) -> int32_t result:
-        xtcp_error_int32_t connection = find_client_connection(i, id);
-        if (connection.status != XTCP_SUCCESS) {
-          // Bad parameter or inactive connection
-          result = connection.status;
-        } else if (get_protocol(id) == XTCP_PROTOCOL_TCP) {
-          // TCP does not support sendto
-          result = XTCP_EPROTONOSUPPORT;
-        } else {
-          // Connection is active, so we can proceed
-          xtcp_ipaddr_t remote_addr_copy;
-          memcpy(remote_addr_copy, remote_addr, sizeof(xtcp_ipaddr_t));
-          unsafe {
-            void* unsafe buffer_token = pbuf_shim_alloc_tx(length);
-            if (buffer_token == NULL) {
-              result = XTCP_ENOMEM;
-            } else {
-              memcpy(pbuf_shim_token_payload(buffer_token), buffer, length);
-              result = shim_sendto(i, id, buffer_token, remote_addr_copy, remote_port);
-            }
-          }
-        }
+        sendto_common(result, i, id, buffer, length, remote_addr, remote_port, null);
+        break;
+
+      case i_xtcp[unsigned i].sendto_timed(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port, uint32_t &ts) -> int32_t result:
+        sendto_common(result, i, id, buffer, length, remote_addr, remote_port, ts);
         break;
 
       case i_xtcp[unsigned i].recv(int32_t id, uint8_t buffer[length], uint32_t length) -> int32_t result:
-        xtcp_error_int32_t connection = find_client_connection(i, id);
-        if (connection.status != XTCP_SUCCESS) {
-          // Bad parameter or inactive connection
-          result = connection.status;
-        } else {
-          uint8_t * unsafe data = NULL;
-          xtcp_error_int32_t copy_length;
-          unsafe {
-            copy_length = get_remote_data(id, &data, length);
-          }
-          if (copy_length.status != XTCP_SUCCESS) {
-            // Error in getting remote data
-            result = copy_length.status;
-          } else {
-            // copy_length.value is pbuf->len
-            result = copy_length.value;
-            unsafe {
-              memcpy(buffer, data, copy_length.value);
-            }
-          }
-          (void)free_remote_data(id);
-        }
+        recv_common(result, i, id, buffer, length, NULL);
+        break;
+
+      case i_xtcp[unsigned i].recv_timed(int32_t id, uint8_t buffer[length], uint32_t length, uint32_t &ts) -> int32_t result:
+        recv_common(result, i, id, buffer, length, &ts);
         break;
 
       case i_xtcp[unsigned i].recvfrom(int32_t id, uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t &ipaddr, uint16_t &port_number) -> int32_t result:
-        xtcp_error_int32_t connection = find_client_connection(i, id);
-        if (connection.status != XTCP_SUCCESS) {
-          // Bad parameter or inactive connection
-          result = connection.status;
-        } else if (get_protocol(id) == XTCP_PROTOCOL_TCP) {
-          // TCP does not support recvfrom
-          result = XTCP_EPROTONOSUPPORT;
-        } else {
-          // Connection is active, so we can proceed
-          xtcp_host_t remote = get_remote(id);
-          memcpy(ipaddr, remote.ipaddr, sizeof(xtcp_ipaddr_t));
-          port_number = remote.port_number;
+        recvfrom_common(result, i, id, buffer, length, ipaddr, port_number, NULL);
+        break;
 
-          /* This is currently expecting data in only one pbuf, so no chaining
-           * If memory pool config in lwipopts.h is ever changed then this needs to change */
-          uint8_t * unsafe data = NULL;
-          xtcp_error_int32_t copy_length;
-          unsafe {
-            copy_length = get_remote_data(id, &data, length);
-          }
-          if (copy_length.status != XTCP_SUCCESS) {
-            // Error in getting remote data
-            result = copy_length.status;
-          } else {
-            // copy_length.value is pbuf->len
-            result = copy_length.value;
-            unsafe {
-              memcpy(buffer, data, copy_length.value);
-            }
-          }
-          (void)free_remote_data(id);
-        }
+      case i_xtcp[unsigned i].recvfrom_timed(int32_t id, uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t &ipaddr, uint16_t &port_number, uint32_t &ts) -> int32_t result:
+        recvfrom_common(result, i, id, buffer, length, ipaddr, port_number, &ts);
         break;
 
       case i_xtcp[unsigned i].set_connection_client_data(int32_t id, void *unsafe data) -> int32_t result:

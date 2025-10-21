@@ -98,7 +98,7 @@ void test_set_remote_then_get_remote_matches(void) {
     TEST_ASSERT_EQUAL(test_port, remote.port_number);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(test_addr, remote.ipaddr, 4);
 
-    xtcp_error_int32_t get_result = get_remote_data(connection.value, &test_payload, test_length);
+    xtcp_error_int32_t get_result = get_remote_data(connection.value, &test_payload, test_length, NULL);
     TEST_ASSERT_EQUAL(PAYLOAD_LENGTH, get_result.value);
     TEST_ASSERT_EQUAL_UINT32(pbuf_payload, test_payload);
 }

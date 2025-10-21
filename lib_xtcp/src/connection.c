@@ -234,8 +234,10 @@ xtcp_host_t get_remote(int32_t index) {
   return remote;
 }
 
-xtcp_error_int32_t get_remote_data(int32_t index, uint8_t **data, int32_t length) {
+xtcp_error_int32_t get_remote_data(int32_t index, uint8_t **data, int32_t length, uint32_t *timestamp) {
   xtcp_error_int32_t result = {.status = XTCP_EINVAL, .value = -1};
+  if (timestamp)
+    *timestamp = 0;
   if ((index >= 0) && (index < MAX_OPEN_SOCKETS)) {
     struct pbuf *pbuf = connections[index].pbuf;
     if (pbuf != NULL) {
@@ -248,6 +250,8 @@ xtcp_error_int32_t get_remote_data(int32_t index, uint8_t **data, int32_t length
         result.status = XTCP_SUCCESS;
         result.value = copy_length;
       }
+      if (timestamp)
+        *timestamp = pbuf->timestamp;
     }
   }
   return result;
