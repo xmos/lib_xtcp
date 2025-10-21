@@ -2,12 +2,13 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
 #include <platform.h>
+#include <string.h>
+
 #include "xk_eth_316_dual/board.h"
 #include "debug_print.h"
 #include "xtcp.h"
 #include "httpd.h"
 #include "smi.h"
-#include "otp_board_info.h"
 
 port p_smi_mdio = MDIO;
 port p_smi_mdc = MDC;
@@ -39,9 +40,6 @@ enum cfg_clients {
   NUM_CFG_CLIENTS
 };
 
-// MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
-static unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x03};
-
 // IP Config - change this to suit your network.  Leave with all
 // 0 values to use DHCP
 xtcp_ipconfig_t ipconfig = {
@@ -51,6 +49,13 @@ xtcp_ipconfig_t ipconfig = {
 };
 
 #define ETH_RX_BUFFER_SIZE_WORDS 1600
+
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]) {
+  // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
+  const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x03};
+  (void)netif_id;
+  memcpy(mac_address, mac_address_phy, MACADDR_NUM_BYTES);
+}
 
 int main(void) {
   xtcp_if         i_xtcp[NUM_XTCP_CLIENTS];
@@ -87,7 +92,7 @@ int main(void) {
     // TCP component
     on tile[0]: xtcp_lwip(i_xtcp, NUM_XTCP_CLIENTS, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                          mac_address_phy, null, ipconfig);
+                          ipconfig);
 
     // HTTP server application
     on tile[0]: xhttpd(i_xtcp[XTCP_TO_HTTP]);

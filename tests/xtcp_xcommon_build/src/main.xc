@@ -42,6 +42,11 @@ xtcp_ipconfig_t ipconfig = {
 
 #define ETH_RX_BUFFER_SIZE_WORDS 1600
 
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]) {
+  (void)netif_id;
+  otp_board_info_get_mac(otp_ports, 0, mac_address);
+}
+
 int main(void) {
   xtcp_if         i_xtcp[NUM_XTCP_CLIENTS];
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
@@ -66,7 +71,7 @@ int main(void) {
     // TCP component
     on tile[0]: xtcp_lwip(i_xtcp, NUM_XTCP_CLIENTS, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                          null, otp_ports, ipconfig);
+                          ipconfig);
 
     // HTTP server application
     on tile[0]: xhttpd(i_xtcp[XTCP_TO_HTTP]);

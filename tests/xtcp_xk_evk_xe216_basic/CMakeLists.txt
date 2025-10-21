@@ -17,7 +17,11 @@ list(APPEND XC_SOURCES ${COMMON_SOURCES})
 
 set(APP_XC_SRCS ${XC_SOURCES})
 
-include(${CMAKE_CURRENT_LIST_DIR}/../deps.cmake)
+set(APP_DEPENDENT_MODULES   lib_xtcp
+                            "lib_board_support(1.4.0)"
+                            "lib_logging(3.4.0)"
+                            "lib_otpinfo(2.2.1)"
+                            )
 
 set(COMPILER_FLAGS_COMMON   -O3
                             -g

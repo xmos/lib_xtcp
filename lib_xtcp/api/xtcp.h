@@ -7,8 +7,6 @@
 #include <mii.h>
 #include <smi.h>
 #include <ethernet.h>
-// TODO - remove dependency on OTP
-#include <otp_board_info.h>
 #include <xccompat.h>
 
 #include "xc2compat.h"
@@ -488,9 +486,6 @@ typedef interface xtcp_pbuf_if {
  *                      interface should be used to connect to it. Otherwise it should be set to null.
  *  \param i_eth_tx     If this component is connected to an MAC component in the Ethernet library then this
  *                      interface should be used to connect to it. Otherwise it should be set to null.
- *  \param mac_address  If this array is non-null then it will be used to set the MAC address of the component.
- *  \param otp_ports    If this port structure is non-null then the component will obtain the MAC address from OTP ROM.
- *                      See the OTP reading library user guide for details.
  *  \param ipconfig     This `xtcp_ipconfig_t` structure is used to determine the IP address configuration of the
  *                      component.
  */
@@ -500,10 +495,22 @@ void xtcp_lwip(SERVER_INTERFACE_ARRAY(xtcp_if, i_xtcp, n_xtcp),
                NULLABLE_CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg),
                NULLABLE_CLIENT_INTERFACE(ethernet_rx_if, i_eth_rx),
                NULLABLE_CLIENT_INTERFACE(ethernet_tx_if, i_eth_tx),
-               CONST_NULLABLE_ARRAY_OF_SIZE(char, mac_address0, MACADDR_NUM_BYTES),
-               NULLABLE_REFERENCE_PARAM(otp_ports_t, otp_ports),
                REFERENCE_PARAM(xtcp_ipconfig_t, ipconfig));
 #endif /* __XC__ || __DOXYGEN__ */
+
+/** Configure the MAC address for a given network interface
+ * 
+ * This function is called by xtcp_lwip() during initialization to set the MAC address for the network interface.
+ * Define in the client application to provide a MAC address.
+ * 
+ * \param netif_id      The network interface ID to configure the MAC address for. Can be ignored for now as only 1 netif is currently supported.
+ * \param mac_address   The six-octet MAC address output parameter to set for the given network interface.
+ * 
+ * \note This is a weak function that must be overridden by the user to provide a custom MAC address configuration.
+ * \warning This function is called from the xtcp_lwip() task and may not be on the same tile as the client application. 
+ * Do not use shared memory or resources in this function.
+*/
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]);
 
 /** Copy an IP address data structure.
  */

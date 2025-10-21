@@ -9,8 +9,8 @@ lib_xtcp: TCP/IP Library
 :scope: General Use
 :description: TCP/IP Library
 :category: Networking
-:keywords: Ethernet, MAC, MII, RMII, RGMII, SMI, TCP, UDP
-:hardware: xcore.ai, xcore-200
+:keywords: Ethernet
+:devices: xcore.ai, xcore-200
 
 *******
 Summary

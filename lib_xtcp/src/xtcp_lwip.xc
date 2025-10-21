@@ -174,8 +174,6 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
                client interface ethernet_cfg_if ?i_eth_cfg,
                client interface ethernet_rx_if ?i_eth_rx,
                client interface ethernet_tx_if ?i_eth_tx,
-               const uint8_t (&?mac_address)[MACADDR_NUM_BYTES],
-               otp_ports_t &?otp_ports,
                xtcp_ipconfig_t &ipconfig)
 {
   timer timers[NUM_TIMEOUTS];
@@ -189,13 +187,7 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
     period[i] = XS1_TIMER_KHZ;
   }
 
-  if (!isnull(mac_address)) {
-    memcpy(mac_address_phy, mac_address, MACADDR_NUM_BYTES);
-  } else if (!isnull(otp_ports)) {
-    otp_board_info_get_mac(otp_ports, 0, mac_address_phy);
-  } else {
-    fail("Must supply OTP ports or MAC address to xtcp component");
-  }
+  xtcp_configure_mac(0, mac_address_phy);
 
   if (!isnull(i_eth_cfg) && !isnull(i_mii)) {
     fail("Error: Cannot use both ethernet_cfg_if and mii_if at the same time");

@@ -51,6 +51,7 @@ set(LIB_C_SRCS              src/client_queue.c
                             src/tcp_transport.c
                             src/udp_recv.c
                             src/dns_found.c
+                            src/xtcp_configure.c
                             ${XTCP_LWIP_CODE_LIST})
 
 set(LIB_XC_SRCS             src/xtcp_lwip.xc
@@ -66,8 +67,7 @@ set(LIB_INCLUDES            api
 set(LIB_DEPENDENT_MODULES   "lib_ethernet(4.1.0)"
                             "lib_logging(3.4.0)"
                             "lib_xassert(4.3.2)"
-                            "lib_random(1.3.1)"
-                            "lib_otpinfo(2.2.1)")
+                            "lib_random(1.3.1)")
 
 set(LIB_COMPILER_FLAGS      -g
                             -O3

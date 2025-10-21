@@ -3,6 +3,7 @@
 
 #include <xs1.h>
 #include <platform.h>
+#include <string.h>
 #include <xscope.h>
 
 #include "app_udp_connect.h"
@@ -54,11 +55,16 @@ static xtcp_ipconfig_t ipconfig = {
   {255, 255, 255,   0},  /* submask, 0 for DHCP */
   {0, 0, 0, 0},          /* Gateway */
 };
-// MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
-static const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x23};
 
 void xscope_user_init(void) {
   xscope_mode_lossless();
+}
+
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]) {
+  // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
+  const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x23};
+  (void)netif_id;
+  memcpy(mac_address, mac_address_phy, MACADDR_NUM_BYTES);
 }
 
 int main()
@@ -97,7 +103,7 @@ int main()
     on tile[1]: xtcp_lwip(i_xtcp, NUM_TCP_CLIENTS,
                           null, // mii_if
                           i_cfg[CFG_TO_TCP], i_rx[ETH_TO_TCP], i_tx[ETH_TO_TCP],
-                          mac_address_phy, null, ipconfig);
+                          ipconfig);
 
     on tile[1]: app_udp_connect(i_xtcp[TCP_TO_APP_UDP]);
   }

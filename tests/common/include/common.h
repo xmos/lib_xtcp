@@ -11,7 +11,6 @@
 
 #include "debug_print.h"
 #include "ethernet.h"
-#include "otp_board_info.h"
 #include "smi.h"
 
 // Defines
