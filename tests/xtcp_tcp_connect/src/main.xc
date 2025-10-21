@@ -3,6 +3,7 @@
 
 #include <xs1.h>
 #include <platform.h>
+#include <xscope.h>
 
 #include "app_tcp_connect.h"
 #include "ethernet.h"
@@ -56,6 +57,9 @@ static xtcp_ipconfig_t ipconfig = {
 // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
 static const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x33};
 
+void xscope_user_init(void) {
+  xscope_mode_lossless();
+}
 
 int main()
 {

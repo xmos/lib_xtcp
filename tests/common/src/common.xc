@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+#if defined BOARD_SUPPORT_BOARD && (BOARD_SUPPORT_BOARD == XK_EVK_XE216)
+#include "xk_evk_xe216/board.h"
+#endif
+
 #ifndef BUSY
 #define BUSY 0
 #endif
@@ -44,10 +48,20 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
     }
   }
 
+#if defined TEST_BOARD_SUPPORT_BOARD && (TEST_BOARD_SUPPORT_BOARD == XK_ETH_XU316_DUAL_100M)
 #ifdef XCORE_AI_MULTI_PHY_SINGLE_PHY
   debug_printf("Configuration: single-phy\n");
 #else
   debug_printf("Configuration: dual-phy\n");
+#endif
+
+#elif defined BOARD_SUPPORT_BOARD && (BOARD_SUPPORT_BOARD == XK_EVK_XE216)
+  debug_printf("Configuration: XE216 EVK\n");
+
+#elif defined BOARD_SUPPORT_BOARD && (BOARD_SUPPORT_BOARD == XK_ETH_316_DUAL)
+  debug_printf("Configuration: XK-ETH-316-DUAL\n");
+#else
+#error "Unknown board configuration"
 #endif
 
   // unsigned data_len = 0;

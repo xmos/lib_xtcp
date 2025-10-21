@@ -3,10 +3,13 @@
 
 #include <xk_eth_xu316_dual_100m/board.h>
 
+#include <xs1.h>
+#include <platform.h>
+#include <xscope.h>
+
 #include "common.h"
 #include "ethernet.h"
 #include "smi.h"
-#include <xscope.h>
 
 port p_smi_mdio = MDIO;
 port p_smi_mdc = MDC;

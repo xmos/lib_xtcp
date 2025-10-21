@@ -6,10 +6,7 @@ import random
 import string
 import time
 import argparse
-import sys
-import struct
-import urllib.request
-import urllib.error
+import subprocess
 from multiprocessing import Pool
 import copy
 import xtcp_support
@@ -59,6 +56,15 @@ def process_test(args):
         args.failures = failures
         return args
 
+    # Pre-build a message to avoid the overhead of building a message in the test loop
+    length_of_message = args.packet_size_limit
+    # Don't allow an 'a' char to be sent, as this kills the remote device
+    message = ''.join(random.choice(
+        string.ascii_lowercase[1:]) for c in range(length_of_message))
+    # message = 'bbccdd'
+
+    message = message.encode('ascii')
+
     num_timeouts = 0
     num_exceptions = 0
 
@@ -66,16 +72,6 @@ def process_test(args):
     # match against rebounded packet
     while tests_to_perform:
         tests_to_perform -= 1
-        time.sleep(args.delay_between_packets)
-        sys.stdout.write('.')  # show progress
-        sys.stdout.flush()
-        length_of_message = args.packet_size_limit
-        # Don't allow an 'a' char to be sent, as this kills the remote device
-        message = ''.join(random.choice(
-            string.ascii_lowercase[1:]) for c in range(length_of_message))
-        # message = 'bbccdd'
-
-        message = message.encode('ascii')
 
         try:
             sock.send(message)
@@ -162,10 +158,7 @@ def reflect_test(args):
         args_copy.start_port = x
         args_pool.append(args_copy)
 
-    try:
-        pool.map_async(process_test, args_pool, 1, callback=xtcp_support.print_errors)
-    except Exception as e:
-        print(f"Exception during pool map: {e}")
+    pool.map_async(process_test, args_pool, 1, callback=xtcp_support.print_errors)
 
     pool.close()
     pool.join()
@@ -185,68 +178,6 @@ def connect_test(args):
 
         if tests_to_perform:
             time.sleep(3)
-
-
-def multicast_test():
-    MCAST_GRP = '224.1.1.1'
-    MCAST_PORT = 5007
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((MCAST_GRP, MCAST_PORT))
-    mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF,
-                    socket.inet_aton('192.168.2.1'))
-
-    while True:
-        print(sock.recv(10240))
-
-
-def udp_bind_test():
-    print("UDP BIND")
-    tests_to_perform = args.packets
-
-    try:
-        # Test only performed for UDP
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(('', args.local_port))
-        # sock.listen(5)
-        # conn, addr = sock.accept()
-        # if(addr[1] != args.start_port):
-        #     print 'ERROR: Bound to wrong address'
-
-        while tests_to_perform:
-            message, addr = sock.recvfrom(1460)
-            if (addr[1] != args.start_port):
-                print('ERROR: Bound to wrong port')
-            if message:
-                sock.sendto(message, addr)
-            tests_to_perform -= 1
-
-        sock.close()
-
-    except socket.error as err:
-        print(err)
-        print('ERROR: Could not connect to device')
-
-
-def webserver_test(args):
-    try:
-        response = urllib.request.urlopen(
-            'http://' + args.ip + ':' + str(args.start_port), timeout=10)
-        html = response.read().decode('utf-8')
-        print(html)
-
-    except urllib.error.URLError as e:
-        if isinstance(e.reason, socket.timeout):
-            print('ERROR: Could not connect to device: {}'.format(e))
-        else:
-            print('ERROR: URL error: {}'.format(e))
-
-    except socket.timeout as e:
-        print('ERROR: Could not connect to device: {}'.format(e))
 
 
 if __name__ == '__main__':
@@ -291,17 +222,10 @@ if __name__ == '__main__':
 
     xtcp_support.check_and_set_args(args, parser)
 
-    # udp_bind_test()
-    # multicast_test()
-    if args.test == 'webserver':
-        webserver_test(args)
-    elif args.test == 'connection':
-        connect_test(args)
+    if args.protocol == 'UDP' or args.protocol == 'TCP':
+        reflect_test(args)
     else:
-        if args.protocol == 'UDP' or args.protocol == 'TCP':
-            reflect_test(args)
-        else:
-            print("Unknown protocol")
+        print("Unknown protocol")
 
     print("Kill target")
     xtcp_support.kill_remote_device(args)

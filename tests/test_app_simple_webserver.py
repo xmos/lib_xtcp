@@ -1,13 +1,15 @@
 # Copyright 2016-2025 XMOS LIMITED.
 # This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
+import pytest
 import time
 import pathlib
 import subprocess
 from hardware_test_tools import XcoreApp
 
 
-def test_app_simple_webserver(request):
+@pytest.mark.parametrize('target', ['XK_ETH_316_DUAL'])  # Target parameter added for filtering consistency
+def test_app_simple_webserver(request, target):
     adapter_id = request.config.getoption("--adapter-id")
     assert adapter_id is not None, "Error: Specify a valid adapter-id"
 

@@ -1,17 +1,17 @@
-// Copyright 2011-2025 XMOS LIMITED.
+// Copyright 2016-2025 XMOS LIMITED.
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 
-#include <xs1.h>
 #include <platform.h>
+#include <string.h>
+#include <stdlib.h>
 #include <xscope.h>
 
-#include "app_udpecho.h"
-#include "app_tcpecho.h"
+#include "debug_print.h"
+#include "common.h"
 #include "ethernet.h"
 #include "smi.h"
 #include "xk_eth_316_dual/board.h"
 #include "xtcp.h"
-
 
 port p_smi_mdio = MDIO;
 port p_smi_mdc = MDC;
@@ -26,45 +26,27 @@ port p_phy_clk = RMII_PHY_CLK_50M;
 clock phy_rxclk = on tile[0]: XS1_CLKBLK_1;
 clock phy_txclk = on tile[0]: XS1_CLKBLK_2;
 
-enum tcp_clients {
-  TCP_TO_APP_UDP,
-  TCP_TO_APP_TCP,
-  NUM_TCP_CLIENTS
-};
-
-enum eth_clients {
-  ETH_TO_TCP,
-  NUM_ETH_CLIENTS
-};
-
-enum cfg_clients {
-  CFG_TO_TCP,
-  CFG_TO_PHY_DRIVER,
-  NUM_CFG_CLIENTS
-};
-
-#define ETH_RX_BUFFER_SIZE_WORDS 592
-
-// Set to your desired IP address
-static xtcp_ipconfig_t ipconfig = {
-  {192, 168, 200, 178},  /* IP address, 0 for DHCP */
-  {255, 255, 255,   0},  /* submask, 0 for DHCP */
-  {0, 0, 0, 0},          /* Gateway */
+// IP Config - change this to suit your network.  Leave with all 0 values to use DHCP/AutoIP
+xtcp_ipconfig_t ipconfig = {
+        { 192, 168, 200, 198 }, // ip address (eg 192,168,0,2)
+        { 255, 255, 255, 0 }, // netmask (eg 255,255,255,0)
+        { 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
 };
 // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
 static const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x03};
+
+#define ETH_RX_BUFFER_SIZE_WORDS 1600
 
 void xscope_user_init(void) {
   xscope_mode_lossless();
 }
 
-int main()
-{
+int main(void) {
+  xtcp_if i_xtcp[REFLECT_PROCESSES];
   ethernet_cfg_if i_cfg[NUM_CFG_CLIENTS];
   ethernet_rx_if i_rx[NUM_ETH_CLIENTS];
   ethernet_tx_if i_tx[NUM_ETH_CLIENTS];
   smi_if i_smi;
-  xtcp_if i_xtcp[NUM_TCP_CLIENTS];
 
   par {
     on tile[0]: rmii_ethernet_rt_mac( i_cfg, NUM_CFG_CLIENTS,
@@ -87,16 +69,19 @@ int main()
                                       ETHERNET_DISABLE_SHAPER);
 
     on tile[1]: dual_ethernet_phy_driver(i_smi, i_cfg[CFG_TO_PHY_DRIVER], null);
+  
     on tile[1]: smi(i_smi, p_smi_mdio, p_smi_mdc);
                     
     // TCP component
-    on tile[0]: xtcp_lwip(i_xtcp, NUM_TCP_CLIENTS,
+    on tile[0]: xtcp_lwip(i_xtcp, REFLECT_PROCESSES,
                           null, // mii_if
-                          i_cfg[CFG_TO_TCP], i_rx[ETH_TO_TCP], i_tx[ETH_TO_TCP],
+                          i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
                           mac_address_phy, null, ipconfig);
-
-    on tile[1]: udp_echo(i_xtcp[TCP_TO_APP_UDP]);
-    on tile[1]: tcp_echo(i_xtcp[TCP_TO_APP_TCP]);
+    
+    // The simple udp reflector thread
+    par (int i = 0; i < REFLECT_PROCESSES; i++) {
+      on tile[0]: reflect(i_xtcp[i], INCOMING_PORT + (i * 10));
+    }
   }
   return 0;
 }
