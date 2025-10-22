@@ -423,6 +423,27 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         ipaddr = get_local_from_pcb(id);
         break;
 
+      case i_xtcp[unsigned i].getsockopt(int32_t id, xtcp_socket_level_t level, uint32_t option, uint8_t value[length], static_const_unsigned length) -> xtcp_error_int32_t error:
+        uint8_t value_copy[length];
+        uint32_t length_copy = length;
+
+        error.status = shim_getsockopt(i, id, level, option, value_copy, &length_copy);
+        if (error.status == XTCP_SUCCESS) {
+            memcpy(value, value_copy, length_copy);
+            error.value = length_copy;
+        } else {
+            error.value = 0;
+        }
+
+        break;
+
+      case i_xtcp[unsigned i].setsockopt(int32_t id, xtcp_socket_level_t level, uint32_t option, const uint8_t value[length], static_const_unsigned length) -> xtcp_error_code_t result:
+        uint8_t value_copy[length];
+
+        memcpy(value_copy, value, length);
+        result = shim_setsockopt(i, id, level, option, value_copy, length);
+        break;
+
       case i_xtcp[unsigned i].is_ifup(void) -> int result:
         result = get_if_state();
         break;

@@ -153,6 +153,33 @@ typedef enum xtcp_error_code_t
   XTCP_EINUSE = -5,           /**< Address in use */
 } xtcp_error_code_t;
 
+/** XTCP socket levels.
+ *
+ *  This type represents the socket levels for getsockopt() and
+ *  setsockopt().
+ *
+ *  Presently only XTCP_SOCKET_LEVEL_IP is supported.
+ */
+typedef enum xtcp_socket_level_t {
+  XTCP_SOCKET_LEVEL_IP = 0,     /**< IP */
+  XTCP_SOCKET_LEVEL_SOCKET = 1, /**< The socket itself */
+  XTCP_SOCKET_LEVEL_TCP = 6,    /**< TCP */
+  XTCP_SOCKET_LEVEL_UDP = 7,    /**< UDP */
+} xtcp_socket_level_t;
+
+/** XTCP socket options.
+ *
+ *  This type represents a socket option when calling getsockopt()
+ *  or setsockopt() with XTCP_SOCKET_LEVEL_IP.
+ */
+typedef enum xtcp_ip_socket_option_t {
+  XTCP_IP_SOCKET_OPTION_TOS = 1,  /**< TOS, value is uint8_t */
+  XTCP_IP_SOCKET_OPTION_TTL = 2,  /**< TTL, value is uint8_t */
+  XTCP_IP_SOCKET_OPTION_MULTICAST_TTL = 5,  /**< multicast TTL, value is uint8_t */
+  XTCP_IP_SOCKET_OPTION_MULTICAST_IF = 6,   /**< multicast interface index, value is uint8_t */
+  XTCP_IP_SOCKET_OPTION_MULTICAST_LOOP = 7, /**< multicast loopback, value is uint8_t */
+} xtcp_ip_socket_option_t;
+
 /** This type represents an int32_t with a status value.
  *
  *  This is a type used to return both a status code and an int32_t value.
@@ -440,6 +467,28 @@ typedef interface xtcp_if {
    * \note This is a non-blocking call. The result of the lookup will be indicated by an XTCP_DNS_RESULT event.
    */
   xtcp_host_t request_host_by_name(const uint8_t hostname[len], static_const_unsigned len, xtcp_ipaddr_t dns_server);
+
+  /** \brief Get a socket option
+   *
+   * \param id       The connection descriptor to act on.
+   * \param level    The protocol level to operate on.
+   * \param option   The socket option.
+   * \param value    The option value.
+   * \param length   The option value length.
+   * \returns        XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided.
+   */
+  xtcp_error_int32_t getsockopt(int32_t id, xtcp_socket_level_t level, uint32_t option, uint8_t value[length], static_const_unsigned length);
+
+  /** \brief Set a socket option
+   *
+   * \param id       The connection descriptor to act on.
+   * \param level    The protocol level to operate on.
+   * \param option   The socket option.
+   * \param value    The option value.
+   * \param length   The option value length.
+   * \returns        XTCP_SUCCESS if successful, XTCP_EINVAL if invalid parameters are provided.
+   */
+  xtcp_error_code_t setsockopt(int32_t id, xtcp_socket_level_t level, uint32_t option, const uint8_t value[length], static_const_unsigned length);
 
   /** \brief Query if the underlying interface is up.
    *
