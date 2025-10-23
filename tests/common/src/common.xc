@@ -34,6 +34,12 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
   timer tmr;
 #endif
 
+#if MULTICAST
+  xtcp_ipaddr_t listen_addr = {224, 1, 2, 3}; // Multicast address
+#else
+  xtcp_ipaddr_t listen_addr = {0, 0, 0, 0}; // Any address
+#endif
+
   // The buffers for incoming data and outgoing responses
   char tx_buffer[OPEN_PORTS_PER_PROCESS][RX_BUFFER_SIZE];
   int response_lens[OPEN_PORTS_PER_PROCESS];
@@ -66,7 +72,6 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
 
   // unsigned data_len = 0;
   char rx_tmp[RX_BUFFER_SIZE];
-  xtcp_ipaddr_t any_addr = {0, 0, 0, 0};
 
   while (1) {
     // A temporary variable to hold connections associated with an event
@@ -87,7 +92,7 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
               reflect_state_t *socket = &connection_states[i];
               socket->socket_id = i_xtcp.socket(PROTOCOL);
 
-              int32_t listen_result = i_xtcp.listen(socket->socket_id, socket->local_port, any_addr);
+              int32_t listen_result = i_xtcp.listen(socket->socket_id, socket->local_port, listen_addr);
               if (listen_result < 0) {
                 debug_printf("Failed to listen on port %d, %i\n", socket->local_port, listen_result);
               } else {
@@ -95,7 +100,9 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
                 if (PROTOCOL == XTCP_PROTOCOL_UDP) {
                   // No connection event for UDP, mark as active
                   socket->active = 1;
-                  // connection_states[i].socket_id = connection_states[i].conn_id;
+#if MULTICAST
+                  i_xtcp.join_multicast_group(listen_addr);
+#endif
                 }
               }
             }
@@ -109,6 +116,9 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
 
               if (socket->active) {
                 socket->active = 0;
+#if MULTICAST
+                  i_xtcp.leave_multicast_group(listen_addr);
+#endif
                 // UDP - closes the socket (listening and data)
                 // TCP - closes listening socket
                 i_xtcp.close(socket->socket_id);
@@ -210,27 +220,17 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
                 break;
               }
             }
-            if (is_active == 0) {
-              // No existing connection, so try and find an empty connection slot
-              for (index = 0; index < OPEN_PORTS_PER_PROCESS; index++) {
-                if (!connection_states[index].active) {
-                  debug_printf("WARNING: new conn from rx data: %d\n", conn_id);
-                  // Otherwise, assign the connection to a slot
-                  connection_states[index].active = 1;
-                  connection_states[index].socket_id = conn_id;
-                  is_active = 1;
-                  break;
-                } else {
-                  debug_printf("Recv data rejected: %d\n", conn_id);
-                }
-              }
-            }
+
             if (is_active) {
               int32_t data_len = i_xtcp.recvfrom(conn_id, rx_tmp, RX_BUFFER_SIZE, ipaddr, port_number);
               if (rx_tmp[0] != 'a') {
                 // Only echo data that is not 'a' (used to terminate the test)
                 reverse_copy(tx_buffer[index], rx_tmp, data_len);
                 response_lens[index] = data_len;
+#if MULTICAST
+                // For multicast, ensure we send back to the multicast address, not the remote host
+                memcpy(ipaddr, listen_addr, sizeof(xtcp_ipaddr_t));
+#endif
                 int32_t result = i_xtcp.sendto(conn_id, tx_buffer[index], response_lens[index], ipaddr, port_number);
                 if (result < 0) {
                   debug_printf("Error sendto response: %d\n", result);
@@ -272,6 +272,9 @@ void reflect(client xtcp_if i_xtcp, int start_port) {
                 
                 if (socket->tcp_id[j] == conn_id) {
                   debug_printf("closing (%d): %c\n", conn_id, rx_tmp[0]);
+#if MULTICAST
+                  i_xtcp.leave_multicast_group(listen_addr);
+#endif
                   i_xtcp.close(socket->tcp_id[j]);
                   socket->tcp_id[j] = INIT_VAL;
                   break;
