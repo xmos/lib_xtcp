@@ -21,6 +21,7 @@
 /* LWIP headers */
 #include "lwip/arch.h"
 #include "lwip/prot/ieee.h"
+#include "lwip/prot/ethernet.h"
 #include "netif/ethernetif.h"
 #include "netif/xcore_netif_output.h"
 
@@ -29,6 +30,17 @@
 #include "lwip_shim.h"
 #include "pbuf_shim.h"
 
+static void ipv4_multicast_to_mac(const xtcp_ipaddr_t ipv4_addr,
+                                  ethernet_macaddr_filter_t &macaddr_filter)
+{
+  macaddr_filter.addr[0] = LL_IP4_MULTICAST_ADDR_0;
+  macaddr_filter.addr[1] = LL_IP4_MULTICAST_ADDR_1;
+  macaddr_filter.addr[2] = LL_IP4_MULTICAST_ADDR_2;
+  macaddr_filter.addr[3] = ipv4_addr[1] & 0x7F;
+  macaddr_filter.addr[4] = ipv4_addr[2];
+  macaddr_filter.addr[5] = ipv4_addr[3];
+  macaddr_filter.appdata = 0;
+}
 
 void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
                client interface mii_if ?i_mii,
@@ -313,12 +325,26 @@ void xtcp_lwip(server xtcp_if i_xtcp[n_xtcp], static const unsigned n_xtcp,
         xtcp_ipaddr_t group_addr;
         memcpy(group_addr, addr, sizeof(xtcp_ipaddr_t));
         shim_join_multicast_group(group_addr);
+
+        if (!isnull(i_eth_cfg) && !isnull(i_eth_rx)) {
+          size_t index = i_eth_rx.get_index();
+          ethernet_macaddr_filter_t macaddr_filter;
+          ipv4_multicast_to_mac(group_addr, macaddr_filter);
+          i_eth_cfg.add_macaddr_filter(index, 0, macaddr_filter);
+        }
         break;
 
       case i_xtcp[unsigned i].leave_multicast_group(xtcp_ipaddr_t addr):
         xtcp_ipaddr_t group_addr;
         memcpy(group_addr, addr, sizeof(xtcp_ipaddr_t));
         shim_leave_multicast_group(group_addr);
+
+        if (!isnull(i_eth_cfg) && !isnull(i_eth_rx)) {
+          size_t index = i_eth_rx.get_index();
+          ethernet_macaddr_filter_t macaddr_filter;
+          ipv4_multicast_to_mac(group_addr, macaddr_filter);
+          i_eth_cfg.del_macaddr_filter(index, 0, macaddr_filter);
+        }
         break;
 
       case i_xtcp[unsigned i].request_host_by_name(const uint8_t hostname[len], static const unsigned len, xtcp_ipaddr_t dns_server) -> xtcp_host_t result:
