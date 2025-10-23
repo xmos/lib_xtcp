@@ -285,11 +285,35 @@ typedef interface xtcp_if {
    * \param buffer        An array of data to be transmitted on the network.
    * \param length      The length of data to send. If this is 0, no data will
    *                    be sent and a XTCP_SENT_DATA event will not occur.
+   * \param ts          The packet transmit timestamp.
+   * \returns           The number of bytes accepted by xtcp or a negative xtcp_error_code_t.
+   */
+  int32_t send_timed(int32_t id, const uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(uint32_t, ts));
+
+  /** \brief Send data to the connection.
+   *
+   * \param id       The connection descriptor to act on.
+   * \param buffer        An array of data to be transmitted on the network.
+   * \param length      The length of data to send. If this is 0, no data will
+   *                    be sent and a XTCP_SENT_DATA event will not occur.
    * \param remote_addr The address of the remote host.
    * \param remote_port The remote port of the remote host.
    * \returns           The number of bytes accepted by xtcp or an xtcp_error_code_t.
    */
   int32_t sendto(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port);
+
+  /** \brief Send timestamped data to the connection.
+   *
+   * \param id       The connection descriptor to act on.
+   * \param buffer        An array of data to be transmitted on the network.
+   * \param length      The length of data to send. If this is 0, no data will
+   *                    be sent and a XTCP_SENT_DATA event will not occur.
+   * \param remote_addr The address of the remote host.
+   * \param remote_port The remote port of the remote host.
+   * \param ts          The packet transmit timestamp.
+   * \returns           The number of bytes accepted by xtcp or an xtcp_error_code_t.
+   */
+  int32_t sendto_timed(int32_t id, const uint8_t buffer[length], uint32_t length, xtcp_ipaddr_t remote_addr, uint16_t remote_port, REFERENCE_PARAM(uint32_t, ts));
 
   /** \brief Receive data on a connection.
    *
@@ -303,6 +327,20 @@ typedef interface xtcp_if {
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
    */
   int32_t recv(int32_t id, uint8_t buffer[length], uint32_t length);
+
+  /** \brief Receive timestamped data on a connection.
+   *
+   * Copies data from an internal buffer to the given buffer, if data is available.
+   *
+   *  If the data buffer is not large enough then an exception will be raised.
+   *
+   * \param id          The connection descriptor to act on.
+   * \param buffer      The destination buffer where received data will be stored.
+   * \param length      The length of the given buffer and the maximum amount of data that will be copied.
+   * \param ts          The packet receive timestamp.
+   * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   */
+  int32_t recv_timed(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(uint32_t, ts));
 
   /** \brief Receive data on a connection, remote host and port.
    *
@@ -318,6 +356,22 @@ typedef interface xtcp_if {
    * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
    */
   int32_t recvfrom(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(xtcp_ipaddr_t, ipaddr), REFERENCE_PARAM(uint16_t, port_number));
+
+  /** \brief Receive timestamped data on a connection, remote host and port.
+   *
+   * Copies data from an internal buffer to the given buffer, if data is available.
+   *
+   *  If the data buffer is not large enough then an exception will be raised.
+   *
+   * \param id          The connection descriptor to act on.
+   * \param buffer      The destination buffer where received data will be stored.
+   * \param length      The length of the given buffer and the maximum amount of data that will be copied.
+   * \param port_number The remote port buffer data was received from.
+   * \param ipaddr      The address of the remote host.
+   * \param ts          The packet receive timestamp.
+   * \returns           Either the total number of bytes copied to the given buffer or an xtcp_error_code_t.
+   */
+  int32_t recvfrom_timed(int32_t id, uint8_t buffer[length], uint32_t length, REFERENCE_PARAM(xtcp_ipaddr_t, ipaddr), REFERENCE_PARAM(uint16_t, port_number), REFERENCE_PARAM(uint32_t, ts));
 
   /** \brief Fill the provided ipconfig address with the current state of the interface.
    *
