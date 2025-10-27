@@ -6,6 +6,10 @@
 
 #include "xtcp.h"
 
+#ifdef __XC__
+extern "C" {
+#endif
+
 xtcp_error_int32_t shim_new_socket(unsigned client_num, xtcp_protocol_t protocol);
 void shim_close_socket(unsigned client_num, int32_t index);
 
@@ -23,5 +27,12 @@ xtcp_error_code_t shim_join_multicast_group(xtcp_ipaddr_t addr);
 xtcp_error_code_t shim_leave_multicast_group(xtcp_ipaddr_t addr);
 
 xtcp_host_t shim_request_host_by_name(unsigned client_num, const uint8_t hostname[], xtcp_ipaddr_t dns_server);
+
+xtcp_error_code_t shim_getsockopt(unsigned client_num, int32_t id, xtcp_socket_level_t level, uint32_t option, uint8_t value[], uint32_t *length);
+xtcp_error_code_t shim_setsockopt(unsigned client_num, int32_t id, xtcp_socket_level_t level, uint32_t option, ARRAY_OF_SIZE(const uint8_t, value, length), uint32_t length);
+
+#ifdef __XC__
+}
+#endif
 
 #endif /* XTCP_LWIP_SHIM_H */
