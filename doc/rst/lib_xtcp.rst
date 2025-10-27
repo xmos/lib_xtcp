@@ -489,6 +489,8 @@ by the library on build).
 
 .. doxygendefine:: CLIENT_QUEUE_SIZE
 
+.. doxygenfunction:: xtcp_configure_mac
+
 |newpage|
 
 .. _lib_xtcp_api:

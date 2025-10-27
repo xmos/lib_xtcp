@@ -5,6 +5,7 @@
 
 #include <xs1.h>
 #include <platform.h>
+#include <string.h>
 #include <xscope.h>
 
 #include "common.h"
@@ -34,15 +35,18 @@ xtcp_ipconfig_t ipconfig = {
     {255, 255, 255,   0},  // netmask    (eg 255,255,255,0)
     {0, 0, 0, 0}           // gateway    (eg 192,168,0,1)
 };
-// MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your
-// desired address.
-static unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97,
-                                                           0x01, 0x02, 0x03};
 
 #define ETH_RX_BUFFER_SIZE_WORDS 1600
 
 void xscope_user_init(void) {
   xscope_mode_lossless();
+}
+
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]) {
+  // MAC address within the XMOS block of 00:22:97:xx:xx:xx. Please adjust to your desired address.
+  const unsigned char mac_address_phy[MACADDR_NUM_BYTES] = {0x00, 0x22, 0x97, 0x01, 0x02, 0x03};
+  (void)netif_id;
+  memcpy(mac_address, mac_address_phy, MACADDR_NUM_BYTES);
 }
 
 int main(void) {
@@ -69,7 +73,7 @@ int main(void) {
     on tile[0] : xtcp_lwip(i_xtcp, REFLECT_PROCESSES,
                            null,
                            i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                           mac_address_phy, null, ipconfig);
+                           ipconfig);
 
     // The simple udp reflector thread
     par(int i = 0; i < REFLECT_PROCESSES; i++) {

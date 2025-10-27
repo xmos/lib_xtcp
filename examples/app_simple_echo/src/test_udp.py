@@ -27,7 +27,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.send(bytes(msg, "ascii"))
 
         chunk = sock.recv(1500)
-        print("Revc'd message: " + str(chunk))
+        print("Recv'd message: " + str(chunk))
 
     except socket.timeout:
         print("No response received within the timeout period.")

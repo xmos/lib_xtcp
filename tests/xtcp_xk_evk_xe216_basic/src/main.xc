@@ -21,11 +21,11 @@ rgmii_ports_t rgmii_ports = on tile[1]: RGMII_PORTS_INITIALIZER;
 port p_smi_mdio   = on tile[1]: XS1_PORT_1C;
 port p_smi_mdc    = on tile[1]: XS1_PORT_1D;
 
-// IP Config - change this to suit your network.  Leave with all 0 values to use DHCP/AutoIP
+// IP Config - change this to suit your network.  Leave with all 0 values to use DHCP
 xtcp_ipconfig_t ipconfig = {
-        { 192, 168, 210, 198 }, // ip address (eg 192,168,0,2)
-        { 255, 255, 255, 0 }, // netmask (eg 255,255,255,0)
-        { 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
+  { 192, 168, 210, 198 }, // ip address (eg 192,168,0,2)
+  { 255, 255, 255, 0 }, // netmask (eg 255,255,255,0)
+  { 0, 0, 0, 0 } // gateway (eg 192,168,0,1)
 };
 
 // Defines
@@ -33,6 +33,11 @@ xtcp_ipconfig_t ipconfig = {
 
 void xscope_user_init(void) {
   xscope_mode_lossless();
+}
+
+void xtcp_configure_mac(unsigned netif_id, uint8_t mac_address[MACADDR_NUM_BYTES]) {
+  (void)netif_id;
+  otp_board_info_get_mac(otp_ports, 0, mac_address);
 }
 
 int main(void) {
@@ -60,7 +65,7 @@ int main(void) {
 
     on tile[0]: xtcp_lwip(i_xtcp, REFLECT_PROCESSES, null,
                           i_cfg[CFG_TO_XTCP], i_rx[ETH_TO_XTCP], i_tx[ETH_TO_XTCP],
-                          null, otp_ports, ipconfig);
+                          ipconfig);
 
     // The simple udp reflector thread
     par (int i = 0; i < REFLECT_PROCESSES; i++) {

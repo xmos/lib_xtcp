@@ -5,11 +5,9 @@ TARGET = XCORE-200-EXPLORER
 
 APP_NAME =
 
-COMMON_FLAGS   = -O3 -mno-dual-issue -g -report -DBOARD_SUPPORT_BOARD=XK_EVK_XE216 ../config.xscope
+XCC_FLAGS  = -O3 -mno-dual-issue -g -report -DBOARD_SUPPORT_BOARD=XK_EVK_XE216 ../config.xscope
 
-XCC_FLAGS  = $(COMMON_FLAGS) -DXTCP_STACK_LWIP
-
-USED_MODULES = lib_xtcp lib_board_support lib_otpinfo
+USED_MODULES = lib_xtcp lib_board_support(>=1.4.0) lib_otpinfo(>=2.2.1)
 
 #=============================================================================
 # The following part of the Makefile includes the common build infrastructure
