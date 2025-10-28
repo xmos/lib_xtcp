@@ -14,8 +14,13 @@
 #include "smi.h"
 
 // Defines
-#define RX_BUFFER_SIZE 1460
+#if MULTICAST
+#define INCOMING_PORT 15577
+#else
 #define INCOMING_PORT 15533
+#endif
+
+#define RX_BUFFER_SIZE 1460
 #define INIT_VAL -1
 
 #ifndef OPEN_PORTS_PER_PROCESS
