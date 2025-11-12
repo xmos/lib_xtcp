@@ -5,12 +5,17 @@ DEPENDENT_MODULES = lib_ethernet(>=4.1.0) lib_otpinfo(>=2.2.1) lib_random(>=1.3.
 # Build flags
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -g -O3 -mno-dual-issue -DSSIZE_MAX=INT_MAX
 
+ifndef LWIP_OPTS_PATH
+$(warning "LWIP_OPTS_PATH not defined, setting to 'standard', may be overridden in the application's Makefile")
+LWIP_OPTS_PATH = ../lwip/contrib/ports/xmos/lib/standard
+endif
+
 # Source directories
 # Note: only includes IPv4 of lwIP
 LWIP_SOURCE_DIRS = ../lwip/api ../lwip/src/api ../lwip/src/core ../lwip/src/core/ipv4 ../lwip/src/netif ../lwip/contrib/ports/xmos/port
 
 # Include directories
-LWIP_INCLUDE_DIRS = ../lwip/src/include ../lwip/contrib ../lwip/contrib/ports/xmos/include ../lwip/contrib/ports/xmos/lib/standard
+LWIP_INCLUDE_DIRS = ../lwip/src/include ../lwip/contrib ../lwip/contrib/ports/xmos/include $(LWIP_OPTS_PATH)
 
 # Exclude files
 LWIP_EXCLUDE_FILES += slipif.c
