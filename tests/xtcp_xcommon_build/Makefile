@@ -5,6 +5,8 @@ TARGET = XCORE-200-EXPLORER
 
 APP_NAME =
 
+LWIP_OPTS_PATH = ../lwip/contrib/ports/xmos/lib/standard
+
 XCC_FLAGS  = -O3 -mno-dual-issue -g -report -DBOARD_SUPPORT_BOARD=XK_EVK_XE216 ../config.xscope
 
 USED_MODULES = lib_xtcp lib_board_support(>=1.4.0) lib_otpinfo(>=2.2.1)
