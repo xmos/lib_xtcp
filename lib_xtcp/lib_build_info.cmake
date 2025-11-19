@@ -1,6 +1,6 @@
 set(LIB_NAME                lib_xtcp)
 
-set(LIB_VERSION             6.2.0)
+set(LIB_VERSION             7.0.0)
 
 # Please note: LWIP_OPTS_PATH may be overridden in the application's CMakeLists.txt file
 if(NOT DEFINED LWIP_OPTS_PATH)
