@@ -520,7 +520,7 @@ The example targets the ``XK-ETH-316-DUAL`` dev-kit and 100BASE-T ethernet
 with an RMII PHY.
 
 For an example of using ``lib_xtcp`` on the ``XCORE-200`` with Gigabit Ethernet,
-say the ``XCORE-200-EXPLORER`` dev-kit, see the example application note ``AN02044``.
+say the ``XCORE-200-EXPLORER`` dev-kit, see the example application note ``AN00121``.
 
 The ``lib_xtcp`` uses a third-party TCP/IP stack, the ``LwIP`` stack. This is built automatically
 when the library is built. ``lib_xtcp`` uses one thread to run the TCP/IP stack and uses around 50 kB of code
