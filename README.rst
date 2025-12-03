@@ -85,12 +85,12 @@ Related application notes
 *************************
 
 * `AN00120: 100Mbps RMII ethernet application note <https://www.xmos.com/file/an00120>`_
-* `AN00199: XMOS Gigabit Ethernet application note (XK_EVK_XE216) <https://www.xmos.com/file/an00199-xmos-gigabit-ethernet-application-note>`_
+* `AN00199: XMOS Gigabit Ethernet application note (XK-EVK-XE216) <https://www.xmos.com/file/an00199-xmos-gigabit-ethernet-application-note>`_
 
 The following application notes use this library:
 
-* `AN00121: A UDP loopback demo running on lib_xtcp application note <https://www.xmos.com/file/an00121>`_
-* `AN02044: A UDP loopback demo running on lib_xtcp on XCORE-200-EXPLORER application note <https://www.xmos.com/file/an02044>`_
+* `AN00121: Using XMOS TCP/IP Library for UDP-based Networking on XCORE-200 application note <https://www.xmos.com/file/an00121>`_
+* `AN02044: Using XMOS TCP/IP Library for UDP-based Networking application note <https://www.xmos.com/file/an02044>`_
 
 *******
 Support
