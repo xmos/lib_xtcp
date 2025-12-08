@@ -1,6 +1,11 @@
 lib_xtcp change log
 ===================
 
+7.0.1
+-----
+
+  * FIXED:  Wrong application-note link descriptions in README.
+
 7.0.0
 -----
 
